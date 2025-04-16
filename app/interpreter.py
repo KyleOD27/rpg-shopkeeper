@@ -1,10 +1,10 @@
 # app/interpreter.py
 
+import re
+from difflib import get_close_matches
+
 from app.conversation import PlayerIntent
 from app.models.items import get_all_items
-from difflib import get_close_matches
-from app.agents.shopkeeper_agent import check_confirmation_via_gpt
-import re
 
 INTENT_KEYWORDS = {
     PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me"],
@@ -18,13 +18,13 @@ INTENT_KEYWORDS = {
 }
 
 SMALL_TALK_KEYWORDS = ["thanks", "thank", "hello", "hi", "greetings", "bye", "goodbye", "cheers", "farewell"]
-
-CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "okay", "fine"]
-
+CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "fine"]
 CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
+
 
 def normalize_input(text: str):
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower().strip())
+
 
 def find_item_in_input(player_input: str):
     items = get_all_items()
@@ -56,36 +56,79 @@ def find_item_in_input(player_input: str):
 
     return None, None
 
+
 def interpret_input(player_input: str):
     lowered = normalize_input(player_input)
     words = lowered.split()
 
-    # 1. ACTION MATCHING FIRST (prioritised)
+    # 1. ACTION MATCHING
     for intent, keywords in INTENT_KEYWORDS.items():
         if any(keyword in lowered for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
-                item_name = find_item_in_input(player_input)
+                item_name, _ = find_item_in_input(player_input)
                 if not item_name:
+                    print(f"[DEBUG] BUY_NEEDS_ITEM: No item identified from input '{player_input}'")
                     return {"intent": PlayerIntent.BUY_NEEDS_ITEM, "item": None}
                 return {"intent": PlayerIntent.BUY_ITEM, "item": item_name}
             return {"intent": intent}
 
-    # 2. THEN CONFIRMATION
+    # 2. CONFIRMATION
     if any(word in words for word in CONFIRMATION_WORDS):
         return {"intent": PlayerIntent.CONFIRM}
 
-    # 3. THEN CANCELLATION
+    # 3. CANCELLATION
     if any(word in words for word in CANCELLATION_WORDS):
         return {"intent": PlayerIntent.CANCEL}
 
-    # 4. THEN SMALL TALK (lowest priority)
+    # 4. SMALL TALK
     if any(word in words for word in SMALL_TALK_KEYWORDS):
         return {"intent": PlayerIntent.SMALL_TALK}
 
-    # 5. GPT FALLBACK (if all else fails)
+    # 5. GPT fallback for confirmation/cancel detection
     gpt_result = check_confirmation_via_gpt(player_input)
     if gpt_result in [PlayerIntent.CONFIRM, PlayerIntent.CANCEL]:
         return {"intent": gpt_result}
 
-    # 6. Default
+    # 6. Unknown
     return {"intent": PlayerIntent.UNKNOWN}
+
+
+import json
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
+from app.conversation import PlayerIntent
+
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def check_confirmation_via_gpt(user_input: str):
+    system_prompt = (
+        "You are a classifier that determines whether a user's sentence is a CONFIRMATION, "
+        "a CANCELLATION, or UNKNOWN. "
+        "Return JSON in this format: { \"intent\": \"CONFIRM\" | \"CANCEL\" | \"UNKNOWN\", \"confidence\": <int 0–100> }."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"\"{user_input}\""}
+            ],
+            temperature=0.0,
+            max_tokens=100,
+        )
+
+        result = json.loads(response.choices[0].message.content.strip())
+
+        if result.get("confidence", 0) >= 85:
+            if result["intent"] == "CONFIRM":
+                return PlayerIntent.CONFIRM
+            elif result["intent"] == "CANCEL":
+                return PlayerIntent.CANCEL
+
+    except Exception as e:
+        print("[GPT CONFIRM CHECK ERROR]", e)
+
+    return PlayerIntent.UNKNOWN

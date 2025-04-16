@@ -10,7 +10,7 @@ from app.conversation import ConversationState, PlayerIntent
 def handle_buy_intent(player_input, player, convo, engine, item_name):
     item = get_item_by_name(item_name)
     if not item:
-        engine.agent_says(engine.agent.generate_clarify_item_prompt())
+        engine.agent_says(engine.agent.shopkeeper_clarify_item_prompt())
         convo.set_intent(PlayerIntent.BUY_ITEM)
         convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
         return
@@ -20,13 +20,13 @@ def handle_buy_intent(player_input, player, convo, engine, item_name):
     convo.set_pending_item(item_name)
     convo.set_state(ConversationState.AWAITING_CONFIRMATION)
 
-    engine.agent_says(engine.agent.generate_buy_confirmation_prompt(item, player['party_gold']))
+    engine.agent_says(engine.agent.shopkeeper_buy_confirm_prompt(item, player['party_gold']))
 
 
 def handle_buy_item_selection(player_input, player, convo, engine):
     item_name, _ = find_item_in_input(player_input)
     if not item_name:
-        engine.agent_says(engine.agent.generate_clarify_item_prompt())
+        engine.agent_says(engine.agent.shopkeeper_clarify_item_prompt())
         return
 
     handle_buy_intent(player_input, player, convo, engine, item_name)
@@ -44,9 +44,9 @@ def handle_buy_confirmation(player_input, player, convo, engine):
     result = buy_item(player['party_id'], player['id'], item_name)
 
     if result['success']:
-        engine.agent_says(engine.agent.generate_buy_success_prompt(item, result['message']))
+        engine.agent_says(engine.agent.shopkeeper_buy_success_prompt(item, result['message']))
     else:
-        engine.agent_says(engine.agent.generate_buy_failure_prompt(item, result['message']))
+        engine.agent_says(engine.agent.shopkeeper_buy_failure_prompt(item, result['message']))
 
     convo.reset_state()
 

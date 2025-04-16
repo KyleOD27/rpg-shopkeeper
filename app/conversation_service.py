@@ -2,9 +2,7 @@
 
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input, find_item_in_input
-from app.agents.shopkeeper_agent import generate_agent_reply, shopkeeper_confirmation_reply
 from app.models.items import get_all_items
-
 
 
 class ConversationService:
@@ -15,9 +13,8 @@ class ConversationService:
         self.player_id = player_id
         self.party_data = party_data
 
-
     def say(self, message):
-        return generate_agent_reply(
+        return self.agent.generate_agent_reply(
             message,
             state=self.convo.state,
             intent=self.convo.player_intent,
@@ -32,7 +29,6 @@ class ConversationService:
         item = intent_data.get("item")
 
         self.convo.set_intent(intent)
-
         self.convo.set_pending_item({"item_name": item} if item else None)
 
         if self.convo.state == ConversationState.INTRODUCTION:
@@ -71,37 +67,37 @@ class ConversationService:
     def handle_awaiting_action(self, player_input):
         intent = self.convo.player_intent
 
-        if intent == PlayerIntent.BUY_ITEM:
+        if intent == PlayerIntent.BUY_ITEM or intent == PlayerIntent.BUY_NEEDS_ITEM:
             item_name, possible_matches = find_item_in_input(player_input)
 
             if not item_name:
-                if possible_matches:
-                    return self.clarify_item_selection(possible_matches)
-                return self.say("I don't stock that. Did you mean something else?")
+                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                return self.agent.shopkeeper_buy_enquire_item()
 
             self.convo.set_pending_item({"item_name": item_name})
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            return self.say(f"Ah, looking to buy a {item_name}? It'll cost you. Deal or no deal?")
+            return self.agent.shopkeeper_buy_confirm_prompt(
+                {"item_name": item_name}, self.party_data['party_gold']
+            )
 
         return self.say("Hmm. That's not something I do. Try saying what you want more clearly.")
 
     def handle_awaiting_confirmation(self, player_input):
-        party_data = self.party_data  # use stored value
-
         intent = self.convo.player_intent
 
         if intent == PlayerIntent.CONFIRM:
+            pending = self.convo.pending_item
+            item_name = pending.get("item_name") if isinstance(pending, dict) else pending
 
-            item_name = self.convo.pending_item[0] if isinstance(self.convo.pending_item, tuple) else self.convo.pending_item
             item = next((i for i in get_all_items() if i["item_name"] == item_name), None)
-
             if not item:
                 return self.say("Something went wrong — I can't find that item in stock.")
 
-            item_cost = item["cost"]
-            new_balance = party_data["party_gold"]
+            cost = item.get("base_price", 0)
+            new_balance = self.party_data.get("party_gold", 0) - cost
+            self.convo.reset_state()
 
-            return shopkeeper_confirmation_reply(item_name, item_cost, party_data["party_gold"])
+            return self.agent.shopkeeper_confirmation_reply(item_name, cost, new_balance)
 
         if intent == PlayerIntent.CANCEL:
             self.convo.reset_state()

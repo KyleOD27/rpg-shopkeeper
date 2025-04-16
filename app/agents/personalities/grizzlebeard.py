@@ -1,9 +1,9 @@
 # app/agents/grizzlebeard.py
 
 from app.agents.base_agent import BaseAgent
-from app.agents.shopkeeper_agent import shopkeeper_greeting
+from app.agents.shopkeeper_agent import BaseShopkeeper
 
-class Grizzlebeard(BaseAgent):
+class Grizzlebeard(BaseShopkeeper):
     name = "Grizzlebeard"
     style = "sarcastic, blunt, dwarven shopkeeper"
 

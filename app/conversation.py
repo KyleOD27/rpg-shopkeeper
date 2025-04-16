@@ -3,7 +3,8 @@
 from enum import Enum, auto
 from app.db import get_convo_state, update_convo_state, log_convo_state
 from config import DEBUG_MODE
-from app.agents.shopkeeper_agent import generate_agent_reply, shopkeeper_greeting
+from app.agents.shopkeeper_agent import BaseShopkeeper
+
 
 class PlayerIntent(Enum):
     VIEW_ITEMS = auto()
