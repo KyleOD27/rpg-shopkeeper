@@ -33,28 +33,35 @@ class BaseShopkeeper:
         )
 
     def shopkeeper_buy_confirm_prompt(self, item, player_gold) -> str:
+        name = item.get("item_name") if isinstance(item, dict) else str(item)
+        price = item.get("base_price") if isinstance(item, dict) else "???"
         return (
             f"Your current party balance is {player_gold} gold. "
-            f"You want to buy {item['item_name']} for {item['base_price']} gold? "
+            f"You want to buy {name} for {price} gold? "
             f"Say 'yes' to proceed."
         )
 
     def shopkeeper_buy_success_prompt(self, item, result_message) -> str:
+        name = item.get("item_name") if isinstance(item, dict) else str(item)
+        price = item.get("base_price") if isinstance(item, dict) else "???"
         return (
-            f"You have just purchased a {item['item_name']} for {item['base_price']} gold. "
+            f"You have just purchased a {name} for {price} gold. "
             f"I'll add it to the list."
         )
 
     def shopkeeper_buy_failure_prompt(self, item, result_message, player_gold) -> str:
+        name = item.get("item_name") if isinstance(item, dict) else str(item)
+        price = item.get("base_price") if isinstance(item, dict) else "???"
         return (
-            f"Sorry, you can't afford the {item['item_name']} which costs {item['base_price']} gold. "
+            f"Sorry, you can't afford the {name} which costs {price} gold. "
             f"You only have {player_gold}."
         )
 
     def shopkeeper_buy_cancel_prompt(self, item) -> str:
-        return f"So you don't want the {item['item_name']}? As you wish."
-
+        name = item.get("item_name") if item and isinstance(item, dict) else None
+        if not name:
+            return "Changed your mind? No problem. Maybe next time."
+        return f"So you don't want the {name}? As you wish."
 
     def shopkeeper_buy_enquire_item(self):
         return "Looking to buy something? Tell me what you're after — I've got potions, scrolls, and more!"
-

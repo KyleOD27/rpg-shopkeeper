@@ -3,7 +3,6 @@
 from enum import Enum, auto
 from app.db import get_convo_state, update_convo_state, log_convo_state
 from config import DEBUG_MODE
-from app.agents.shopkeeper_agent import BaseShopkeeper
 
 
 class PlayerIntent(Enum):
@@ -21,11 +20,14 @@ class PlayerIntent(Enum):
     UNKNOWN = auto()
     BUY_NEEDS_ITEM = auto()  # “Buy” with no item mentioned
 
+
 class ConversationState(Enum):
     INTRODUCTION = "INTRODUCTION"
     AWAITING_ACTION = "AWAITING_ACTION"
     AWAITING_ITEM_SELECTION = "AWAITING_ITEM_SELECTION"
     AWAITING_CONFIRMATION = "AWAITING_CONFIRMATION"
+    IN_TRANSACTION = "IN_TRANSACTION"
+
 
 class Conversation:
     def __init__(self, player_id):
@@ -35,12 +37,13 @@ class Conversation:
         self.pending_item = None
         self.latest_input = None
         self.player_intent = None
+        self.match_confirmed = False  # Used for confirmation flow
 
         saved = get_convo_state(self.player_id)
         if saved:
             self.state = ConversationState(saved["current_state"])
             self.pending_action = saved["pending_action"]
-            self.pending_item = saved["pending_item"]
+            self.pending_item = saved["pending_item"] if saved["pending_item"] else None
         else:
             self.save_state()
 
@@ -54,15 +57,13 @@ class Conversation:
         self.save_state()
 
     def set_pending_item(self, item):
-        if item is None:
-            self.pending_item = None
-        elif isinstance(item, dict):
-            name = item.get("item_name")
-            self.pending_item = str(name) if name else None
-        elif isinstance(item, str):
+        if isinstance(item, str):
             self.pending_item = item
+        elif isinstance(item, dict):
+            self.pending_item = item.get("item_name")
+        elif item is None:
+            self.pending_item = None
         else:
-            # This catches tuples, lists, objects — anything not expected
             self.pending_item = str(item)
         self.save_state()
 
@@ -76,9 +77,9 @@ class Conversation:
     def reset_state(self):
         self.state = ConversationState.INTRODUCTION
         self.pending_action = None
-        self.pending_item = None
         self.player_intent = None
         self.latest_input = None
+        self.match_confirmed = False
         self.save_state()
 
     def save_state(self):
@@ -104,7 +105,7 @@ class Conversation:
         print(f"Player ID: {self.player_id}")
         print(f"State: {self.state.name}")
         print(f"Action: {self.pending_action}")
-        print(f"Item: {self.pending_item}")
+        print(f"Item: {self.pending_item or 'None'}")
         print(f"User Input: {self.latest_input if self.latest_input else 'N/A'}")
         print(f"Player Intent: {self.player_intent.name if self.player_intent else 'N/A'}")
         print("--------------------------------------")

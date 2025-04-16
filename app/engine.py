@@ -6,7 +6,6 @@ from app.db import execute_db
 from app.dm_commands import handle_dm_command
 from app.interpreter import interpret_input, find_item_in_input
 from app.conversation import ConversationState, PlayerIntent
-from app.agents.shopkeeper_agent import generate_agent_reply, shopkeeper_greeting
 
 
 class GameEngine:
@@ -29,10 +28,13 @@ class GameEngine:
         intent = interpreted['intent']
         item_name = interpreted.get('item')
 
+        convo.set_intent(intent)
+        convo.set_input(player_input)
+
         # Debug state before logic
         convo.debug()
 
-        # Confirmation Flow
+        # BUY CONFIRMATION
         if convo.state == ConversationState.AWAITING_CONFIRMATION and convo.pending_action == 'BUY_ITEM' and convo.pending_item:
             if intent == PlayerIntent.CONFIRM:
                 return self.handle_buy_confirmation(player, convo)
@@ -44,24 +46,23 @@ class GameEngine:
 
             else:
                 item = get_item_by_name(convo.pending_item)
-                self.agent_says(self.agent.shopkeeper_buy_success_prompt(item, player['party_gold']))
+                self.agent_says(self.agent.shopkeeper_buy_confirm_prompt(item, player['party_gold']))
                 return
 
-        # Awaiting item choice
+        # AWAITING ITEM CHOICE
         if convo.state == ConversationState.AWAITING_ITEM_SELECTION and convo.pending_action == 'BUY_ITEM':
             return self.handle_buy_item_selection(player_input, player, convo)
 
-        # Handle Buy Intent Without Item
-        if intent == 'BUY_NEEDS_ITEM':
+        # BUY WITHOUT ITEM
+        if intent == PlayerIntent.BUY_NEEDS_ITEM:
             convo.set_intent(PlayerIntent.BUY_ITEM)
             convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-            self.agent_says(self.agent.shopkeeper_clarify_item_prompt())
+            self.agent_says(self.agent.shopkeeper_buy_enquire_item())
             return
 
-        # Handle Buy Intent With Item
+        # BUY WITH ITEM
         if intent == PlayerIntent.BUY_ITEM:
             if not item_name:
-                convo.set_intent(PlayerIntent.BUY_ITEM)
                 convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 self.agent_says(self.agent.shopkeeper_clarify_item_prompt())
                 return
@@ -69,72 +70,7 @@ class GameEngine:
             item = get_item_by_name(item_name)
             if not item:
                 self.agent_says(f"'{item_name}' isn't something I sell. Try again.")
-                convo.set_intent(PlayerIntent.BUY_ITEM)
                 convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 return
 
-            return self.handle_buy_intent(player, convo, item)
-
-        # Fallback: Small Talk / Unknown
-        self.agent_says(generate_agent_reply(player_input, state=convo)['data'])
-
-    def handle_buy_intent(self, player, convo, item):
-        convo.set_intent(PlayerIntent.BUY_ITEM)
-        convo.set_pending_item(item)
-        convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-
-        self.agent_says(self.agent.shopkeeper_buy_confirm_prompt(item, player['party_gold']))
-
-    def handle_buy_item_selection(self, player_input, player, convo):
-        item_name, _ = find_item_in_input(player_input)
-        if not item_name:
-            self.agent_says(self.agent.shopkeeper_clarify_item_prompt())
-            return
-
-        item = get_item_by_name(item_name)
-        if not item:
-            self.agent_says(self.agent.shopkeeper_clarify_item_prompt())
-            return
-
-        self.handle_buy_intent(player, convo, item)
-
-    def handle_buy_confirmation(self, player, convo):
-        item_name = convo.pending_item
-        item = get_item_by_name(item_name)
-
-        if not item:
-            self.agent_says("Something went wrong — item vanished from the shelf. Try again.")
-            convo.reset_state()
-            return
-
-        result = self.buy_item(player['party_id'], self.player_id, item)
-
-        if result['success']:
-            self.agent_says(self.agent.shopkeeper_buy_confirm_prompt(item, result['message']))
-        else:
-            self.agent_says(self.agent.shopkeeper_buy_confirm_prompt(item, result['message']))
-
-        convo.reset_state()
-
-    def buy_item(self, party_id, player_id, item):
-        price = item['base_price']
-        party = get_party_by_id(party_id)
-
-        if not party:
-            return {"success": False, "message": "Party not found."}
-
-        if party['party_gold'] < price:
-            return {"success": False, "message": f"Not enough gold. You have {party['party_gold']} gold."}
-
-        new_gold = party['party_gold'] - price
-        update_party_gold(party_id, new_gold)
-
-        execute_db(
-            '''
-            INSERT INTO transaction_ledger (party_id, player_id, action, item_name, amount, balance_after, details)
-            VALUES (?, ?, 'BUY', ?, ?, ?, ?)
-            ''',
-            (party_id, player_id, item['item_name'], -price, new_gold, f"Purchased {item['item_name']}")
-        )
-
-        return {"success": True, "message": f"Bought {item['item_name']} for {price} gold. Remaining gold: {new_gold}."}
+            return self.handle_buy_intent

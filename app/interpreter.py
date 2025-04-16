@@ -1,11 +1,16 @@
 # app/interpreter.py
 
 import re
+import os
+import json
 from difflib import get_close_matches
+from dotenv import load_dotenv
+from openai import OpenAI
 
 from app.conversation import PlayerIntent
 from app.models.items import get_all_items
 
+# === INTENT KEYWORDS ===
 INTENT_KEYWORDS = {
     PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me"],
     PlayerIntent.BUY_ITEM: ["buy", "purchase", "get", "acquire"],
@@ -52,9 +57,19 @@ def find_item_in_input(player_input: str):
     matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.6)
     if matches:
         matched = matches[0]
-        return next(item for item in item_names if item.lower() == matched), None
+        for item in item_names:
+            if item.lower() == matched:
+                return item, None
 
     return None, None
+
+
+def detect_buy_intent(player_input: str):
+    item_name, _ = find_item_in_input(player_input)
+    if not item_name:
+        print(f"[DEBUG] BUY_NEEDS_ITEM: No item identified from input '{player_input}'")
+        return PlayerIntent.BUY_NEEDS_ITEM, None
+    return PlayerIntent.BUY_ITEM, item_name
 
 
 def interpret_input(player_input: str):
@@ -65,11 +80,8 @@ def interpret_input(player_input: str):
     for intent, keywords in INTENT_KEYWORDS.items():
         if any(keyword in lowered for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
-                item_name, _ = find_item_in_input(player_input)
-                if not item_name:
-                    print(f"[DEBUG] BUY_NEEDS_ITEM: No item identified from input '{player_input}'")
-                    return {"intent": PlayerIntent.BUY_NEEDS_ITEM, "item": None}
-                return {"intent": PlayerIntent.BUY_ITEM, "item": item_name}
+                intent_type, item = detect_buy_intent(player_input)
+                return {"intent": intent_type, "item": item}
             return {"intent": intent}
 
     # 2. CONFIRMATION
@@ -93,12 +105,7 @@ def interpret_input(player_input: str):
     return {"intent": PlayerIntent.UNKNOWN}
 
 
-import json
-from openai import OpenAI
-from dotenv import load_dotenv
-import os
-from app.conversation import PlayerIntent
-
+# === GPT FALLBACK CLASSIFIER ===
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
