@@ -5,6 +5,7 @@ from app.interpreter import interpret_input, find_item_in_input
 from app.models.items import get_item_by_name
 from app.models.parties import update_party_gold
 from app.models.ledger import record_transaction
+from app.dm_commands import handle_dm_command
 
 
 class ConversationService:
@@ -26,6 +27,11 @@ class ConversationService:
 
     # 🧠 Central handler
     def handle(self, player_input):
+        # 🔍 DM command check
+        if player_input.strip().lower().startswith("dm "):
+            return handle_dm_command(self.party_id, self.player_id, player_input)
+
+        # 🧠 Set input and interpret intent
         self.convo.set_input(player_input)
         intent_data = interpret_input(player_input)
         intent = intent_data.get("intent")
@@ -35,11 +41,11 @@ class ConversationService:
         if item:
             self.convo.set_pending_item(item)
 
-        # Handle INTRODUCTION as a special case
+        # 🎬 Handle INTRODUCTION
         if self.convo.state == ConversationState.INTRODUCTION:
             return self.handle_introduction()
 
-        # Try routing by (state, intent)
+        # 🎯 Route intent based on current state
         handler = self.intent_router.get((self.convo.state, intent))
 
         if handler:
@@ -66,6 +72,19 @@ class ConversationService:
     # 🧭 INTRO flow
     def handle_introduction(self):
         intent = self.convo.player_intent
+        if intent in {
+            PlayerIntent.BUY_ITEM,
+            PlayerIntent.BUY_NEEDS_ITEM,
+        } and self.convo.pending_item:
+            # Skip straight to confirmation
+            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+            item = self.get_dict_item(self.convo.pending_item)
+            return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data["party_gold"])
+
+        elif intent == PlayerIntent.BUY_NEEDS_ITEM:
+            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+            return self.agent.shopkeeper_buy_enquire_item()
+
         if intent in {
             PlayerIntent.VIEW_ITEMS,
             PlayerIntent.BUY_ITEM,
@@ -141,6 +160,7 @@ class ConversationService:
         update_party_gold(self.party_id, self.party_data["party_gold"])  # Optional if implemented
 
         record_transaction(
+
             party_id=self.party_id,
             player_id=self.player_id,
             item_name=name,
