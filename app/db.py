@@ -67,15 +67,13 @@ def update_convo_state(player_id, state, action=None, item=None):
             (player_id, state, action, item)
         )
 
-def log_convo_state(player_id, state, action=None, item=None):
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            '''
-            INSERT INTO session_state_log (player_id, state, pending_action, pending_item)
-            VALUES (?, ?, ?, ?)
-            ''',
-            (player_id, state, action, item)
+def log_convo_state(player_id, state, action, item, user_input=None, player_intent=None):
+    with open("session_log.txt", "a") as log:
+        log.write(
+            f"PlayerID={player_id} | State={state} | Action={action} | Item={item} | "
+            f"Input='{user_input}' | Intent={player_intent}\n"
         )
+
 
 def create_tables():
     with sqlite3.connect(DB_PATH) as conn:
