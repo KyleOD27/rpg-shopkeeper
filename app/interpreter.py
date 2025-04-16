@@ -3,6 +3,7 @@
 from app.conversation import PlayerIntent
 from app.models.items import get_all_items
 from difflib import get_close_matches
+from app.agents.shopkeeper_agent import check_confirmation_via_gpt
 import re
 
 INTENT_KEYWORDS = {
@@ -18,9 +19,9 @@ INTENT_KEYWORDS = {
 
 SMALL_TALK_KEYWORDS = ["thanks", "thank", "hello", "hi", "greetings", "bye", "goodbye", "cheers", "farewell"]
 
-CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay"]
+CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "okay", "fine"]
 
-CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now"]
+CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
 
 def normalize_input(text: str):
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower().strip())
@@ -81,6 +82,10 @@ def interpret_input(player_input: str):
     if any(word in words for word in SMALL_TALK_KEYWORDS):
         return {"intent": PlayerIntent.SMALL_TALK}
 
-    # 5. Default
-    return {"intent": PlayerIntent.UNKNOWN}
+    # 5. GPT FALLBACK (if all else fails)
+    gpt_result = check_confirmation_via_gpt(player_input)
+    if gpt_result in [PlayerIntent.CONFIRM, PlayerIntent.CANCEL]:
+        return {"intent": gpt_result}
 
+    # 6. Default
+    return {"intent": PlayerIntent.UNKNOWN}

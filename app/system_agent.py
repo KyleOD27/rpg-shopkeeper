@@ -13,7 +13,8 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 SHOP_NAMES = [
     "Grizzlebeard's Emporium",
     "Merlinda's Curios",
-    "Skabfang's Shack"
+    "Skabfang's Shack",
+    "RPG Shop"
 ]
 
 SYSTEM_PROMPT = (

@@ -6,7 +6,7 @@ from app.db import execute_db
 from app.dm_commands import handle_dm_command
 from app.interpreter import interpret_input, find_item_in_input
 from app.conversation import ConversationState, PlayerIntent
-from app.gpt_agent import generate_agent_reply
+from app.agents.shopkeeper_agent import generate_agent_reply, shopkeeper_greeting
 
 
 class GameEngine:

@@ -1,7 +1,9 @@
 # config.py
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 DEBUG_MODE = True
 TRACE_MODE = False
-
-# Dev convenience: load directly into a specific shop
-FORCE_SHOP_NAME = "Grizzlebeard's Emporium"  # or None to disable
+DEFAULT_SHOP_NAME = "Grizzlebeard's Emporium"
+FORCE_SHOP_NAME = "Grizzlebeard's Emporium"

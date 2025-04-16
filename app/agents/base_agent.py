@@ -1,4 +1,6 @@
 # app/agents/base_agent.py
+from app.agents.shopkeeper_agent import shopkeeper_greeting
+
 
 class BaseAgent:
     """

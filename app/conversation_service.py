@@ -2,15 +2,19 @@
 
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input, find_item_in_input
-from app.gpt_agent import generate_agent_reply
+from app.agents.shopkeeper_agent import generate_agent_reply, shopkeeper_confirmation_reply
+from app.models.items import get_all_items
+
 
 
 class ConversationService:
-    def __init__(self, convo, agent, party_id, player_id):
+    def __init__(self, convo, agent, party_id, player_id, party_data):
         self.convo = convo
         self.agent = agent
         self.party_id = party_id
         self.player_id = player_id
+        self.party_data = party_data
+
 
     def say(self, message):
         return generate_agent_reply(
@@ -82,10 +86,22 @@ class ConversationService:
         return self.say("Hmm. That's not something I do. Try saying what you want more clearly.")
 
     def handle_awaiting_confirmation(self, player_input):
+        party_data = self.party_data  # use stored value
+
         intent = self.convo.player_intent
 
         if intent == PlayerIntent.CONFIRM:
-            return "CONFIRM"
+
+            item_name = self.convo.pending_item[0] if isinstance(self.convo.pending_item, tuple) else self.convo.pending_item
+            item = next((i for i in get_all_items() if i["item_name"] == item_name), None)
+
+            if not item:
+                return self.say("Something went wrong — I can't find that item in stock.")
+
+            item_cost = item["cost"]
+            new_balance = party_data["party_gold"]
+
+            return shopkeeper_confirmation_reply(item_name, item_cost, party_data["party_gold"])
 
         if intent == PlayerIntent.CANCEL:
             self.convo.reset_state()

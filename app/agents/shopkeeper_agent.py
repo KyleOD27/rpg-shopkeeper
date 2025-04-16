@@ -1,4 +1,4 @@
-# app/gpt_agent.py — Final State-Aware Version
+# app/shopkeeper_agent.py — Final State-Aware Version
 
 import os
 import json
@@ -9,20 +9,77 @@ from dotenv import load_dotenv
 
 from app.models.items import get_all_items
 from app.agent_rules import BASE_AGENT_RULES
+# config import DEBUG_MODE
+DEBUG_MODE = False
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-DEBUG_MODE = False
-
 ACTIVE_AGENT = None
 
 
+def shopkeeper_greeting(party_name: str, visit_count: int, player_name: str) -> str:
+    if visit_count == 1:
+        return f"Ah, {party_name} — first time in this shop? Nice to meet you, {player_name}."
+    elif visit_count < 5:
+        return f"{party_name} again? I think you might like it here, {player_name}."
+    else:
+        return f"Back already, {player_name}? I'm flattered. This is visit number {visit_count}!"
+
+def shopkeeper_intro_prompt(self) -> str:
+    return (
+        "Welcome to the rpg store. My standard actions are  BUY, SELL, HAGGLE, DEPOSIT, WITHDRAW, CHECK_BALANCE, VIEW_lEDGER."
+    )
+
+def shopkeeper_fallback_prompt(self) -> str:
+    item_names = [item["item_name"] for item in get_all_items()]
+    return f"I’m not sure what you’re after, so here’s what we’ve got: {', '.join(item_names)}"
+
+def shopkeeper_confirmation_reply(item_name, item_cost, new_balance):
+    return (
+        f"Very well. The '{item_name}' is yours for {item_cost} gold. "
+        f"You now have {new_balance} gold remaining."
+    )
+
+def shopkeeper_clarify_item_prompt(self) -> str:
+    item_names = [item["item_name"] for item in get_all_items()]
+    return (
+        f"I am aware you are looking for an item, but not sure which one. Here is what we have:{', '.join(item_names)}"
+    )
+
+def shopkeeper_buy_confirm_prompt(self, item, player_gold) -> str:
+     return (
+        f"Your current party balance is {player_gold} gold."
+        f"You want to BUY item: {item['item_name']} for {item['base_price']} gold?"
+        f"Give me a yes and we'll get it done."
+    )
+
+
+def shopkeeper_buy_success_prompt(self, item, result_message) -> str:
+    return (
+        f"You have just purchased a {item['item_name']} for {item['base_price']} gold. Congratulations!" 
+        f"I'll add it to the list."
+    )
+
+def shopkeeper_buy_failure_prompt(self, item, result_message, player_gold) -> str:
+    return (
+            f"I am sorry you can not afford to buy a {item['item_name']} for {item['base_price']} gold."
+            f"Your balance is only: {player_gold}"
+    )
+
+def shopkeeper_buy_cancel_prompt(self, item) -> str:
+        return (
+            f"So you don't want {item['item_name']}?"
+    )
+
+
+##break
+
 def set_active_agent(agent_name):
     global ACTIVE_AGENT
-    agent_module = importlib.import_module(f'app.agents.{agent_name.lower()}')
+    agent_module = importlib.import_module(f'app.agents.personalities.{agent_name.lower()}')
     agent_class = getattr(agent_module, agent_name)
     ACTIVE_AGENT = agent_class()
+
 
 
 def build_system_prompt():
@@ -139,3 +196,40 @@ def chat_with_gpt(prompt):
     except Exception as e:
         print("GPT Interpreter Error:", e)
         return '{"intent": "UNKNOWN", "item": null}'
+
+from app.conversation import PlayerIntent
+
+def check_confirmation_via_gpt(user_input: str):
+    system_prompt = (
+        "You are a classifier that determines whether a user's sentence is a CONFIRMATION, "
+        "a CANCELLATION, or UNKNOWN. "
+        "Return JSON in this format: { \"intent\": \"CONFIRM\" | \"CANCEL\" | \"UNKNOWN\", \"confidence\": <int 0–100> }."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"\"{user_input}\""}
+            ],
+            temperature=0.0,
+            max_tokens=100,
+        )
+
+        result = json.loads(response.choices[0].message.content.strip())
+
+        if DEBUG_MODE:
+            print(f"[DEBUG] GPT confirmation classifier: {result}")
+
+        if result.get("confidence", 0) >= 85:
+            if result["intent"] == "CONFIRM":
+                return PlayerIntent.CONFIRM
+            elif result["intent"] == "CANCEL":
+                return PlayerIntent.CANCEL
+
+    except Exception as e:
+        print("[GPT CONFIRM CHECK ERROR]", e)
+
+    return PlayerIntent.UNKNOWN
+

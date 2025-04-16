@@ -4,12 +4,17 @@ from app.models.parties import get_party_by_id
 from app.models.shops import get_shop_by_id
 from app.models.visits import get_visit_count, increment_visit_count
 from app.system_agent import choose_shop_via_gpt, SHOP_NAMES
-from app.gpt_agent import set_active_agent
-from app.engine import GameEngine
+from app.agents.shopkeeper_agent import set_active_agent
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
 import importlib
-from config import DEBUG_MODE, FORCE_SHOP_NAME
+from config import DEBUG_MODE, FORCE_SHOP_NAME, DEFAULT_SHOP_NAME
+from app.agents.shopkeeper_agent import shopkeeper_greeting
+
+from dotenv import load_dotenv
+load_dotenv()
+import os
+
 
 from dotenv import load_dotenv
 import os
@@ -25,33 +30,23 @@ player_name = 'Thistle'
 
 
 def choose_shop():
-    if DEBUG_MODE and FORCE_SHOP_NAME:
-        shop_name = FORCE_SHOP_NAME
-        print(f"[DEBUG] Auto-loading shop: {shop_name}")
-    else:
-        print("=== Available Shops ===")
-        for name in SHOP_NAMES:
-            print(f"- {name}")
-        player_input = input("Which shop would you like to visit?: ")
-        shop_name = choose_shop_via_gpt(player_input)
+    shop_name = DEFAULT_SHOP_NAME
 
-        if not shop_name:
-            print("I couldn't figure out which shop you meant. Try again.")
-            return choose_shop()
-
-    if shop_name not in SHOP_NAMES:
-        print(f"[ERROR] Shop '{shop_name}' not found in known list.")
+    if not shop_name or shop_name not in SHOP_NAMES:
+        print(f"[ERROR] Configured shop '{shop_name}' not found in known list.")
         return None
 
+    print(f"[DEBUG] Loading shop from config: {shop_name}")
     shop_id = SHOP_NAMES.index(shop_name) + 1
     shop = get_shop_by_id(shop_id)
 
-    shop_module = importlib.import_module(f'app.agents.{shop["agent_name"].lower()}')
+    shop_module = importlib.import_module(f'app.agents.personalities.{shop["agent_name"].lower()}')
     agent_class = getattr(shop_module, shop["agent_name"])
 
     set_active_agent(shop["agent_name"])
 
     return shop_id, shop["shop_name"], agent_class()
+
 
 
 def main():
@@ -69,12 +64,13 @@ def main():
     print(f"Party: {party['party_name']}")
     print(f"Gold: {party['party_gold']}\n")
 
-    greeting = agent.generate_greeting(party["party_name"], visit_count, player_name)
+    greeting = shopkeeper_greeting(party["party_name"], visit_count, player_name)
     print(greeting)
 
     # Single shared conversation and service object
     convo = Conversation(player_id)
-    service = ConversationService(convo, agent, party_id, player_id)
+    service = ConversationService(convo, agent, party_id, player_id, party)
+
 
     while True:
         player_input = input(">> ").strip()
