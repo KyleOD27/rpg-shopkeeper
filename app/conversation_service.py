@@ -113,6 +113,10 @@ class ConversationService:
             (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
             (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_CONFIRM): self.withdraw_handler.handle_confirm_withdraw,
+
+            (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+            (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+
         }
 
     def handle_introduction(self):
@@ -156,3 +160,8 @@ class ConversationService:
 
     def handle_accept_thanks(self, _):
         return self.agent.shopkeeper_accept_thanks()
+
+    def handle_check_balance(self, _):
+        current_gold = self.party_data.get("party_gold", 0)
+        return self.agent.shopkeeper_check_balance_prompt(current_gold)
+

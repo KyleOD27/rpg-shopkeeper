@@ -128,3 +128,7 @@ class BaseShopkeeper:
     def shopkeeper_withdraw_insufficient_funds_prompt(self, amount, current_gold):
         return f"Sorry, you tried to withdraw {amount} gold but only have {current_gold}. Try a smaller amount?"
 
+    def shopkeeper_check_balance_prompt(self, gold_amount: int):
+        return f"Your party currently holds {gold_amount} gold."
+
+

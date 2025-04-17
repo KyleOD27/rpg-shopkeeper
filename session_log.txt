@@ -965,3 +965,5 @@ PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Pot
 PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
