@@ -19,6 +19,8 @@ INSERT INTO players (party_id, player_name, character_name, role) VALUES
 
 INSERT INTO shops (shop_name, agent_name, location)
 VALUES
+('RPG Shop', 'Shopkeeper', 'RPG'),
 ('Grizzlebeard''s Emporium', 'Grizzlebeard', 'Stonehelm Market'),
 ('Merlinda''s Curios', 'Merlinda', 'Everspring Forest'),
 ('Skabfang''s Shack', 'Skabfang', 'Goblin Warrens');
+

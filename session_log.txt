@@ -974,3 +974,13 @@ PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' |
 PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Scroll of Identify | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Scroll of Identify | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Scroll of Identify | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Scroll of Identify | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Scroll of Identify | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None

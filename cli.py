@@ -1,19 +1,18 @@
 # cli.py
 
-from app.models.parties import get_party_by_id
-from app.models.shops import get_shop_by_id
-from app.models.visits import get_visit_count, increment_visit_count
-from app.system_agent import choose_shop_via_gpt, SHOP_NAMES
-from app.conversation import Conversation
-from app.conversation_service import ConversationService
 import importlib
-from config import DEBUG_MODE, FORCE_SHOP_NAME, DEFAULT_PLAYER_NAME
-from app.agents.shopkeeper_agent import BaseShopkeeper
-
-from dotenv import load_dotenv
 import os
 import openai
+from dotenv import load_dotenv
 
+from app.models.parties import get_party_by_id
+from app.models.players import get_player_by_id
+from app.models.visits import get_visit_count, increment_visit_count
+from app.models.shops import get_all_shops, get_shop_names
+from app.system_agent import choose_shop_via_gpt
+from app.conversation import Conversation
+from app.conversation_service import ConversationService
+from config import DEBUG_MODE, SHOP_NAME, DEFAULT_PLAYER_NAME
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -21,39 +20,33 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Static Context
 party_id = 'group_001'
 player_id = 1
-
-from app.models.players import get_player_by_id
-
 player = get_player_by_id(player_id)
 player_name = DEFAULT_PLAYER_NAME
 
-
 def choose_shop():
-    shop_name = None
-
-    if DEBUG_MODE and FORCE_SHOP_NAME:
-        shop_name = FORCE_SHOP_NAME
+    if DEBUG_MODE and SHOP_NAME:
+        shop_name = SHOP_NAME
         print(f"[DEBUG] Loading shop from config: {shop_name}")
     else:
+        shop_names = get_shop_names()
         print("=== Available Shops ===")
-        for name in SHOP_NAMES:
+        for name in shop_names:
             print(f"- {name}")
         player_input = input("Which shop would you like to visit?: ")
         shop_name = choose_shop_via_gpt(player_input)
 
-    if not shop_name or shop_name not in SHOP_NAMES:
+    all_shops = get_all_shops()
+    shop = next((s for s in all_shops if s["shop_name"] == shop_name), None)
+
+    if not shop:
         print(f"[ERROR] Configured shop '{shop_name}' not found in known list.")
         return None
-
-    shop_id = SHOP_NAMES.index(shop_name) + 1
-    shop = get_shop_by_id(shop_id)
 
     shop_module = importlib.import_module(f'app.agents.personalities.{shop["agent_name"].lower()}')
     agent_class = getattr(shop_module, shop["agent_name"])
     agent_instance = agent_class()
 
-    return shop_id, shop["shop_name"], agent_instance
-
+    return shop["shop_id"], shop["shop_name"], agent_instance
 
 def main():
     result = choose_shop()
@@ -86,7 +79,6 @@ def main():
         response = service.handle(player_input)
         convo.debug("AFTER HANDLE")
         print(response)
-
 
 if __name__ == '__main__':
     main()

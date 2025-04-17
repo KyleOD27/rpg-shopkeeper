@@ -5,17 +5,12 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from config import DEBUG_MODE
+from config import SHOP_NAMES  # Instead of hardcoding them here
+
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-
-SHOP_NAMES = [
-    "Grizzlebeard's Emporium",
-    "Merlinda's Curios",
-    "Skabfang's Shack",
-    "RPG Shop"
-]
 
 SYSTEM_PROMPT = (
     "You are the system assistant for a Dungeons & Dragons shop game."
