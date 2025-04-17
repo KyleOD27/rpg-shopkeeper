@@ -103,3 +103,9 @@ class BaseShopkeeper:
 
     def shopkeeper_sell_cancel_prompt(self, item_name):
         return f"Changed your mind about the {item_name}? No worries."
+
+    def shopkeeper_deposit_gold_prompt(self):
+        return "Stashing away some savings? How much gold shall I deposit for you?"
+
+    def shopkeeper_deposit_success_prompt(self, amount, new_total):
+        return f"Got it! {amount} gold safely stored in the vault. Your balance is now {new_total} gold."
