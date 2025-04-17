@@ -27,6 +27,8 @@ class PlayerIntent(Enum):
     SELL_NEEDS_ITEM=auto()
     DEPOSIT_NEEDS_AMOUNT=auto()
     DEPOSIT_CONFIRM=auto()
+    WITHDRAW_NEEDS_AMOUNT=auto()
+    WITHDRAW_CONFIRM = auto()
 
 
 class ConversationState(Enum):

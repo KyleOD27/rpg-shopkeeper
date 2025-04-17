@@ -109,3 +109,22 @@ class BaseShopkeeper:
 
     def shopkeeper_deposit_success_prompt(self, amount, new_total):
         return f"Got it! {amount} gold safely stored in the vault. Your balance is now {new_total} gold."
+
+    def shopkeeper_withdraw_gold_prompt(self):
+        return "Planning to spend some coin? How much would you like to withdraw?"
+
+    def shopkeeper_withdraw_success_prompt(self, amount, new_total):
+        return f"Here's your {amount} gold. Don't spend it all at once! Your balance is now {new_total}."
+
+    def shopkeeper_withdraw_insufficient_gold(self, requested, available):
+        return f"Sorry, you only have {available} gold — not enough to withdraw {requested}."
+
+    def shopkeeper_withdraw_gold_prompt(self):
+        return "Taking some coin out? How much would you like to withdraw?"
+
+    def shopkeeper_withdraw_success_prompt(self, amount, new_total):
+        return f"Done! {amount} gold withdrawn. Your balance is now {new_total} gold."
+
+    def shopkeeper_withdraw_insufficient_funds_prompt(self, amount, current_gold):
+        return f"Sorry, you tried to withdraw {amount} gold but only have {current_gold}. Try a smaller amount?"
+

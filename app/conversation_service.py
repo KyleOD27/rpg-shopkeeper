@@ -9,6 +9,7 @@ from app.models.players import get_player_by_id
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
+from app.shop_handlers.withdraw_handler import WithdrawHandler
 
 
 class ConversationService:
@@ -21,7 +22,9 @@ class ConversationService:
         self.buy_handler = BuyHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.sell_handler = SellHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.deposit_handler = DepositHandler(convo, agent, party_id, player_id, player_name, self.party_data)
+        self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.intent_router = self._build_router()
+
 
     def say(self, message):
         return message
@@ -100,6 +103,16 @@ class ConversationService:
             (ConversationState.INTRODUCTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.INTRODUCTION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_CONFIRM): self.deposit_handler.handle_confirm_deposit,
+
+            # Withdraw flow
+            (ConversationState.AWAITING_ACTION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
+
+            (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_CONFIRM): self.withdraw_handler.handle_confirm_withdraw,
         }
 
     def handle_introduction(self):

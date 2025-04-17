@@ -76,5 +76,35 @@ class DepositHandler:
         self.convo.reset_state()
         return self.agent.shopkeeper_deposit_success_prompt(amount, new_total)
 
+    def handle_confirm_withdraw(self, player_input):
+        match = re.search(r'\d+', player_input)
+        if not match:
+            return self.agent.shopkeeper_withdraw_gold_prompt()
+
+        amount = int(match.group())
+        current_gold = self.party_data.get("party_gold", 0)
+
+        if amount > current_gold:
+            return self.agent.shopkeeper_withdraw_insufficient_funds_prompt(amount, current_gold)
+
+        # 💰 Deduct from balance
+        self.party_data["party_gold"] -= amount
+        update_party_gold(self.party_id, self.party_data["party_gold"])
+
+        # 🧾 Record transaction
+        record_transaction(
+            party_id=self.party_id,
+            player_id=self.player_id,
+            item_name=None,
+            amount=amount,
+            action="WITHDRAW",
+            balance_after=self.party_data["party_gold"],
+            details=f"{self.player_name} withdrew gold"
+        )
+
+        self.convo.reset_state()
+        return self.agent.shopkeeper_withdraw_success_prompt(amount, self.party_data["party_gold"])
+
+
 
 

@@ -88,6 +88,16 @@ def detect_deposit_intent(player_input: str):
     print(f"[DEBUG] DEPOSIT_NEEDS_AMOUNT: No amount found in input '{player_input}'")
     return PlayerIntent.DEPOSIT_NEEDS_AMOUNT, None
 
+def detect_withdraw_intent(player_input: str):
+    lowered = normalize_input(player_input)
+    match = re.search(r'\b\d+\b', lowered)
+    if match:
+        amount = int(match.group())
+        return PlayerIntent.WITHDRAW_GOLD, amount
+    print(f"[DEBUG] WITHDRAW_NEEDS_AMOUNT: No amount found in input '{player_input}'")
+    return PlayerIntent.WITHDRAW_NEEDS_AMOUNT, None
+
+
 
 
 
@@ -129,6 +139,9 @@ def interpret_input(player_input: str, convo=None):
             elif intent == PlayerIntent.DEPOSIT_GOLD:
                 intent_type, amount = detect_deposit_intent(player_input)
                 return {"intent": intent_type, "amount": amount}
+            elif intent == PlayerIntent.WITHDRAW_GOLD:
+                intent_type, amount = detect_withdraw_intent(player_input)
+                return {"intent": intent_type, "amount": amount}
             return {"intent": intent}
 
     # ✅ 5. Item Detection without action word
@@ -142,8 +155,14 @@ def interpret_input(player_input: str, convo=None):
         if match:
             amount = int(match.group())
             return {"intent": PlayerIntent.DEPOSIT_CONFIRM, "amount": amount}
+    # ✅ 7. If awaiting withdraw amount and numeric input
+    if convo and convo.player_intent == PlayerIntent.WITHDRAW_NEEDS_AMOUNT:
+        match = re.search(r'\d+', lowered)
+        if match:
+            amount = int(match.group())
+            return {"intent": PlayerIntent.WITHDRAW_CONFIRM, "amount": amount}
 
-    # ✅ 7. GPT fallback
+    # ✅ 8. GPT fallback
     gpt_result = check_confirmation_via_gpt(player_input, convo)
     if gpt_result in [PlayerIntent.BUY_CONFIRM, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CONFIRM, PlayerIntent.SELL_CANCEL]:
         return {"intent": gpt_result}
