@@ -1,16 +1,15 @@
-# cli.py
-
 import importlib
 import os
 import openai
 from dotenv import load_dotenv
 
-from app.models.parties import get_party_by_id
+from app.models.parties import get_party_by_id, get_all_parties
 from app.models.players import (
     get_player_id_by_name,
     get_player_by_id,
     get_player_name_by_id,
     validate_login_credentials,
+    add_player_to_party
 )
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops, get_shop_names
@@ -22,25 +21,49 @@ from config import DEBUG_MODE, SHOP_NAME
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Static party for now
-party_id = 'group_001'
-
 def login():
     print("=== Welcome to RPG Shopkeeper ===")
     for _ in range(3):
-        entered_id = input("User ID: ").strip().lower()
+        entered_id = input("User ID: ").strip()
         entered_pin = input("PIN: ").strip()
-
         print(f"[DEBUG] Entered ID: '{entered_id}', PIN: '{entered_pin}'")
 
-        player_id = validate_login_credentials(entered_id, entered_pin)
-        print(f"[DEBUG] validate_login_credentials() => {player_id}")
+        result = validate_login_credentials(entered_id, entered_pin)
+        print(f"[DEBUG] Validating login: name='{entered_id}', passcode='{entered_pin}' => result: {result}")
 
-        if player_id:
+        if isinstance(result, int):  # player_id returned
             print("Login successful!\n")
-            return player_id
-        else:
-            print("Incorrect credentials. Try again.\n")
+            return result
+
+        # Handle new player registration
+        print("User not found or incorrect PIN.")
+        choice = input("Would you like to register as a new player? (yes/no): ").strip().lower()
+        if choice in ["yes", "y"]:
+            parties = get_all_parties()
+            print("\nAvailable Parties:")
+            for idx, party in enumerate(parties, start=1):
+                print(f"{idx}. {party['party_name']} (ID: {party['party_id']})")
+
+            while True:
+                try:
+                    selection = int(input("Choose a party by number: "))
+                    if 1 <= selection <= len(parties):
+                        chosen_party = parties[selection - 1]
+                        break
+                    else:
+                        print("Invalid choice. Try again.")
+                except ValueError:
+                    print("Please enter a number.")
+
+            character_name = input("Enter your character name: ").strip()
+            role = input("Choose a role (e.g. Wizard, Rogue): ").strip()
+            add_player_to_party(chosen_party["party_id"], entered_id, character_name, role, entered_pin)
+            player_id = get_player_id_by_name(entered_id)
+            if player_id:
+                print(f"[INFO] New player '{entered_id}' added successfully to {chosen_party['party_name']}!")
+                return player_id
+
+        print("Try again...\n")
 
     print("Too many failed attempts. Exiting.")
     return None
@@ -71,6 +94,7 @@ def choose_shop():
 
     return shop["shop_id"], shop["shop_name"], agent_instance
 
+
 def main():
     player_id = login()
     if not player_id:
@@ -79,6 +103,7 @@ def main():
     player = get_player_by_id(player_id)
     player_row = get_player_name_by_id(player_id)
     player_name = player_row["player_name"] if player_row else "Adventurer"
+    party_id = player["party_id"]
 
     result = choose_shop()
     if result is None:
@@ -110,6 +135,7 @@ def main():
         response = service.handle(player_input)
         convo.debug("AFTER HANDLE")
         print(response)
+
 
 if __name__ == '__main__':
     main()

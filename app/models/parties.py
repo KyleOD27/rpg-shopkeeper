@@ -35,15 +35,18 @@ def create_party(party_id, party_name, starting_gold=100):
     execute_db(sql, (party_id, party_name, starting_gold))
 
 # Add Player to Existing Party
-def add_player_to_party(party_id, player_name, character_name, role):
+def add_player_to_party(party_id, player_name, character_name, role, passcode):
     sql = """
-        INSERT INTO players (party_id, player_name, character_name, role)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO players (party_id, player_name, character_name, role, passcode)
+        VALUES (?, ?, ?, ?, ?)
     """
-    execute_db(sql, (party_id, player_name, character_name, role))
-
-from app.db import query_db, execute_db
-
+    try:
+        execute_db(sql, (party_id, player_name, character_name, role, passcode))
+        print(f"[DEBUG] Player '{player_name}' added to party '{party_id}'.")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Failed to add player to party: {e}")
+        return False
 
 def get_party_by_id(party_id: str):
     return query_db(
@@ -55,4 +58,8 @@ def update_party_gold(party_id: str, new_gold: int):
         "UPDATE parties SET party_gold = ? WHERE party_id = ?",
         (new_gold, party_id)
     )
+
+def get_all_parties():
+    sql = "SELECT party_id, party_name FROM parties"
+    return query_db(sql)
 

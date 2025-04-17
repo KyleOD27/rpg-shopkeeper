@@ -1007,3 +1007,20 @@ PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion
 PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=4 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=5 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=2 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=2 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=2 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=2 | State=INTRODUCTION | Action=None | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=2 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=7 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=7 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=7 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=9 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
