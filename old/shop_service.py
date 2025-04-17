@@ -1,6 +1,6 @@
 # app/shop_service.py
 
-from app.shop import buy_item, sell_item, haggle, deposit_gold, withdraw_gold
+from app.shop_functions import buy_item, sell_item, haggle, deposit_gold, withdraw_gold
 from app.models.items import get_all_items
 from app.models.ledger import get_last_transactions
 from app.models.parties import get_party_by_id

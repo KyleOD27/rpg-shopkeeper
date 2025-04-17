@@ -1,4 +1,4 @@
-from app.shop import deposit_gold, withdraw_gold
+from app.shop_functions import deposit_gold, withdraw_gold
 from app.models.parties import get_party_by_id
 
 party_id = 'group_001'

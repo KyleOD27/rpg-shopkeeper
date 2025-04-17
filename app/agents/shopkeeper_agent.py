@@ -13,7 +13,7 @@ class BaseShopkeeper:
 
     def shopkeeper_intro_prompt(self) -> str:
         return (
-            "Welcome to the RPG store. I handle BUY, SELL, HAGGLE, DEPOSIT, WITHDRAW, CHECK_BALANCE, and LEDGER actions."
+            f"Welcome to the RPG store. I handle BUY, SELL, HAGGLE, DEPOSIT, WITHDRAW, CHECK_BALANCE, and LEDGER actions."
         )
 
     def shopkeeper_fallback_prompt(self) -> str:

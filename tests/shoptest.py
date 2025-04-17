@@ -1,4 +1,4 @@
-from app.shop import buy_item
+from app.shop_functions import buy_item
 from app.models.parties import get_party_by_id
 
 party_id = 'group_001'

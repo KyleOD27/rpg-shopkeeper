@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from app.models.items import get_all_items
 from app.models.parties import get_party_by_id
-from app.shop import buy_item, sell_item, deposit_gold, withdraw_gold, haggle
+from app.shop_functions import buy_item, sell_item, deposit_gold, withdraw_gold, haggle
 
 app = Flask(__name__)
 

@@ -88,9 +88,14 @@ def interpret_input(player_input: str):
     if any(word in words for word in CONFIRMATION_WORDS):
         return {"intent": PlayerIntent.CONFIRM}
 
-    # 3. CANCELLATION
-    if any(word in words for word in CANCELLATION_WORDS):
-        return {"intent": PlayerIntent.CANCEL}
+    # 3. ITEM DETECTION without intent keyword
+    item_name, _ = find_item_in_input(player_input)
+    if item_name:
+        return {"intent": PlayerIntent.BUY_ITEM, "item": item_name}
+
+    # 4. CONFIRMATION (move this further down)
+    if any(word in words for word in CONFIRMATION_WORDS):
+        return {"intent": PlayerIntent.CONFIRM}
 
     # 4. SMALL TALK
     if any(word in words for word in SMALL_TALK_KEYWORDS):

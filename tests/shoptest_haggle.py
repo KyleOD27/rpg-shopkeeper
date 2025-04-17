@@ -1,4 +1,4 @@
-from app.shop import haggle
+from app.shop_functions import haggle
 
 party_id = 'group_001'
 
