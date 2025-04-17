@@ -967,3 +967,10 @@ PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Inten
 PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None

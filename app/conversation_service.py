@@ -117,6 +117,9 @@ class ConversationService:
             (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
             (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
 
+            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
+
         }
 
     def handle_introduction(self):
@@ -164,4 +167,8 @@ class ConversationService:
     def handle_check_balance(self, _):
         current_gold = self.party_data.get("party_gold", 0)
         return self.agent.shopkeeper_check_balance_prompt(current_gold)
+
+    def handle_view_items(self, _):
+        return self.agent.shopkeeper_view_items_prompt()
+
 

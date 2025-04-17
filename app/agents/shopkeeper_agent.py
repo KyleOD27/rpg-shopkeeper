@@ -131,4 +131,17 @@ class BaseShopkeeper:
     def shopkeeper_check_balance_prompt(self, gold_amount: int):
         return f"Your party currently holds {gold_amount} gold."
 
+    def shopkeeper_view_items_prompt(self):
+        from app.models.items import get_all_items
+
+        items = [dict(row) for row in get_all_items()]  # Convert to dicts to avoid .get errors
+
+        if not items:
+            return "The shelves are empty at the moment — check back later!"
+
+        lines = [f" • {item['item_name']} — {item['base_price']} gold" for item in items]
+        return "Here’s what I have in stock:\n\n" + "\n".join(lines)
+
+
+
 
