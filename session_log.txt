@@ -1,0 +1,598 @@
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=BUY_ITEM
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=BUY_ITEM
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=BUY_ITEM
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Cloak of Billowing', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Cloak of Billowing', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=HAGGLE | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=HAGGLE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=UNKNOWN | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=('Healing Potion', None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=(None, None) | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=UNKNOWN | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion', 'match_confirmed': True} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={'item_name': 'Healing Potion'} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item={"item_name": "Healing Potion"} | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_NEEDS_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=VIEW_LEDGER | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=VIEW_LEDGER | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ACTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=CANCEL | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SHOW_GRATITUDE | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SHOW_GRATITUDE | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=CANCEL | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=BUY_ITEM
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=BUY_ITEM
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=BUY_ITEM
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
