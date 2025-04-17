@@ -5,7 +5,6 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from config import DEBUG_MODE
-from config import SHOP_NAMES  # Instead of hardcoding them here
 
 
 load_dotenv()
@@ -16,9 +15,6 @@ SYSTEM_PROMPT = (
     "You are the system assistant for a Dungeons & Dragons shop game."
     "\n\nThe player wants to visit a shop."
     "\n\nMatch their input to one of these shop names exactly:"
-    f"\n- {SHOP_NAMES[0]}"
-    f"\n- {SHOP_NAMES[1]}"
-    f"\n- {SHOP_NAMES[2]}"
     "\n\nRespond ONLY with this JSON format:"
     "\n{\n  \"shop_name\": \"<exact shop name>\"\n}"
 )

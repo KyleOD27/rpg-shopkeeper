@@ -6,22 +6,45 @@ import openai
 from dotenv import load_dotenv
 
 from app.models.parties import get_party_by_id
-from app.models.players import get_player_by_id
+from app.models.players import (
+    get_player_id_by_name,
+    get_player_by_id,
+    get_player_name_by_id,
+    validate_login_credentials,
+)
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops, get_shop_names
 from app.system_agent import choose_shop_via_gpt
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
-from config import DEBUG_MODE, SHOP_NAME, DEFAULT_PLAYER_NAME
+from config import DEBUG_MODE, SHOP_NAME
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Static Context
+# Static party for now
 party_id = 'group_001'
-player_id = 1
-player = get_player_by_id(player_id)
-player_name = DEFAULT_PLAYER_NAME
+
+def login():
+    print("=== Welcome to RPG Shopkeeper ===")
+    for _ in range(3):
+        entered_id = input("User ID: ").strip().lower()
+        entered_pin = input("PIN: ").strip()
+
+        print(f"[DEBUG] Entered ID: '{entered_id}', PIN: '{entered_pin}'")
+
+        player_id = validate_login_credentials(entered_id, entered_pin)
+        print(f"[DEBUG] validate_login_credentials() => {player_id}")
+
+        if player_id:
+            print("Login successful!\n")
+            return player_id
+        else:
+            print("Incorrect credentials. Try again.\n")
+
+    print("Too many failed attempts. Exiting.")
+    return None
+
 
 def choose_shop():
     if DEBUG_MODE and SHOP_NAME:
@@ -49,6 +72,14 @@ def choose_shop():
     return shop["shop_id"], shop["shop_name"], agent_instance
 
 def main():
+    player_id = login()
+    if not player_id:
+        return
+
+    player = get_player_by_id(player_id)
+    player_row = get_player_name_by_id(player_id)
+    player_name = player_row["player_name"] if player_row else "Adventurer"
+
     result = choose_shop()
     if result is None:
         print("[FATAL] Failed to load shop. Exiting.")
