@@ -1,4 +1,4 @@
-# app/buy_handler.py
+# app/shop_handlers/buy_handler.py
 
 from app.interpreter import find_item_in_input
 from app.models.items import get_item_by_name
@@ -8,11 +8,12 @@ from app.conversation import ConversationState, PlayerIntent
 
 
 class BuyHandler:
-    def __init__(self, convo, agent, party_id, player_id, party_data):
+    def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
         self.convo = convo
         self.agent = agent
         self.party_id = party_id
         self.player_id = player_id
+        self.player_name = player_name
         self.party_data = party_data
 
     def get_dict_item(self, item_reference):
@@ -66,15 +67,17 @@ class BuyHandler:
             return self.agent.shopkeeper_buy_failure_prompt(item, "Not enough gold.", self.party_data["party_gold"])
 
         self.party_data["party_gold"] -= cost
-
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
         record_transaction(
             party_id=self.party_id,
             player_id=self.player_id,
+            player_name=self.player_name,
             item_name=name,
             amount=cost,
-            action="BUY"
+            action="BUY",
+            balance_after=self.party_data["party_gold"],
+            details="Purchased item"
         )
 
         self.convo.reset_state()

@@ -20,12 +20,13 @@ INTENT_KEYWORDS = {
     PlayerIntent.CHECK_BALANCE: ["balance", "gold amount", "how much gold", "check funds"],
     PlayerIntent.VIEW_LEDGER: ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal"],
+    PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
 }
 
-SMALL_TALK_KEYWORDS = ["thanks", "thank", "hello", "hi", "greetings", "bye", "goodbye", "cheers", "farewell"]
+SMALL_TALK_KEYWORDS = ["hello", "hi", "greetings", "bye", "goodbye", "farewell"]
 CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "fine"]
 CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
-
+GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "ty", "cheers", "farewell"]
 
 def normalize_input(text: str):
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower().strip())
@@ -100,6 +101,10 @@ def interpret_input(player_input: str):
     # 4. SMALL TALK
     if any(word in words for word in SMALL_TALK_KEYWORDS):
         return {"intent": PlayerIntent.SMALL_TALK}
+
+    # 5. SMALL TALK
+    if any(word in words for word in GRATITUDE_KEYWORDS):
+            return {"intent": PlayerIntent.SHOW_GRATITUDE}
 
     # 5. GPT fallback for confirmation/cancel detection
     gpt_result = check_confirmation_via_gpt(player_input)

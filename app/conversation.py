@@ -6,6 +6,7 @@ from config import DEBUG_MODE
 
 
 class PlayerIntent(Enum):
+    SHOW_GRATITUDE = auto()
     VIEW_ITEMS = auto()
     BUY_ITEM = auto()
     SELL_ITEM = auto()

@@ -7,12 +7,13 @@ from app.system_agent import choose_shop_via_gpt, SHOP_NAMES
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
 import importlib
-from config import DEBUG_MODE, FORCE_SHOP_NAME
+from config import DEBUG_MODE, FORCE_SHOP_NAME, DEFAULT_PLAYER_NAME
 from app.agents.shopkeeper_agent import BaseShopkeeper
 
 from dotenv import load_dotenv
 import os
 import openai
+
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -20,7 +21,11 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Static Context
 party_id = 'group_001'
 player_id = 1
-player_name = 'Thistle'
+
+from app.models.players import get_player_by_id
+
+player = get_player_by_id(player_id)
+player_name = DEFAULT_PLAYER_NAME
 
 
 def choose_shop():
@@ -69,7 +74,7 @@ def main():
     print(greeting)
 
     convo = Conversation(player_id)
-    service = ConversationService(convo, agent, party_id, player_id, party)
+    service = ConversationService(convo, agent, party_id, player_id, player_name, party)
 
     while True:
         player_input = input(">> ").strip()

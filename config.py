@@ -7,3 +7,4 @@ DEBUG_MODE = True
 TRACE_MODE = False
 DEFAULT_SHOP_NAME = "Grizzlebeard's Emporium"
 FORCE_SHOP_NAME = "Grizzlebeard's Emporium"
+DEFAULT_PLAYER_NAME = "Thistle"

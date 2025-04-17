@@ -1,6 +1,7 @@
 # app/agents/shopkeeper_agent.py
 
 from app.models.items import get_all_items
+from datetime import datetime
 
 class BaseShopkeeper:
     def shopkeeper_greeting(self, party_name: str, visit_count: int, player_name: str) -> str:
@@ -17,8 +18,17 @@ class BaseShopkeeper:
         )
 
     def shopkeeper_fallback_prompt(self) -> str:
-        item_names = [item["item_name"] for item in get_all_items()]
-        return f"I’m not sure what you’re after, so here’s what we’ve got: {', '.join(item_names)}"
+        items = get_all_items()
+        if not items:
+            return "Hmm… Looks like the shelves are bare right now!"
+
+        lines = ["I'm not sure what you're after, so here's what we’ve got in stock:\n"]
+        for item in items:
+            name = dict(item).get("item_name", "Unknown Item")
+            price = dict(item).get("base_price", "?")
+            lines.append(f" • {name} — {price} gold")
+
+        return "\n".join(lines)
 
     def shopkeeper_confirmation_reply(self, item_name, item_cost, new_balance) -> str:
         return (
@@ -65,3 +75,25 @@ class BaseShopkeeper:
 
     def shopkeeper_buy_enquire_item(self):
         return "Looking to buy something? Tell me what you're after — I've got potions, scrolls, and more!"
+
+    def shopkeeper_accept_thanks(self):
+        return "No problem at all, thanks for your purchase!"
+
+    def shopkeeper_show_ledger(self, ledger_entries: list) -> str:
+        if not ledger_entries:
+            return "Your ledger is empty. No purchases, sales, or deposits yet!"
+
+        lines = ["Here's your transaction history:"]
+        for entry in ledger_entries:
+            e = dict(entry)
+            timestamp = e.get("timestamp", "")[:16].replace("T", " ")  # assuming ISO datetime
+            player = e.get("player_name", "Unknown")
+            item = e.get("item_name", "Something")
+            gold = e.get("amount", 0)
+            action = e.get("action", "ACTION")
+            balance = e.get("balance_after", "?")
+            lines.append(f" - {timestamp} | {player} | {action} '{item}' for {gold} gold (Balance: {balance})")
+
+        return "\n".join(lines)
+
+
