@@ -63,3 +63,23 @@ def get_all_parties():
     sql = "SELECT party_id, party_name FROM parties"
     return query_db(sql)
 
+def generate_next_party_id():
+    result = query_db("SELECT COUNT(*) as count FROM parties", one=True)
+    next_id = result["count"] + 1
+    return f"group_{str(next_id).zfill(3)}"  # e.g. group_001, group_002
+
+def add_new_party(party_name):
+    party_id = generate_next_party_id()
+    try:
+        sql = """
+            INSERT INTO parties (party_id, party_name, party_gold, reputation_score)
+            VALUES (?, ?, 100, 0)
+        """
+        execute_db(sql, (party_id, party_name))
+        print(f"[INFO] Party '{party_name}' created with ID '{party_id}'")
+        return party_id
+    except Exception as e:
+        print(f"[ERROR] Failed to add party: {e}")
+        return None
+
+

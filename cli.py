@@ -1,9 +1,11 @@
+# cli.py
+
 import importlib
 import os
 import openai
 from dotenv import load_dotenv
 
-from app.models.parties import get_party_by_id, get_all_parties
+from app.models.parties import get_party_by_id, get_all_parties, add_new_party
 from app.models.players import (
     get_player_id_by_name,
     get_player_by_id,
@@ -21,6 +23,18 @@ from config import DEBUG_MODE, SHOP_NAME
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+
+def register_new_party():
+    print("\n=== New Party Registration ===")
+    party_name = input("Enter a name for your new party: ").strip()
+    party_id = add_new_party(party_name)
+    if party_id:
+        return party_id
+    else:
+        print("[ERROR] Party registration failed.")
+        return None
+
+
 def login():
     print("=== Welcome to RPG Shopkeeper ===")
     for _ in range(3):
@@ -31,37 +45,45 @@ def login():
         result = validate_login_credentials(entered_id, entered_pin)
         print(f"[DEBUG] Validating login: name='{entered_id}', passcode='{entered_pin}' => result: {result}")
 
-        if isinstance(result, int):  # player_id returned
+        if isinstance(result, int):
             print("Login successful!\n")
             return result
 
-        # Handle new player registration
         print("User not found or incorrect PIN.")
         choice = input("Would you like to register as a new player? (yes/no): ").strip().lower()
         if choice in ["yes", "y"]:
-            parties = get_all_parties()
-            print("\nAvailable Parties:")
-            for idx, party in enumerate(parties, start=1):
-                print(f"{idx}. {party['party_name']} (ID: {party['party_id']})")
+            print("1. Join Existing Party")
+            print("2. Register New Party")
+            party_choice = input("Choose an option (1/2): ").strip()
 
-            while True:
-                try:
-                    selection = int(input("Choose a party by number: "))
-                    if 1 <= selection <= len(parties):
-                        chosen_party = parties[selection - 1]
-                        break
-                    else:
-                        print("Invalid choice. Try again.")
-                except ValueError:
-                    print("Please enter a number.")
+            if party_choice == "1":
+                parties = get_all_parties()
+                print("\nAvailable Parties:")
+                for i, party in enumerate(parties, 1):
+                    print(f"{i}. {party['party_name']} (ID: {party['party_id']})")
+                selection = int(input("Choose a party by number: ").strip()) - 1
+                selected_party = parties[selection]
+                party_id = selected_party["party_id"]
+
+            elif party_choice == "2":
+                party_id = register_new_party()
+                if not party_id:
+                    continue
+            else:
+                print("Invalid option. Try again.")
+                continue
 
             character_name = input("Enter your character name: ").strip()
             role = input("Choose a role (e.g. Wizard, Rogue): ").strip()
-            add_player_to_party(chosen_party["party_id"], entered_id, character_name, role, entered_pin)
-            player_id = get_player_id_by_name(entered_id)
-            if player_id:
-                print(f"[INFO] New player '{entered_id}' added successfully to {chosen_party['party_name']}!")
-                return player_id
+            add_player_to_party(party_id, entered_id, character_name, role, entered_pin)
+            player_id_row = get_player_id_by_name(entered_id)
+            if isinstance(player_id_row, int):
+                print(f"[INFO] New player '{entered_id}' added successfully!")
+                return player_id_row
+
+
+            else:
+                print("[ERROR] Failed to retrieve new player ID.\n")
 
         print("Try again...\n")
 
