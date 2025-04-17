@@ -1,7 +1,6 @@
-# app/agents/shopkeeper_agent.py
-
 from app.models.items import get_all_items
 from datetime import datetime
+
 
 class BaseShopkeeper:
     def shopkeeper_greeting(self, party_name: str, visit_count: int, player_name: str) -> str:
@@ -14,7 +13,7 @@ class BaseShopkeeper:
 
     def shopkeeper_intro_prompt(self) -> str:
         return (
-            f"Welcome to the RPG store. I handle BUY, SELL, HAGGLE, DEPOSIT, WITHDRAW, CHECK_BALANCE, and LEDGER actions."
+            "Welcome to the RPG store. I handle BUY, SELL, HAGGLE, DEPOSIT, WITHDRAW, CHECK_BALANCE, and LEDGER actions."
         )
 
     def shopkeeper_fallback_prompt(self) -> str:
@@ -86,7 +85,7 @@ class BaseShopkeeper:
         lines = ["Here's your transaction history:"]
         for entry in ledger_entries:
             e = dict(entry)
-            timestamp = e.get("timestamp", "")[:16].replace("T", " ")  # assuming ISO datetime
+            timestamp = e.get("timestamp", "")[:16].replace("T", " ")
             player = e.get("player_name", "Unknown")
             item = e.get("item_name", "Something")
             gold = e.get("amount", 0)
@@ -96,4 +95,11 @@ class BaseShopkeeper:
 
         return "\n".join(lines)
 
+    def shopkeeper_sell_offer_prompt(self, item_name, price):
+        return f"I’ll give you {price} gold for your {item_name}. Deal?"
 
+    def shopkeeper_sell_success_prompt(self, item_name, amount) -> str:
+        return f"Sold! I’ve taken the {item_name} and added {amount} gold to your pouch."
+
+    def shopkeeper_sell_cancel_prompt(self, item_name):
+        return f"Changed your mind about the {item_name}? No worries."

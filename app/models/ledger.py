@@ -19,7 +19,6 @@ from app.db import execute_db  # Make sure this is available for write ops
 def record_transaction(
     party_id,
     player_id,
-    player_name,
     item_name,
     amount,
     action,

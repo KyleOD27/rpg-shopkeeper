@@ -20,6 +20,11 @@ class PlayerIntent(Enum):
     SMALL_TALK = auto()
     UNKNOWN = auto()
     BUY_NEEDS_ITEM = auto()  # “Buy” with no item mentioned
+    BUY_CONFIRM =auto()
+    BUY_CANCEL=auto()
+    SELL_CONFIRM=auto()
+    SELL_CANCEL=auto()
+    SELL_NEEDS_ITEM=auto()
 
 
 class ConversationState(Enum):

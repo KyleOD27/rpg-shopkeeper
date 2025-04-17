@@ -72,7 +72,6 @@ class BuyHandler:
         record_transaction(
             party_id=self.party_id,
             player_id=self.player_id,
-            player_name=self.player_name,
             item_name=name,
             amount=cost,
             action="BUY",

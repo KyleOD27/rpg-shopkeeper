@@ -72,54 +72,72 @@ def detect_buy_intent(player_input: str):
         return PlayerIntent.BUY_NEEDS_ITEM, None
     return PlayerIntent.BUY_ITEM, item_name
 
+def detect_sell_intent(player_input: str):
+    item_name, _ = find_item_in_input(player_input)
+    if not item_name:
+        print(f"[DEBUG] SELL_NEEDS_ITEM: No item identified from input '{player_input}'")
+        return PlayerIntent.SELL_NEEDS_ITEM, None
+    return PlayerIntent.SELL_ITEM, item_name
 
-def interpret_input(player_input: str):
+
+
+def interpret_input(player_input: str, convo=None):
     lowered = normalize_input(player_input)
     words = lowered.split()
 
-    # 1. ACTION MATCHING
+    # ✅ 1. Confirmation
+    if any(word in words for word in CONFIRMATION_WORDS):
+        if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
+            return {"intent": PlayerIntent.SELL_CONFIRM}
+        elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
+            return {"intent": PlayerIntent.BUY_CONFIRM}
+        return {"intent": PlayerIntent.CONFIRM}
+
+    # ✅ 2. Cancellation
+    if any(word in words for word in CANCELLATION_WORDS):
+        if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
+            return {"intent": PlayerIntent.SELL_CANCEL}
+        elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
+            return {"intent": PlayerIntent.BUY_CANCEL}
+        return {"intent": PlayerIntent.CANCEL}
+
+    # ✅ 3. Gratitude / Small Talk
+    if any(word in words for word in GRATITUDE_KEYWORDS):
+        return {"intent": PlayerIntent.SHOW_GRATITUDE}
+    if any(word in words for word in SMALL_TALK_KEYWORDS):
+        return {"intent": PlayerIntent.SMALL_TALK}
+
+    # ✅ 4. Keyword-Based Action Matching
     for intent, keywords in INTENT_KEYWORDS.items():
         if any(keyword in lowered for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
                 intent_type, item = detect_buy_intent(player_input)
                 return {"intent": intent_type, "item": item}
+            elif intent == PlayerIntent.SELL_ITEM:
+                intent_type, item = detect_sell_intent(player_input)
+                return {"intent": intent_type, "item": item}
             return {"intent": intent}
 
-    # 2. CONFIRMATION
-    if any(word in words for word in CONFIRMATION_WORDS):
-        return {"intent": PlayerIntent.CONFIRM}
-
-    # 3. ITEM DETECTION without intent keyword
+    # ✅ 5. Item Detection without action word
     item_name, _ = find_item_in_input(player_input)
     if item_name:
         return {"intent": PlayerIntent.BUY_ITEM, "item": item_name}
 
-    # 4. CONFIRMATION (move this further down)
-    if any(word in words for word in CONFIRMATION_WORDS):
-        return {"intent": PlayerIntent.CONFIRM}
-
-    # 4. SMALL TALK
-    if any(word in words for word in SMALL_TALK_KEYWORDS):
-        return {"intent": PlayerIntent.SMALL_TALK}
-
-    # 5. SMALL TALK
-    if any(word in words for word in GRATITUDE_KEYWORDS):
-            return {"intent": PlayerIntent.SHOW_GRATITUDE}
-
-    # 5. GPT fallback for confirmation/cancel detection
-    gpt_result = check_confirmation_via_gpt(player_input)
-    if gpt_result in [PlayerIntent.CONFIRM, PlayerIntent.CANCEL]:
+    # ✅ 6. GPT fallback
+    gpt_result = check_confirmation_via_gpt(player_input, convo)
+    if gpt_result in [PlayerIntent.BUY_CONFIRM, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CONFIRM, PlayerIntent.SELL_CANCEL]:
         return {"intent": gpt_result}
 
-    # 6. Unknown
     return {"intent": PlayerIntent.UNKNOWN}
+
 
 
 # === GPT FALLBACK CLASSIFIER ===
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def check_confirmation_via_gpt(user_input: str):
+def check_confirmation_via_gpt(user_input: str, convo=None):
+
     system_prompt = (
         "You are a classifier that determines whether a user's sentence is a CONFIRMATION, "
         "a CANCELLATION, or UNKNOWN. "
@@ -141,9 +159,18 @@ def check_confirmation_via_gpt(user_input: str):
 
         if result.get("confidence", 0) >= 85:
             if result["intent"] == "CONFIRM":
+                if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
+                    return PlayerIntent.SELL_CONFIRM
+                elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
+                    return PlayerIntent.BUY_CONFIRM
                 return PlayerIntent.CONFIRM
             elif result["intent"] == "CANCEL":
+                if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
+                    return PlayerIntent.SELL_CANCEL
+                elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
+                    return PlayerIntent.BUY_CANCEL
                 return PlayerIntent.CANCEL
+
 
     except Exception as e:
         print("[GPT CONFIRM CHECK ERROR]", e)
