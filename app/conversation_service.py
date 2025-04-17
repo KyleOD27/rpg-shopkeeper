@@ -1,3 +1,5 @@
+# app/conversation_service.py
+
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input
 from app.models.items import get_item_by_name
@@ -47,13 +49,16 @@ class ConversationService:
             self.convo.set_intent(PlayerIntent.UNKNOWN)
             intent = PlayerIntent.UNKNOWN
 
+        # Handle directly if matched in router
         handler = self.intent_router.get((self.convo.state, intent))
         if handler:
             return handler(player_input)
 
+        # Intro logic including fallback for UNKNOWN
         if self.convo.state == ConversationState.INTRODUCTION:
             return self.handle_introduction()
 
+        # Final fallback
         return self.handle_fallback()
 
     def _build_router(self):
@@ -62,6 +67,7 @@ class ConversationService:
             (ConversationState.INTRODUCTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
             (ConversationState.AWAITING_ACTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
+            (ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN): self.handle_fallback,
 
             # View ledger
             (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
@@ -112,6 +118,9 @@ class ConversationService:
             self.convo.debug("Player wants to sell but no item was identified. Asking for clarification.")
             self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
             return self.agent.shopkeeper_clarify_item_prompt()
+
+        self.convo.debug("Player hasn't engaged properly yet. Staying in INTRODUCTION.")
+        return self.agent.shopkeeper_fallback_prompt()
 
     def handle_fallback(self, *_):
         return self.agent.shopkeeper_fallback_prompt()

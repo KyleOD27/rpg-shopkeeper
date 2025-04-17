@@ -813,3 +813,20 @@ PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Inten
 PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
 PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Mystery Box | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Mystery Box | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Mystery Box | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_CONFIRM | Item=Mystery Box | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Mystery Box | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
