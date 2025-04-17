@@ -28,7 +28,8 @@ class PlayerIntent(Enum):
     DEPOSIT_NEEDS_AMOUNT=auto()
     DEPOSIT_CONFIRM=auto()
     WITHDRAW_NEEDS_AMOUNT=auto()
-    WITHDRAW_CONFIRM = auto()
+    WITHDRAW_CONFIRM=auto()
+    BARTER=auto()
 
 
 class ConversationState(Enum):

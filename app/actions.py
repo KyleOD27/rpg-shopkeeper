@@ -49,6 +49,11 @@ CONVERSE_ACTIONS = [
         "label": "Haggle",
         "description": "Try to negotiate a better price."
     },
+{
+        "intent": PlayerIntent.BARTER,
+        "label": "Haggle",
+        "description": "Try to negotiate a better price."
+    },
 ]
 
 
