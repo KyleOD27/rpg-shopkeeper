@@ -18,7 +18,7 @@ from app.models.shops import get_all_shops, get_shop_names
 from app.system_agent import choose_shop_via_gpt
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
-from config import DEBUG_MODE, SHOP_NAME
+from config import DEBUG_MODE, SHOP_NAME, AUTO_LOGIN_NAME, AUTO_LOGIN_PIN
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -37,6 +37,20 @@ def register_new_party():
 
 def login():
     print("=== Welcome to RPG Shopkeeper ===")
+
+    # Config override path
+    if AUTO_LOGIN_NAME and AUTO_LOGIN_PIN:
+        print("[DEBUG] Attempting auto-login via config...")
+        result = validate_login_credentials(AUTO_LOGIN_NAME, AUTO_LOGIN_PIN)
+        print(f"[DEBUG] Validating login: name='{AUTO_LOGIN_NAME}', passcode='{AUTO_LOGIN_PIN}' => result: {result}")
+
+        if isinstance(result, int):
+            print(f"[INFO] Auto-login successful as '{AUTO_LOGIN_NAME}'\n")
+            return result
+        else:
+            print("[WARN] Auto-login failed, falling back to manual login.\n")
+
+    # Manual login + registration loop
     for _ in range(3):
         entered_id = input("User ID: ").strip()
         entered_pin = input("PIN: ").strip()
@@ -80,8 +94,6 @@ def login():
             if isinstance(player_id_row, int):
                 print(f"[INFO] New player '{entered_id}' added successfully!")
                 return player_id_row
-
-
             else:
                 print("[ERROR] Failed to retrieve new player ID.\n")
 
@@ -91,30 +103,45 @@ def login():
     return None
 
 
+
 def choose_shop():
-    if DEBUG_MODE and SHOP_NAME:
-        shop_name = SHOP_NAME
-        print(f"[DEBUG] Loading shop from config: {shop_name}")
+    shop_list = get_all_shops()
+
+    if SHOP_NAME:
+        print(f"[DEBUG] Attempting auto-shop entry from config: '{SHOP_NAME}'")
+        matching = [shop for shop in shop_list if shop["shop_name"].lower() == SHOP_NAME.lower()]
+        if matching:
+            selected_shop = matching[0]
+            print(f"[INFO] Auto-selected shop: {selected_shop['shop_name']}")
+        else:
+            print(f"[WARN] Configured shop '{SHOP_NAME}' not found. Falling back to manual selection.\n")
+            selected_shop = None
     else:
-        shop_names = get_shop_names()
+        selected_shop = None
+
+    if not selected_shop:
         print("=== Available Shops ===")
-        for name in shop_names:
-            print(f"- {name}")
-        player_input = input("Which shop would you like to visit?: ")
-        shop_name = choose_shop_via_gpt(player_input)
+        for i, shop in enumerate(shop_list, start=1):
+            print(f"{i}. {shop['shop_name']}")
 
-    all_shops = get_all_shops()
-    shop = next((s for s in all_shops if s["shop_name"] == shop_name), None)
+        while True:
+            try:
+                selection = int(input("Choose a shop by number: ").strip())
+                if 1 <= selection <= len(shop_list):
+                    selected_shop = shop_list[selection - 1]
+                    break
+                else:
+                    print(f"Invalid choice. Please enter a number between 1 and {len(shop_list)}.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
 
-    if not shop:
-        print(f"[ERROR] Configured shop '{shop_name}' not found in known list.")
-        return None
-
-    shop_module = importlib.import_module(f'app.agents.personalities.{shop["agent_name"].lower()}')
-    agent_class = getattr(shop_module, shop["agent_name"])
+    shop_module = importlib.import_module(f'app.agents.personalities.{selected_shop["agent_name"].lower()}')
+    agent_class = getattr(shop_module, selected_shop["agent_name"])
     agent_instance = agent_class()
 
-    return shop["shop_id"], shop["shop_name"], agent_instance
+    return selected_shop["shop_id"], selected_shop["shop_name"], agent_instance
+
+
 
 
 def main():

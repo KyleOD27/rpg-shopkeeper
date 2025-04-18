@@ -1024,3 +1024,4 @@ PlayerID=7 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Inten
 PlayerID=7 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
 PlayerID=7 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
 PlayerID=9 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=11 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None

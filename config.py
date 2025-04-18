@@ -5,10 +5,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Flags
-DEBUG_MODE = True
+DEBUG_MODE = False
 TRACE_MODE = False
 
 # Shop Settings
 SHOP_NAME = "RPG Shop"
 
-#Alice, 1234
+# Optional login override
+AUTO_LOGIN_NAME = "Alice"       # or None
+AUTO_LOGIN_PIN = "1234"     # or None
