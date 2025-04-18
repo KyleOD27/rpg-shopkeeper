@@ -1,3 +1,5 @@
-Flask
-openai
-python-dotenv#
+Flask~=3.1.0
+openai~=1.72.0
+python-dotenv~=1.1.0
+python-dotenv~=1.1.0
+twilio~=9.5.2
