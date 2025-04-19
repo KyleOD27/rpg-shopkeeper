@@ -10,12 +10,12 @@ from config import SHOP_NAME, AUTO_LOGIN_NAME
 # In-memory cache of sessions
 conversations = {}
 
-# Hardcoded sender mapping — you can extend this or load from config/db
+# 🔗 Map SMS sender number to known player name
 sender_to_player_id = {
-    "whatsapp:+447971548666": AUTO_LOGIN_NAME,
+    "+447971548666": AUTO_LOGIN_NAME,  # Replace with your number and config value
 }
 
-def handle_whatsapp_command(sender: str, text: str) -> str:
+def handle_sms_command(sender: str, text: str) -> str:
     try:
         if sender not in sender_to_player_id:
             return "You’re not registered. Ask the Game Master to set you up! 🧙‍♂️"
@@ -24,41 +24,34 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
         print(f"[DEBUG] Mapped sender to player: {player_name}")
 
         player_id = get_player_id_by_name(player_name)
-        print(f"[DEBUG] Player ID: {player_id}")
         if not player_id:
             return "Character not found. Please ask the Game Master to check your setup."
 
         player = get_player_by_id(player_id)
-        print(f"[DEBUG] Player: {player}")
         if not player:
             return "Player details missing. Please contact the Game Master."
 
         party = get_party_by_id(player["party_id"])
-        print(f"[DEBUG] Party: {party}")
         if not party:
             return "Party not found. Please contact the Game Master."
 
         all_shops = get_all_shops()
-        print(f"[DEBUG] All shops: {all_shops}")
         if not all_shops:
             return "No shops found in the system."
 
-        if SHOP_NAME:
-            matching = [s for s in all_shops if s["shop_name"].lower() == SHOP_NAME.lower()]
-            shop = matching[0] if matching else all_shops[0]
-        else:
-            shop = all_shops[0]
-        print(f"[DEBUG] Selected shop: {shop}")
+        # Select the correct shop
+        shop = next((s for s in all_shops if s["shop_name"].lower() == SHOP_NAME.lower()), all_shops[0])
 
         visit_count = get_visit_count(party["party_id"], shop["shop_id"])
         increment_visit_count(party["party_id"], shop["shop_id"])
-        print(f"[DEBUG] Visit count: {visit_count}")
+        print(f"[DEBUG] Visit count for {shop['shop_name']}: {visit_count}")
 
+        # Load agent
         mod = importlib.import_module(f'app.agents.personalities.{shop["agent_name"].lower()}')
-        print(f"[DEBUG] Imported module for: {shop['agent_name']}")
         Agent = getattr(mod, shop["agent_name"])
         agent = Agent()
 
+        # Retrieve or create session
         if sender not in conversations:
             conversations[sender] = Conversation(player_id)
 
@@ -74,7 +67,8 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
 
         response = service.handle(text)
         print(f"[DEBUG] Agent response: {response}")
-        return response or "Hmm… no response from the shopkeeper. Try again?"
+        return response or "Hmm… the shopkeeper says nothing. Try again?"
+
     except Exception as e:
-        print(f"[ERROR] in handle_whatsapp_command: {e}")
-        return "Something broke when talking to the shopkeeper. Please tell the Game Master!"
+        print(f"[ERROR] in handle_sms_command: {e}")
+        return "Something broke while speaking to the shopkeeper. Please tell the Game Master!"

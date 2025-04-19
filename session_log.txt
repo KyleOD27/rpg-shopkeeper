@@ -1091,3 +1091,41 @@ PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Pot
 PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SMALL_TALK | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=DEPOSIT_GOLD | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=DEPOSIT_GOLD | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SMALL_TALK | Item=None | Input='None' | Intent=None
