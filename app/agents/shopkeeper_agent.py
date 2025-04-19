@@ -13,7 +13,7 @@ class BaseShopkeeper:
 
     def shopkeeper_intro_prompt(self) -> str:
         return (
-            "Welcome to the RPG store. I handle BUY, SELL, HAGGLE, DEPOSIT, WITHDRAW, CHECK_BALANCE, and LEDGER actions."
+            "Hello! Welcome to the RPG store. I handle BUY, SELL, DEPOSIT, WITHDRAW, CHECK BALANCE, and SEE LEDGER actions."
         )
 
     def shopkeeper_fallback_prompt(self) -> str:
@@ -38,7 +38,7 @@ class BaseShopkeeper:
     def shopkeeper_clarify_item_prompt(self) -> str:
         item_names = [item["item_name"] for item in get_all_items()]
         return (
-            f"I'm not sure which item you want. Here's what we have: {', '.join(item_names)}"
+            f"Ah so you want to BUY something! Here's what we have: {', '.join(item_names)}"
         )
 
     def shopkeeper_buy_confirm_prompt(self, item, player_gold) -> str:
@@ -73,7 +73,10 @@ class BaseShopkeeper:
         return f"So you don't want the {name}? As you wish."
 
     def shopkeeper_buy_enquire_item(self):
-        return "Looking to buy something? Tell me what you're after — I've got potions, scrolls, and more!"
+        item_names = [item["item_name"] for item in get_all_items()]
+        return (
+            f"Ah so you want to BUY something! Here's what we have: {', '.join(item_names)}"
+        )
 
     def shopkeeper_accept_thanks(self):
         return "No problem at all, thanks for your purchase!"

@@ -68,6 +68,13 @@ class ConversationService:
 
     def _build_router(self):
         return {
+
+            # Greeting
+            (ConversationState.INTRODUCTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
+
             # Gratitude
             (ConversationState.INTRODUCTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
@@ -170,5 +177,8 @@ class ConversationService:
 
     def handle_view_items(self, _):
         return self.agent.shopkeeper_view_items_prompt()
+
+    def handle_reply_to_greeting(self, _):
+        return self.agent.shopkeeper_intro_prompt()
 
 

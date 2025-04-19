@@ -21,9 +21,10 @@ INTENT_KEYWORDS = {
     PlayerIntent.VIEW_LEDGER: ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
+    PlayerIntent.GREETING: ["hello", "hi", "greetings", "hallo", "hey", "what up"],
 }
 
-SMALL_TALK_KEYWORDS = ["hello", "hi", "greetings", "bye", "goodbye", "farewell"]
+SMALL_TALK_KEYWORDS = ["goodbye", "farewell"]
 CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "fine"]
 CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
 GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "ty", "cheers", "farewell"]

@@ -12,10 +12,10 @@ INSERT INTO parties (party_id, party_name, party_gold, reputation_score) VALUES
 ('group_001', 'The Cursed Cartographers', 100, 0);
 
 -- Insert Test Players
-INSERT INTO players (party_id, player_name, character_name, role, passcode) VALUES
-('group_001', 'Alice', 'Thistle', 'Rogue', '1234'),
-('group_001', 'Bob', 'Magnus', 'Wizard', '5678'),
-('group_001', 'Charlie', 'Garruk', 'Barbarian','9012');
+INSERT INTO players (party_id, player_name, character_name, role, passcode, phone_number, player_type) VALUES
+('group_001', 'Kyle', 'Kookyko', 'Wizard', '1234', '+447971548666', 'Admin'),
+('group_001', 'Jaz', 'JazzySmash', 'Bard', '5678','+447851681361', 'Regular'),
+('group_001', 'Will', 'Will of the Meeple', 'Barbarian','9999', '+447940133344', 'Dungeon Master');
 
 -- Insert Shops
 INSERT INTO shops (shop_name, agent_name, location) VALUES

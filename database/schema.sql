@@ -13,7 +13,9 @@ CREATE TABLE players (
     player_name TEXT NOT NULL,              -- Player's Name (real or character)
     character_name TEXT,                    -- Optional Character Name
     role TEXT,                              -- Optional Role (Wizard, Rogue etc.)
-    passcode TEXT,                           -- Used for Login
+    passcode TEXT,                          -- Used for Login
+    phone_number TEXT,                       -- Used for SMS. Should be unique to player. Essential for communication.
+    player_type TEXT,                        -- Used to distinguish between Admin, DM and regular players
     UNIQUE(party_id, player_name),          -- Prevent duplicates within a party
     FOREIGN KEY(party_id) REFERENCES parties(party_id)
 );

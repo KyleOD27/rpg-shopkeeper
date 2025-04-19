@@ -30,6 +30,10 @@ class PlayerIntent(Enum):
     WITHDRAW_NEEDS_AMOUNT=auto()
     WITHDRAW_CONFIRM=auto()
     BARTER=auto()
+    BARTER_CONFIRM=auto()
+    BARTER_CANCEL=auto()
+    BARTER_NEEDS_ITEM=auto()
+    GREETING=auto()
 
 
 class ConversationState(Enum):
