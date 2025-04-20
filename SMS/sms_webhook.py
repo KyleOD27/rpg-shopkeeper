@@ -4,7 +4,7 @@ from twilio.rest import Client
 import logging
 import os
 from dotenv import load_dotenv
-from sms_router import handle_sms_command
+from SMS.sms_router import handle_sms_command
 
 # 🌱 Load environment variables
 load_dotenv()
@@ -67,12 +67,12 @@ def send_startup_sms():
     except Exception as e:
         app.logger.warning(f"⚠️ Could not send startup SMS: {e}")
 
-if __name__ == "__main__":
+def start_sms_server():
     port = 5000
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        # ✅ Only send once in actual reload process
         app.logger.info(f"🔗 Ensure Twilio webhook points to: {NGROK_URL}/sms")
         send_startup_sms()
 
     app.logger.info(f"🛡️ Starting Flask server on port {port}")
     app.run(port=port, debug=True, host="0.0.0.0")
+

@@ -39,7 +39,7 @@ class ConversationService:
 
     def handle(self, player_input):
         if player_input.strip().lower().startswith("dm "):
-            return handle_dm_command(self.party_id, self.player_id, player_input)
+            return handle_dm_command(self.party_id, self.player_id, player_input, party_data=self.party_data)
 
         self.convo.set_input(player_input)
         intent_data = interpret_input(player_input, self.convo)
@@ -126,6 +126,7 @@ class ConversationService:
             (ConversationState.INTRODUCTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_ACTION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_ACTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_CONFIRM): self.deposit_handler.handle_confirm_deposit,
