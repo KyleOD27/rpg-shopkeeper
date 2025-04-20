@@ -18,13 +18,17 @@ class ConversationService:
         self.agent = agent
         self.party_id = party_id
         self.player_id = player_id
-        self.party_data = dict(party_data)
+
+        self.party_data = dict(party_data)  # Convert Row to dict first
+        self.party_data["player_name"] = player_name
+        self.party_data["visit_count"] = self.party_data.get("visit_count", 1)
+
         self.buy_handler = BuyHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.sell_handler = SellHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.deposit_handler = DepositHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
-        self.intent_router = self._build_router()
 
+        self.intent_router = self._build_router()
 
     def say(self, message):
         return message
@@ -54,21 +58,17 @@ class ConversationService:
             self.convo.set_intent(PlayerIntent.UNKNOWN)
             intent = PlayerIntent.UNKNOWN
 
-        # Handle directly if matched in router
         handler = self.intent_router.get((self.convo.state, intent))
         if handler:
             return handler(player_input)
 
-        # Intro logic including fallback for UNKNOWN
         if self.convo.state == ConversationState.INTRODUCTION:
             return self.handle_introduction()
 
-        # Final fallback
         return self.handle_fallback()
 
     def _build_router(self):
         return {
-
             # Greeting
             (ConversationState.INTRODUCTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
@@ -81,11 +81,27 @@ class ConversationService:
             (ConversationState.AWAITING_ACTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
             (ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN): self.handle_fallback,
 
-            # View ledger
+            # View Ledger
+            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
             (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
 
-            # Buy flow
+            # View Items
+            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
+
+            # Check Balance
+            (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+
+            # Buy Flow
+            (ConversationState.INTRODUCTION, PlayerIntent.BUY_ITEM): self.buy_handler.process_buy_item_flow,
+            (ConversationState.INTRODUCTION, PlayerIntent.BUY_NEEDS_ITEM): self.buy_handler.process_buy_item_flow,
             (ConversationState.AWAITING_ACTION, PlayerIntent.BUY_ITEM): self.buy_handler.process_buy_item_flow,
             (ConversationState.AWAITING_ACTION, PlayerIntent.BUY_NEEDS_ITEM): self.buy_handler.process_buy_item_flow,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.BUY_ITEM): self.buy_handler.process_buy_item_flow,
@@ -95,70 +111,52 @@ class ConversationService:
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CONFIRM): self.buy_handler.handle_confirm_purchase,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CANCEL): self.buy_handler.handle_cancel_purchase,
 
-            # Sell flow
+            # Sell Flow
+            (ConversationState.INTRODUCTION, PlayerIntent.SELL_ITEM): self.sell_handler.process_sell_item_flow,
+            (ConversationState.INTRODUCTION, PlayerIntent.SELL_NEEDS_ITEM): self.sell_handler.process_sell_item_flow,
             (ConversationState.AWAITING_ACTION, PlayerIntent.SELL_ITEM): self.sell_handler.process_sell_item_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_ITEM): self.sell_handler.process_sell_item_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_NEEDS_ITEM): self.sell_handler.process_sell_item_flow,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.SELL_NEEDS_ITEM): self.sell_handler.process_sell_item_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CONFIRM): self.sell_handler.handle_confirm_sale,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CANCEL): self.sell_handler.handle_cancel_sale,
 
-            # Deposit flow
-            (ConversationState.AWAITING_ACTION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
-            (ConversationState.INTRODUCTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
+            # Deposit Flow
             (ConversationState.INTRODUCTION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
+            (ConversationState.INTRODUCTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_GOLD): self.deposit_handler.process_deposit_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_NEEDS_AMOUNT): self.deposit_handler.process_deposit_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.DEPOSIT_CONFIRM): self.deposit_handler.handle_confirm_deposit,
 
-            # Withdraw flow
-            (ConversationState.AWAITING_ACTION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
-
-            (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
+            # Withdraw Flow
             (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.INTRODUCTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_GOLD): self.withdraw_handler.process_withdraw_gold_flow,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_NEEDS_AMOUNT): self.withdraw_handler.process_withdraw_gold_flow,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_CONFIRM): self.withdraw_handler.handle_confirm_withdraw,
-
-            (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
-            (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
-
-            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_ITEMS): self.handle_view_items,
-
         }
 
     def handle_introduction(self):
         intent = self.convo.player_intent
 
-        # 🛒 Buy flow
-        if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM} and self.convo.pending_item:
-            self.convo.debug("Player wants to buy and item was identified. Moving to AWAITING_CONFIRMATION.")
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            item = self.get_dict_item(self.convo.pending_item)
-            return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data["party_gold"])
+        if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
+            return self.buy_handler.process_buy_item_flow(self.convo.input_text)
 
-        elif intent == PlayerIntent.BUY_NEEDS_ITEM:
-            self.convo.debug("Player wants to buy but no item was identified. Asking for clarification.")
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            return self.agent.shopkeeper_buy_enquire_item()
+        elif intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
+            return self.sell_handler.process_sell_item_flow(self.convo.input_text)
 
-        # 💰 Sell flow
-        elif intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM} and self.convo.pending_item:
-            self.convo.debug("Player wants to sell and item was identified. Moving to AWAITING_CONFIRMATION.")
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            item = self.get_dict_item(self.convo.pending_item)
-            offer_price = item.get("sell_price") or round(item.get("base_price", 0) * 0.5)
-            return self.agent.shopkeeper_sell_offer_prompt(item["item_name"], offer_price)
+        return self.handle_fallback()
 
-        elif intent == PlayerIntent.SELL_NEEDS_ITEM:
-            self.convo.debug("Player wants to sell but no item was identified. Asking for clarification.")
-            self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-            return self.agent.shopkeeper_clarify_item_prompt()
-
-        self.convo.debug("Player hasn't engaged properly yet. Staying in INTRODUCTION.")
-        return self.agent.shopkeeper_fallback_prompt()
+    def handle_reply_to_greeting(self, _):
+        return self.agent.shopkeeper_greeting(
+            party_name=self.party_data["party_name"],
+            visit_count=self.party_data["visit_count"],
+            player_name=self.party_data["player_name"]
+        )
 
     def handle_fallback(self, *_):
         return self.agent.shopkeeper_fallback_prompt()
@@ -177,8 +175,3 @@ class ConversationService:
 
     def handle_view_items(self, _):
         return self.agent.shopkeeper_view_items_prompt()
-
-    def handle_reply_to_greeting(self, _):
-        return self.agent.shopkeeper_intro_prompt()
-
-

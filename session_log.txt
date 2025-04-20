@@ -1149,3 +1149,129 @@ PlayerID=1 | State=AWAITING_CONFIRMATION | Action=GREETING | Item=None | Input='
 PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=AWAITING_CONFIRMATION | Action=GREETING | Item=None | Input='None' | Intent=None
 PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=SELL_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_ITEM_SELECTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=WITHDRAW_NEEDS_AMOUNT | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=WITHDRAW_NEEDS_AMOUNT | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=WITHDRAW_NEEDS_AMOUNT | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=WITHDRAW_CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=WITHDRAW_GOLD | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=WITHDRAW_GOLD | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=DEPOSIT_NEEDS_AMOUNT | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=DEPOSIT_NEEDS_AMOUNT | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=DEPOSIT_NEEDS_AMOUNT | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=DEPOSIT_CONFIRM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=DEPOSIT_GOLD | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=DEPOSIT_GOLD | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=GREETING | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=GREETING | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=GREETING | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=GREETING | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=GREETING | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=DEPOSIT_GOLD | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=DEPOSIT_GOLD | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Cloak of Billowing | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SELL_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_ITEM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=SELL_CONFIRM | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Iron Dagger | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=UNKNOWN | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=GREETING | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_ITEM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=Healing Potion | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=SHOW_GRATITUDE | Item=None | Input='None' | Intent=None
+PlayerID=1 | State=INTRODUCTION | Action=CHECK_BALANCE | Item=None | Input='None' | Intent=None

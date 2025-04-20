@@ -12,7 +12,7 @@ from app.models.items import get_all_items
 
 # === INTENT KEYWORDS ===
 INTENT_KEYWORDS = {
-    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me"],
+    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me", "what do you sell", "what do you buy", "what else"],
     PlayerIntent.BUY_ITEM: ["buy", "purchase", "get", "acquire"],
     PlayerIntent.SELL_ITEM: ["sell", "offload", "trade in"],
     PlayerIntent.DEPOSIT_GOLD: ["deposit", "store gold", "stash"],

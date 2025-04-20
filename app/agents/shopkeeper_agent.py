@@ -11,21 +11,17 @@ class BaseShopkeeper:
         else:
             return f"Back already, {player_name}? I'm flattered. This is visit number {visit_count}!"
 
-    def shopkeeper_intro_prompt(self) -> str:
-        return (
-            "Hello! Welcome to the RPG store. I handle BUY, SELL, DEPOSIT, WITHDRAW, CHECK BALANCE, and SEE LEDGER actions."
-        )
-
     def shopkeeper_fallback_prompt(self) -> str:
-        items = get_all_items()
-        if not items:
-            return "Hmm… Looks like the shelves are bare right now!"
-
-        lines = ["I'm not sure what you're after, so here's what we’ve got in stock:\n"]
-        for item in items:
-            name = dict(item).get("item_name", "Unknown Item")
-            price = dict(item).get("base_price", "?")
-            lines.append(f" • {name} — {price} gold")
+        return (
+            "This is what I can do for you:\n"
+            "Buy – I stock equipment for adventurers, just ask me what I have\n"
+            "Sell – Top up your party balance by selling me unwanted goods\n"
+            "Deposit - To buy here, you must top up your party balance by depositing gold\n"
+            "Withdraw – You can withdraw gold at any time, just ask\n"
+            "Check Balance – I keep a note of your balance, ask any time\n"
+            "View Ledger – If you want to see our trade history, ask away\n"
+            "View Items – Always happy to show you what we have in stock\n"
+        )
 
         return "\n".join(lines)
 
@@ -36,10 +32,18 @@ class BaseShopkeeper:
         )
 
     def shopkeeper_clarify_item_prompt(self) -> str:
-        item_names = [item["item_name"] for item in get_all_items()]
-        return (
-            f"Ah so you want to BUY something! Here's what we have: {', '.join(item_names)}"
-        )
+        items = get_all_items()
+        if not items:
+            return "Ah, it seems the shelves are bare!"
+
+        lines = ["Ah, so you want to BUY something! Here's what we have:\n"]
+        for item in items:
+            item_dict = dict(item)  # Convert sqlite3.Row to regular dict
+            name = item_dict.get("item_name", "Unknown Item")
+            price = item_dict.get("base_price", "?")
+            lines.append(f" • {name} — {price} gold")
+
+        return "\n".join(lines)
 
     def shopkeeper_buy_confirm_prompt(self, item, player_gold) -> str:
         name = item.get("item_name") if isinstance(item, dict) else str(item)
@@ -74,12 +78,13 @@ class BaseShopkeeper:
 
     def shopkeeper_buy_enquire_item(self):
         item_names = [item["item_name"] for item in get_all_items()]
-        return (
-            f"Ah so you want to BUY something! Here's what we have: {', '.join(item_names)}"
-        )
+        display_items = ', '.join(item_names[:5])
+        if len(item_names) > 5:
+            display_items += ", and more..."
+        return f"Ah so you want to BUY something! Here's what I have on offer: {display_items}"
 
     def shopkeeper_accept_thanks(self):
-        return "No problem at all, thanks for your purchase!"
+        return "No problem at all, thanks for being you!"
 
     def shopkeeper_show_ledger(self, ledger_entries: list) -> str:
         if not ledger_entries:
@@ -98,11 +103,13 @@ class BaseShopkeeper:
 
         return "\n".join(lines)
 
-    def shopkeeper_sell_offer_prompt(self, item_name, price):
-        return f"I’ll give you {price} gold for your {item_name}. Deal?"
+    def shopkeeper_sell_offer_prompt(self, item, offer_price):
+        name = item.get("name") or item.get("title") or item.get("item_name", "item")
+        return f"I’ll give you {offer_price} gold for your {name}. Deal?"
 
-    def shopkeeper_sell_success_prompt(self, item_name, amount) -> str:
-        return f"Sold! I’ve taken the {item_name} and added {amount} gold to your pouch."
+    def shopkeeper_sell_success_prompt(self, item, amount) -> str:
+        name = item.get("name") or item.get("title") or item.get("item_name", "item")
+        return f"Sold! I’ve taken the {name} and added {amount} gold to your party balance."
 
     def shopkeeper_sell_cancel_prompt(self, item_name):
         return f"Changed your mind about the {item_name}? No worries."
@@ -144,6 +151,14 @@ class BaseShopkeeper:
 
         lines = [f" • {item['item_name']} — {item['base_price']} gold" for item in items]
         return "Here’s what I have in stock:\n\n" + "\n".join(lines)
+
+    def shopkeeper_sell_enquire_item(self):
+        item_names = [item["item_name"] for item in get_all_items()]
+        display_items = ', '.join(item_names[:5])
+        if len(item_names) > 5:
+            display_items += ", and more..."
+        return f"Ah so you want to SELL something! Here's what I accept: {display_items}"
+
 
 
 
