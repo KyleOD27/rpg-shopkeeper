@@ -6,11 +6,11 @@ from app.models.parties import update_party_gold
 import re
 
 class DepositHandler:
-    def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
+    def __init__(self, convo, agent, party_id, character_id, player_name, party_data):
         self.convo = convo
         self.agent = agent
         self.party_id = party_id
-        self.player_id = player_id
+        self.character_id = character_id
         self.player_name = player_name
         self.party_data = party_data
 
@@ -31,7 +31,7 @@ class DepositHandler:
 
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
+            character_id=self.character_id,
             item_name=None,
             amount=amount,
             action="DEPOSIT",
@@ -44,7 +44,6 @@ class DepositHandler:
         return self.agent.shopkeeper_deposit_success_prompt(amount, new_total)
 
     def _extract_amount(self, text):
-        import re
         match = re.search(r'\b\d+\b', text)
         if match:
             return int(match.group())
@@ -61,11 +60,11 @@ class DepositHandler:
         self.party_data["party_gold"] += amount
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
-        new_total = self.party_data["party_gold"]  # ✅ Add this line
+        new_total = self.party_data["party_gold"]
 
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
+            character_id=self.character_id,
             item_name=None,
             amount=amount,
             action="DEPOSIT",
@@ -94,7 +93,7 @@ class DepositHandler:
         # 🧾 Record transaction
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
+            character_id=self.character_id,
             item_name=None,
             amount=amount,
             action="WITHDRAW",
@@ -104,7 +103,3 @@ class DepositHandler:
 
         self.convo.reset_state()
         return self.agent.shopkeeper_withdraw_success_prompt(amount, self.party_data["party_gold"])
-
-
-
-

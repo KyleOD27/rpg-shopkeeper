@@ -4,11 +4,11 @@ from app.models.parties import update_party_gold
 import re
 
 class WithdrawHandler:
-    def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
+    def __init__(self, convo, agent, party_id, character_id, player_name, party_data):
         self.convo = convo
         self.agent = agent
         self.party_id = party_id
-        self.player_id = player_id
+        self.character_id = character_id
         self.player_name = player_name
         self.party_data = party_data
 
@@ -31,7 +31,7 @@ class WithdrawHandler:
 
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
+            character_id=self.character_id,
             item_name=None,
             amount=-amount,
             action="WITHDRAW",
@@ -59,7 +59,7 @@ class WithdrawHandler:
 
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
+            character_id=self.character_id,
             item_name=None,
             amount=-amount,
             action="WITHDRAW",

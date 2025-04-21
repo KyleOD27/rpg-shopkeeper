@@ -1,72 +1,63 @@
 import importlib
+from app.db import query_db
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
-from app.models.players import get_player_by_id, get_player_id_by_name
 from app.models.parties import get_party_by_id
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops
-from config import SHOP_NAME, AUTO_LOGIN_NAME
+from config import SHOP_NAME
+from app.auth.user_login import get_user_by_phone, normalise_for_storage
 
-# In-memory cache of sessions
+# === In-memory session store ===
 conversations = {}
-
-# 🔗 Map SMS sender number to known player name
-sender_to_player_id = {
-    "+447971548666": AUTO_LOGIN_NAME,  # Replace with your number and config value
-}
 
 def handle_sms_command(sender: str, text: str) -> str:
     try:
-        if sender not in sender_to_player_id:
-            return "You’re not registered. Ask the Game Master to set you up! 🧙‍♂️"
+        user = get_user_by_phone(sender)
+        if not user:
+            return "🚫 You’re not registered. Ask the Game Master to set you up! 🧙‍♂️"
 
-        player_name = sender_to_player_id[sender]
-        print(f"[DEBUG] Mapped sender to player: {player_name}")
+        # Select first character linked to this user
+        character = query_db(
+            "SELECT * FROM characters WHERE user_id = ? ORDER BY character_id ASC LIMIT 1",
+            (user["user_id"],), one=True
+        )
+        if not character:
+            return "No character found for your user. Ask the Game Master to help you roll one up."
 
-        player_id = get_player_id_by_name(player_name)
-        if not player_id:
-            return "Character not found. Please ask the Game Master to check your setup."
-
-        player = get_player_by_id(player_id)
-        if not player:
-            return "Player details missing. Please contact the Game Master."
-
-        party = get_party_by_id(player["party_id"])
+        character_id = character["character_id"]
+        party = get_party_by_id(character["party_id"])
         if not party:
-            return "Party not found. Please contact the Game Master."
+            return "Your party wasn’t found. Ask the Game Master to check setup."
 
-        all_shops = get_all_shops()
-        if not all_shops:
+        shops = get_all_shops()
+        if not shops:
             return "No shops found in the system."
 
-        # Select the correct shop
-        shop = next((s for s in all_shops if s["shop_name"].lower() == SHOP_NAME.lower()), all_shops[0])
-
-        visit_count = get_visit_count(party["party_id"], shop["shop_id"])
+        shop = next((s for s in shops if s["shop_name"].lower() == SHOP_NAME.lower()), shops[0])
         increment_visit_count(party["party_id"], shop["shop_id"])
-        print(f"[DEBUG] Visit count for {shop['shop_name']}: {visit_count}")
+        visit_count = get_visit_count(party["party_id"], shop["shop_id"])
 
-        # Load agent
+        # Load agent dynamically
         mod = importlib.import_module(f'app.agents.personalities.{shop["agent_name"].lower()}')
         Agent = getattr(mod, shop["agent_name"])
         agent = Agent()
 
-        # Retrieve or create session
+        # Get or create session
         if sender not in conversations:
-            conversations[sender] = Conversation(player_id)
+            conversations[sender] = Conversation(character_id)
 
         convo = conversations[sender]
         service = ConversationService(
             convo=convo,
             agent=agent,
             party_id=party["party_id"],
-            player_id=player_id,
-            player_name=player["player_name"],
+            player_id=character_id,
+            player_name=character["player_name"],
             party_data=party,
         )
 
         response = service.handle(text)
-        print(f"[DEBUG] Agent response: {response}")
         return response or "Hmm… the shopkeeper says nothing. Try again?"
 
     except Exception as e:

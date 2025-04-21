@@ -20,20 +20,20 @@ class PlayerIntent(Enum):
     SMALL_TALK = auto()
     UNKNOWN = auto()
     BUY_NEEDS_ITEM = auto()  # “Buy” with no item mentioned
-    BUY_CONFIRM =auto()
-    BUY_CANCEL=auto()
-    SELL_CONFIRM=auto()
-    SELL_CANCEL=auto()
-    SELL_NEEDS_ITEM=auto()
-    DEPOSIT_NEEDS_AMOUNT=auto()
-    DEPOSIT_CONFIRM=auto()
-    WITHDRAW_NEEDS_AMOUNT=auto()
-    WITHDRAW_CONFIRM=auto()
-    BARTER=auto()
-    BARTER_CONFIRM=auto()
-    BARTER_CANCEL=auto()
-    BARTER_NEEDS_ITEM=auto()
-    GREETING=auto()
+    BUY_CONFIRM = auto()
+    BUY_CANCEL = auto()
+    SELL_CONFIRM = auto()
+    SELL_CANCEL = auto()
+    SELL_NEEDS_ITEM = auto()
+    DEPOSIT_NEEDS_AMOUNT = auto()
+    DEPOSIT_CONFIRM = auto()
+    WITHDRAW_NEEDS_AMOUNT = auto()
+    WITHDRAW_CONFIRM = auto()
+    BARTER = auto()
+    BARTER_CONFIRM = auto()
+    BARTER_CANCEL = auto()
+    BARTER_NEEDS_ITEM = auto()
+    GREETING = auto()
 
 
 class ConversationState(Enum):
@@ -45,8 +45,8 @@ class ConversationState(Enum):
 
 
 class Conversation:
-    def __init__(self, player_id):
-        self.player_id = player_id
+    def __init__(self, character_id):
+        self.character_id = character_id
         self.state = ConversationState.INTRODUCTION
         self.pending_action = None
         self.pending_item = None
@@ -54,7 +54,7 @@ class Conversation:
         self.player_intent = None
         self.match_confirmed = False  # Used for confirmation flow
 
-        saved = get_convo_state(self.player_id)
+        saved = get_convo_state(self.character_id)
         if saved:
             self.state = ConversationState(saved["current_state"])
             self.pending_action = saved["pending_action"]
@@ -99,13 +99,13 @@ class Conversation:
 
     def save_state(self):
         update_convo_state(
-            player_id=self.player_id,
+            character_id=self.character_id,
             state=self.state.value,
             action=self.pending_action,
             item=self.pending_item
         )
         log_convo_state(
-            player_id=self.player_id,
+            character_id=self.character_id,
             state=self.state.value,
             action=self.pending_action,
             item=self.pending_item
@@ -117,7 +117,7 @@ class Conversation:
         print("[DEBUG] --- Conversation Debug Info ---")
         if note:
             print(f"Note: {note}")
-        print(f"Player ID: {self.player_id}")
+        print(f"Character ID: {self.character_id}")
         print(f"State: {self.state.name}")
         print(f"Action: {self.pending_action}")
         print(f"Item: {self.pending_item or 'None'}")

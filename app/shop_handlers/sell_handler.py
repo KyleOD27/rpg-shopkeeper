@@ -8,11 +8,11 @@ from app.conversation import ConversationState, PlayerIntent
 
 
 class SellHandler:
-    def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
+    def __init__(self, convo, agent, party_id, character_id, player_name, party_data):
         self.convo = convo
         self.agent = agent
         self.party_id = party_id
-        self.player_id = player_id
+        self.character_id = character_id
         self.player_name = player_name
         self.party_data = party_data
 
@@ -24,7 +24,6 @@ class SellHandler:
         item_name, _ = find_item_in_input(player_input)
 
         if not item_name:
-            # Always move to item selection if no item was found
             self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
             return self.agent.shopkeeper_sell_enquire_item()
 
@@ -68,7 +67,7 @@ class SellHandler:
 
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
+            character_id=self.character_id,
             item_name=name,
             amount=offer_price,
             action="SELL",
@@ -80,4 +79,3 @@ class SellHandler:
         self.convo.set_pending_item(None)
 
         return self.agent.shopkeeper_sell_success_prompt(item, offer_price)
-

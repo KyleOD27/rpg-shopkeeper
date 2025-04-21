@@ -1,86 +1,131 @@
--- Parties Table
+-- USERS TABLE
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone_number TEXT UNIQUE NOT NULL,
+    user_name TEXT,
+    subscription_tier TEXT CHECK(subscription_tier IN ('Free', 'Adventurer', 'DM', 'Guild')) DEFAULT 'Free',
+    lifetime_access BOOLEAN DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- PARTIES TABLE
 CREATE TABLE parties (
-    party_id TEXT PRIMARY KEY,              -- Unique ID (e.g. WhatsApp Group ID)
-    party_name TEXT,                        -- Optional Party Name
-    party_gold INTEGER DEFAULT 100,         -- Shared Party Gold
-    reputation_score INTEGER DEFAULT 0      -- Reputation Score (-5 to +5)
+    party_id TEXT PRIMARY KEY,
+    party_name TEXT,
+    party_gold INTEGER DEFAULT 100,
+    reputation_score INTEGER DEFAULT 0
 );
 
--- Players Table
-CREATE TABLE players (
-    player_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    party_id TEXT NOT NULL,                 -- Foreign Key to parties
-    player_name TEXT NOT NULL,              -- Player's Name (real or character)
-    character_name TEXT,                    -- Optional Character Name
-    role TEXT,                              -- Optional Role (Wizard, Rogue etc.)
-    passcode TEXT,                          -- Used for Login
-    phone_number TEXT,                       -- Used for SMS. Should be unique to player. Essential for communication.
-    player_type TEXT,                        -- Used to distinguish between Admin, DM and regular players
-    UNIQUE(party_id, player_name),          -- Prevent duplicates within a party
-    FOREIGN KEY(party_id) REFERENCES parties(party_id)
+-- PARTY OWNERS
+CREATE TABLE party_owners (
+    party_id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY(party_id) REFERENCES parties(party_id),
+    FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
 
--- Items Table (Shop Inventory)
+-- PARTY MEMBERSHIP
+CREATE TABLE party_membership (
+    party_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (party_id, user_id),
+    FOREIGN KEY(party_id) REFERENCES parties(party_id),
+    FOREIGN KEY(user_id) REFERENCES users(user_id)
+);
+
+-- CHARACTERS TABLE
+CREATE TABLE characters (
+    character_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    party_id TEXT NOT NULL,
+    player_name TEXT NOT NULL,
+    character_name TEXT,
+    role TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(party_id) REFERENCES parties(party_id),
+    UNIQUE(party_id, player_name)
+);
+
+-- ITEMS TABLE
 CREATE TABLE items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_name TEXT NOT NULL,                -- Item Name
-    description TEXT,                       -- Item Description
-    base_price INTEGER NOT NULL,            -- Base Price in Gold
+    item_name TEXT NOT NULL,
+    description TEXT,
+    base_price INTEGER NOT NULL,
     rarity TEXT CHECK(rarity IN ('Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary'))
 );
 
--- Transaction Ledger Table (History of Buys/Sells)
+-- TRANSACTION LEDGER
 CREATE TABLE transaction_ledger (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    party_id TEXT NOT NULL,                 -- Party who transacted
-    player_id INTEGER,                      -- Player involved (if applicable)
+    party_id TEXT NOT NULL,
+    character_id INTEGER,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     action TEXT NOT NULL CHECK(action IN ('BUY', 'SELL', 'HAGGLE', 'ADJUST', 'DEPOSIT', 'WITHDRAW')),
-    item_name TEXT,                         -- Item bought or sold
-    amount INTEGER,                         -- Gold gained (+) or lost (-)
-    balance_after INTEGER,                  -- Party Gold after transaction
-    details TEXT,                           -- Notes / Flavour / Insult
+    item_name TEXT,
+    amount INTEGER,
+    balance_after INTEGER,
+    details TEXT,
     FOREIGN KEY(party_id) REFERENCES parties(party_id),
-    FOREIGN KEY(player_id) REFERENCES players(player_id)
+    FOREIGN KEY(character_id) REFERENCES characters(character_id)
 );
 
--- Reputation Events Table (Track Changes)
+-- REPUTATION EVENTS
 CREATE TABLE reputation_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     party_id TEXT NOT NULL,
-    event_description TEXT,                 -- What happened
-    change INTEGER,                         -- Reputation Change (+/-)
+    event_description TEXT,
+    change INTEGER,
     event_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(party_id) REFERENCES parties(party_id)
 );
 
-CREATE TABLE IF NOT EXISTS shops (
+-- SHOPS TABLE
+CREATE TABLE shops (
     shop_id INTEGER PRIMARY KEY AUTOINCREMENT,
     shop_name TEXT NOT NULL,
     agent_name TEXT NOT NULL,
     location TEXT
 );
 
-CREATE TABLE IF NOT EXISTS shop_visits (
+-- SHOP VISITS
+CREATE TABLE shop_visits (
     party_id TEXT NOT NULL,
     shop_id INTEGER NOT NULL,
     visit_count INTEGER NOT NULL DEFAULT 1,
-    PRIMARY KEY (party_id, shop_id)
+    PRIMARY KEY (party_id, shop_id),
+    FOREIGN KEY(party_id) REFERENCES parties(party_id),
+    FOREIGN KEY(shop_id) REFERENCES shops(shop_id)
 );
 
-CREATE TABLE player_sessions (
-    player_id TEXT PRIMARY KEY,
+-- CHARACTER SESSION STATE
+CREATE TABLE character_sessions (
+    character_id INTEGER PRIMARY KEY,
     current_state TEXT,
     pending_action TEXT,
     pending_item TEXT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(character_id) REFERENCES characters(character_id)
 );
 
-CREATE TABLE IF NOT EXISTS session_state_log (
+-- SESSION STATE LOG
+CREATE TABLE session_state_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id TEXT NOT NULL,
+    character_id INTEGER NOT NULL,
     state TEXT NOT NULL,
     pending_action TEXT,
     pending_item TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(character_id) REFERENCES characters(character_id)
+);
+
+-- USER SHOP ACCESS TABLE
+CREATE TABLE user_shop_access (
+    user_id INTEGER NOT NULL,
+    shop_id INTEGER NOT NULL,
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, shop_id),
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(shop_id) REFERENCES shops(shop_id)
 );

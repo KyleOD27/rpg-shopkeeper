@@ -5,24 +5,22 @@ import os
 import openai
 from dotenv import load_dotenv
 
+from app.db import execute_db, query_db
 from app.models.parties import get_party_by_id, get_all_parties, add_new_party
-from app.models.players import (
-    get_player_id_by_name,
-    get_player_by_id,
-    get_player_name_by_id,
-    validate_login_credentials,
-    add_player_to_party
+from app.models.characters import (
+    get_character_by_id,
+    add_character_to_party
 )
 from app.models.visits import get_visit_count, increment_visit_count
-from app.models.shops import get_all_shops, get_shop_names
+from app.models.shops import get_all_shops
 from app.system_agent import choose_shop_via_gpt
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
-from config import DEBUG_MODE, SHOP_NAME, AUTO_LOGIN_NAME, AUTO_LOGIN_PIN
+from config import DEBUG_MODE, SHOP_NAME
+from app.auth.user_login import get_user_by_phone, normalise_for_storage, register_user, create_character_for_user
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
 
 def register_new_party():
     print("\n=== New Party Registration ===")
@@ -34,75 +32,75 @@ def register_new_party():
         print("[ERROR] Party registration failed.")
         return None
 
-
-def login():
-    print("=== Welcome to RPG Shopkeeper ===")
-
-    # Config override path
-    if AUTO_LOGIN_NAME and AUTO_LOGIN_PIN:
-        print("[DEBUG] Attempting auto-login via config...")
-        result = validate_login_credentials(AUTO_LOGIN_NAME, AUTO_LOGIN_PIN)
-        print(f"[DEBUG] Validating login: name='{AUTO_LOGIN_NAME}', passcode='{AUTO_LOGIN_PIN}' => result: {result}")
-
-        if isinstance(result, int):
-            print(f"[INFO] Auto-login successful as '{AUTO_LOGIN_NAME}'\n")
-            return result
-        else:
-            print("[WARN] Auto-login failed, falling back to manual login.\n")
-
-    # Manual login + registration loop
+def manual_login_or_register():
     for _ in range(3):
-        entered_id = input("User ID: ").strip()
-        entered_pin = input("PIN: ").strip()
-        print(f"[DEBUG] Entered ID: '{entered_id}', PIN: '{entered_pin}'")
+        raw_phone = input("Phone Number (+44...): ").strip()
+        user = get_user_by_phone(raw_phone)
 
-        result = validate_login_credentials(entered_id, entered_pin)
-        print(f"[DEBUG] Validating login: name='{entered_id}', passcode='{entered_pin}' => result: {result}")
+        if user:
+            print("✅ Login successful!\n")
+            return user["user_id"]
 
-        if isinstance(result, int):
-            print("Login successful!\n")
-            return result
+        print("🚫 No user found for that phone number.")
+        choice = input("Would you like to register as a new user? (yes/no): ").strip().lower()
+        if choice not in ["yes", "y"]:
+            print("Try again...\n")
+            continue
 
-        print("User not found or incorrect PIN.")
-        choice = input("Would you like to register as a new player? (yes/no): ").strip().lower()
-        if choice in ["yes", "y"]:
-            print("1. Join Existing Party")
-            print("2. Register New Party")
-            party_choice = input("Choose an option (1/2): ").strip()
+        print("1. Join Existing Party")
+        print("2. Register New Party")
+        party_choice = input("Choose an option (1/2): ").strip()
 
-            if party_choice == "1":
-                parties = get_all_parties()
-                print("\nAvailable Parties:")
-                for i, party in enumerate(parties, 1):
-                    print(f"{i}. {party['party_name']} (ID: {party['party_id']})")
-                selection = int(input("Choose a party by number: ").strip()) - 1
-                selected_party = parties[selection]
-                party_id = selected_party["party_id"]
+        if party_choice == "1":
+            parties = get_all_parties()
+            print("\nAvailable Parties:")
+            for i, party in enumerate(parties, 1):
+                print(f"{i}. {party['party_name']} (ID: {party['party_id']})")
+            selection = int(input("Choose a party by number: ").strip()) - 1
+            party_id = parties[selection]["party_id"]
 
-            elif party_choice == "2":
-                party_id = register_new_party()
-                if not party_id:
-                    continue
-            else:
-                print("Invalid option. Try again.")
+        elif party_choice == "2":
+            party_id = register_new_party()
+            if not party_id:
                 continue
+        else:
+            print("Invalid option. Try again.")
+            continue
 
-            character_name = input("Enter your character name: ").strip()
-            role = input("Choose a role (e.g. Wizard, Rogue): ").strip()
-            add_player_to_party(party_id, entered_id, character_name, role, entered_pin)
-            player_id_row = get_player_id_by_name(entered_id)
-            if isinstance(player_id_row, int):
-                print(f"[INFO] New player '{entered_id}' added successfully!")
-                return player_id_row
-            else:
-                print("[ERROR] Failed to retrieve new player ID.\n")
+        user_name = input("Enter your name: ").strip()
+        character_name = input("Enter your character name: ").strip()
+        role = input("Choose a role (e.g. Wizard, Rogue): ").strip()
 
-        print("Try again...\n")
+        user = register_user(raw_phone, user_name)
+        execute_db(
+            "INSERT INTO party_membership (party_id, user_id) VALUES (?, ?)",
+            (party_id, user["user_id"])
+        )
+        create_character_for_user(raw_phone, user["user_id"], party_id, user_name, character_name, role)
+
+        print(f"[INFO] New user '{user_name}' and character '{character_name}' added successfully!\n")
+        return user["user_id"]
 
     print("Too many failed attempts. Exiting.")
     return None
 
+def choose_character(user_id):
+    characters = query_db("SELECT * FROM characters WHERE user_id = ?", (user_id,))
+    if not characters:
+        print("[ERROR] No characters found for this user.")
+        return None
 
+    if len(characters) == 1:
+        character = characters[0]
+        print(f"[INFO] Auto-selected character: {character['character_name']} ({character['role']})")
+    else:
+        print("\nAvailable Characters:")
+        for i, c in enumerate(characters, 1):
+            print(f"{i}. {c['character_name']} the {c['role']} (Player name: {c['player_name']})")
+        choice = int(input("Select a character by number: ").strip()) - 1
+        character = characters[choice]
+
+    return character
 
 def choose_shop():
     shop_list = get_all_shops()
@@ -141,18 +139,18 @@ def choose_shop():
 
     return selected_shop["shop_id"], selected_shop["shop_name"], agent_instance
 
-
-
-
 def main():
-    player_id = login()
-    if not player_id:
+    user_id = manual_login_or_register()
+    if not user_id:
         return
 
-    player = get_player_by_id(player_id)
-    player_row = get_player_name_by_id(player_id)
-    player_name = player_row["player_name"] if player_row else "Adventurer"
-    party_id = player["party_id"]
+    character = choose_character(user_id)
+    if not character:
+        return
+
+    character_id = character["character_id"]
+    player_name = character["player_name"]
+    party_id = character["party_id"]
 
     result = choose_shop()
     if result is None:
@@ -171,8 +169,8 @@ def main():
     greeting = agent.shopkeeper_greeting(party["party_name"], visit_count, player_name)
     print(greeting)
 
-    convo = Conversation(player_id)
-    service = ConversationService(convo, agent, party_id, player_id, player_name, party)
+    convo = Conversation(character_id)
+    service = ConversationService(convo, agent, party_id, character_id, player_name, party)
 
     while True:
         player_input = input(">> ").strip()
@@ -184,7 +182,6 @@ def main():
         response = service.handle(player_input)
         convo.debug("AFTER HANDLE")
         print(response)
-
 
 if __name__ == '__main__':
     main()

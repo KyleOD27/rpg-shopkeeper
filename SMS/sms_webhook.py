@@ -1,3 +1,5 @@
+# sms_webhook.py
+
 from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
@@ -73,6 +75,5 @@ def start_sms_server():
         app.logger.info(f"🔗 Ensure Twilio webhook points to: {NGROK_URL}/sms")
         send_startup_sms()
 
-    app.logger.info(f"🛡️ Starting Flask server on port {port}")
+    app.logger.info(f"🚡 Starting Flask server on port {port}")
     app.run(port=port, debug=True, host="0.0.0.0")
-

@@ -1,5 +1,5 @@
 from app.models.parties import create_party, add_player_to_party, get_party_by_id
-from app.models.players import get_all_players_in_party
+from app.models.characters import get_all_players_in_party
 
 party_id = 'group_002'
 

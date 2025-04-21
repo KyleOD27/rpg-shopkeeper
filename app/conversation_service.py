@@ -5,7 +5,7 @@ from app.interpreter import interpret_input
 from app.models.items import get_item_by_name
 from app.dm_commands import handle_dm_command
 from app.models.ledger import get_last_transactions
-from app.models.players import get_player_by_id
+from app.models.characters import get_character_by_id
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler

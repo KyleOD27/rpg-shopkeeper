@@ -71,9 +71,9 @@ class BuyHandler:
 
         record_transaction(
             party_id=self.party_id,
-            player_id=self.player_id,
-            item_name=name,
-            amount=cost,
+            character_id=self.player_id,  # ✅ player_id is actually character_id now
+            item_name=item["item_name"],
+            amount=-item["base_price"],
             action="BUY",
             balance_after=self.party_data["party_gold"],
             details="Purchased item"
