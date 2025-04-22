@@ -7,20 +7,16 @@ from dotenv import load_dotenv
 
 from app.db import execute_db, query_db
 from app.models.parties import get_party_by_id, get_all_parties, add_new_party
-from app.models.characters import (
-    get_character_by_id,
-    add_character_to_party
-)
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops
-from app.system_agent import choose_shop_via_gpt
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
-from config import DEBUG_MODE, SHOP_NAME
-from app.auth.user_login import get_user_by_phone, normalise_for_storage, register_user, create_character_for_user
+from app.config import RuntimeFlags, SHOP_NAME
+from app.auth.user_login import get_user_by_phone, register_user, create_character_for_user
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
 
 def register_new_party():
     print("\n=== New Party Registration ===")
@@ -31,6 +27,7 @@ def register_new_party():
     else:
         print("[ERROR] Party registration failed.")
         return None
+
 
 def manual_login_or_register():
     for _ in range(3):
@@ -84,6 +81,7 @@ def manual_login_or_register():
     print("Too many failed attempts. Exiting.")
     return None
 
+
 def choose_character(user_id):
     characters = query_db("SELECT * FROM characters WHERE user_id = ?", (user_id,))
     if not characters:
@@ -102,11 +100,13 @@ def choose_character(user_id):
 
     return character
 
+
 def choose_shop():
     shop_list = get_all_shops()
 
     if SHOP_NAME:
-        print(f"[DEBUG] Attempting auto-shop entry from config: '{SHOP_NAME}'")
+        if RuntimeFlags.DEBUG_MODE:
+            print(f"[DEBUG] Attempting auto-shop entry from config: '{SHOP_NAME}'")
         matching = [shop for shop in shop_list if shop["shop_name"].lower() == SHOP_NAME.lower()]
         if matching:
             selected_shop = matching[0]
@@ -139,6 +139,7 @@ def choose_shop():
 
     return selected_shop["shop_id"], selected_shop["shop_name"], agent_instance
 
+
 def main():
     user_id = manual_login_or_register()
     if not user_id:
@@ -162,7 +163,7 @@ def main():
     visit_count = get_visit_count(party_id, shop_id)
     party = get_party_by_id(party_id)
 
-    print(f"=== Welcome to {agent.name}'s Shop ===")
+    print(f"\n=== Welcome to {agent.name}'s Shop ===")
     print(f"Party: {party['party_name']}")
     print(f"Gold: {party['party_gold']}\n")
 
@@ -182,6 +183,7 @@ def main():
         response = service.handle(player_input)
         convo.debug("AFTER HANDLE")
         print(response)
+
 
 if __name__ == '__main__':
     main()

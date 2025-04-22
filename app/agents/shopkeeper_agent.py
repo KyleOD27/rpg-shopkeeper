@@ -14,13 +14,13 @@ class BaseShopkeeper:
     def shopkeeper_fallback_prompt(self) -> str:
         return (
             "This is what I can do for you:\n"
-            "1. BUY – I have items available to purchase\n"
-            "2. SELL – Sell me unwanted goods\n"
-            "3. DEPOSIT - To buy here, you must top up your party balance by depositing gold\n"
-            "4. WITHDRAW – You can withdraw gold at any time, just ask\n"
-            "5. SEE BALANCE – I keep a note of your balance, ask any time\n"
-            "6. LEDGER – If you want to see our trade history, ask away\n"
-            "7. VIEW ITEMS – Always happy to show you what we have in stock\n"
+            "BUY – I have items available to purchase\n"
+            "SELL – Sell me unwanted goods\n"
+            "DEPOSIT - Top up your party balance\n"
+            "WITHDRAW – Take back deposited gold\n"
+            "BALANCE – See your party balance\n"
+            "LEDGER – See our trade history\n"
+            "ITEMS – See what we have in stock\n"
         )
 
         return "\n".join(lines)

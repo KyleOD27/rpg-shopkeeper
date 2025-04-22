@@ -7,6 +7,7 @@ import logging
 import os
 from dotenv import load_dotenv
 from SMS.sms_router import handle_sms_command
+from app.config import RuntimeFlags  # ✅ Import runtime debug flag
 
 # 🌱 Load environment variables
 load_dotenv()
@@ -21,8 +22,9 @@ NGROK_URL = os.getenv("NGROK_URL")
 app = Flask(__name__)
 client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
+# 🐛 Use DEBUG log level if RuntimeFlags.DEBUG_MODE is on
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.DEBUG if RuntimeFlags.DEBUG_MODE else logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()]
 )
@@ -49,6 +51,7 @@ def sms():
         app.logger.error("❌ Error in /sms route", exc_info=True)
         return Response("<Response><Message>Oops! Something broke.</Message></Response>", mimetype="application/xml")
 
+
 def send_startup_sms():
     try:
         params = {
@@ -69,6 +72,7 @@ def send_startup_sms():
     except Exception as e:
         app.logger.warning(f"⚠️ Could not send startup SMS: {e}")
 
+
 def start_sms_server():
     port = 5000
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
@@ -76,4 +80,4 @@ def start_sms_server():
         send_startup_sms()
 
     app.logger.info(f"🚡 Starting Flask server on port {port}")
-    app.run(port=port, debug=True, host="0.0.0.0")
+    app.run(port=port, debug=RuntimeFlags.DEBUG_MODE, host="0.0.0.0")

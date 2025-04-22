@@ -2,7 +2,7 @@
 
 from enum import Enum, auto
 from app.db import get_convo_state, update_convo_state, log_convo_state
-from config import DEBUG_MODE
+from app.config import RuntimeFlags  # ✅ Use config object instead of raw DEBUG_MODE
 
 
 class PlayerIntent(Enum):
@@ -19,7 +19,7 @@ class PlayerIntent(Enum):
     CANCEL = auto()
     SMALL_TALK = auto()
     UNKNOWN = auto()
-    BUY_NEEDS_ITEM = auto()  # “Buy” with no item mentioned
+    BUY_NEEDS_ITEM = auto()
     BUY_CONFIRM = auto()
     BUY_CANCEL = auto()
     SELL_CONFIRM = auto()
@@ -112,7 +112,7 @@ class Conversation:
         )
 
     def debug(self, note=None):
-        if not DEBUG_MODE:
+        if not RuntimeFlags.DEBUG_MODE:
             return
         print("[DEBUG] --- Conversation Debug Info ---")
         if note:

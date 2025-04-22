@@ -4,7 +4,7 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
-from config import DEBUG_MODE
+from app.config import DEBUG_MODE
 
 
 load_dotenv()

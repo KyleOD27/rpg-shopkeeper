@@ -3,13 +3,14 @@
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input
 from app.models.items import get_item_by_name
-from app.dm_commands import handle_dm_command
+from commands.dm_commands import handle_dm_command
 from app.models.ledger import get_last_transactions
-from app.models.characters import get_character_by_id
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
 from app.shop_handlers.withdraw_handler import WithdrawHandler
+from commands.admin_commands import handle_admin_command
+
 
 
 class ConversationService:
@@ -41,6 +42,9 @@ class ConversationService:
         if player_input.strip().lower().startswith("dm "):
             return handle_dm_command(self.party_id, self.player_id, player_input, party_data=self.party_data)
 
+        if player_input.strip().lower().startswith("admin "):
+            return handle_admin_command(player_input)
+
         self.convo.set_input(player_input)
         intent_data = interpret_input(player_input, self.convo)
         intent = intent_data.get("intent")
@@ -53,10 +57,19 @@ class ConversationService:
         if intent == PlayerIntent.VIEW_LEDGER:
             return self.handle_view_ledger(player_input)
 
-        if intent in {PlayerIntent.CONFIRM, PlayerIntent.CANCEL} and self.convo.state != ConversationState.AWAITING_CONFIRMATION:
-            self.convo.debug(f"Ignoring {intent} — not in confirmation state.")
-            self.convo.set_intent(PlayerIntent.UNKNOWN)
-            intent = PlayerIntent.UNKNOWN
+        if intent in {PlayerIntent.CONFIRM,
+                      PlayerIntent.CANCEL} and self.convo.state != ConversationState.AWAITING_CONFIRMATION:
+            # Attempt graceful recovery: If user reaffirms or changes mind, re-push them into confirmation state
+            if self.convo.player_intent == PlayerIntent.BUY_ITEM and intent == PlayerIntent.CONFIRM:
+                self.convo.debug(f"User reconfirmed purchase outside of confirmation state — rerouting to BUY_CONFIRM.")
+                intent = PlayerIntent.BUY_CONFIRM
+            elif self.convo.player_intent == PlayerIntent.SELL_ITEM and intent == PlayerIntent.CONFIRM:
+                self.convo.debug(f"User reconfirmed sale outside of confirmation state — rerouting to SELL_CONFIRM.")
+                intent = PlayerIntent.SELL_CONFIRM
+            else:
+                self.convo.debug(f"Ignoring {intent} — not in confirmation state.")
+                self.convo.set_intent(PlayerIntent.UNKNOWN)
+                intent = PlayerIntent.UNKNOWN
 
         handler = self.intent_router.get((self.convo.state, intent))
         if handler:

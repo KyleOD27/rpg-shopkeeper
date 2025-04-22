@@ -129,3 +129,11 @@ CREATE TABLE user_shop_access (
     FOREIGN KEY(user_id) REFERENCES users(user_id),
     FOREIGN KEY(shop_id) REFERENCES shops(shop_id)
 );
+
+CREATE TABLE system_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    action TEXT,
+    details TEXT
+);
+

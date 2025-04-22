@@ -5,8 +5,8 @@ from app.conversation_service import ConversationService
 from app.models.parties import get_party_by_id
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops
-from config import SHOP_NAME
-from app.auth.user_login import get_user_by_phone, normalise_for_storage
+from app.config import SHOP_NAME
+from app.auth.user_login import get_user_by_phone
 
 # === In-memory session store ===
 conversations = {}

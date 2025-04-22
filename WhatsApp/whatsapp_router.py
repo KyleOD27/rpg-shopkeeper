@@ -2,10 +2,9 @@ import importlib
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
 from app.models.characters import get_character_by_id, get_character_id_by_player_name
-from app.models.parties import get_party_by_id
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops
-from config import SHOP_NAME, AUTO_LOGIN_NAME
+from app.config import SHOP_NAME, AUTO_LOGIN_NAME
 
 # In-memory cache of sessions
 conversations = {}

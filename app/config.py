@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Flags
-DEBUG_MODE = True
+class RuntimeFlags:
+    DEBUG_MODE = False
+
 TRACE_MODE = False
 
 # Shop Settings
