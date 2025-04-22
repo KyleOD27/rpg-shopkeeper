@@ -5,6 +5,8 @@ from app.models.items import get_item_by_name
 from app.models.parties import update_party_gold
 from app.models.ledger import record_transaction
 from app.conversation import ConversationState, PlayerIntent
+from app.shop_handlers.haggle_handler import HaggleHandler
+
 
 
 class BuyHandler:
@@ -35,6 +37,16 @@ class BuyHandler:
         item = self.get_dict_item(item_name)
         return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data["party_gold"])
 
+    def handle_haggle(self, _):
+        item_name = self.convo.pending_item
+        item = self.get_dict_item(item_name)
+
+        if not item:
+            return self.agent.say("Sorry, I’m not sure what you’re trying to haggle for.")
+
+        haggle = HaggleHandler(self.agent, self.convo, self.party_data)
+        return haggle.attempt_haggle(item)
+
     def handle_confirm_purchase(self, _):
         item_name = self.convo.pending_item
         item = self.get_dict_item(item_name)
@@ -60,26 +72,37 @@ class BuyHandler:
         if not item:
             return self.agent.say("Something went wrong — I can't find that item in stock.")
 
-        cost = item.get("base_price", 0)
+        # Determine cost with discount if applicable
+        discount_price = self.convo.discount
+        base_price = item.get("base_price", 0)
+        cost = discount_price if discount_price is not None else base_price
+
         name = item.get("name") or item.get("title") or item_name
 
         if self.party_data["party_gold"] < cost:
             return self.agent.shopkeeper_buy_failure_prompt(item, "Not enough gold.", self.party_data["party_gold"])
 
+        # Deduct gold
         self.party_data["party_gold"] -= cost
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
+        # Record transaction with actual cost
+        discount_note = f" (discounted from {base_price}g)" if discount_price is not None else ""
         record_transaction(
             party_id=self.party_id,
-            character_id=self.player_id,  # ✅ player_id is actually character_id now
+            character_id=self.player_id,
             item_name=item["item_name"],
-            amount=-item["base_price"],
+            amount=-cost,
             action="BUY",
             balance_after=self.party_data["party_gold"],
-            details="Purchased item"
+            details=f"Purchased item{discount_note}"
         )
 
+        # Reset conversation state
         self.convo.reset_state()
         self.convo.set_pending_item(None)
+        self.convo.set_discount(None)
 
-        return self.agent.shopkeeper_buy_success_prompt(item, "Purchase complete!")
+        return self.agent.shopkeeper_buy_success_prompt(item, cost)
+
+

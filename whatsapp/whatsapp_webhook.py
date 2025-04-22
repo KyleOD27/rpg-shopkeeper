@@ -1,6 +1,6 @@
 from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
-from WhatsApp.whatsapp_router import handle_whatsapp_command
+from whatsapp.whatsapp_router import handle_whatsapp_command
 import logging
 import os
 from dotenv import load_dotenv

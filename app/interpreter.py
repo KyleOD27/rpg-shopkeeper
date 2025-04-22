@@ -19,7 +19,7 @@ INTENT_KEYWORDS = {
     PlayerIntent.WITHDRAW_GOLD: ["withdraw", "take gold", "collect"],
     PlayerIntent.CHECK_BALANCE: ["balance", "gold amount", "how much gold", "check funds"],
     PlayerIntent.VIEW_LEDGER: ["ledger", "transactions", "history"],
-    PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal"],
+    PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal", "cheaper", "too much"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
     PlayerIntent.GREETING: ["hello", "hi", "greetings", "hallo", "hey", "what up"],
 }
@@ -80,6 +80,19 @@ def detect_sell_intent(player_input: str):
         return PlayerIntent.SELL_NEEDS_ITEM, None
     return PlayerIntent.SELL_ITEM, item_name
 
+def detect_haggle_intent(player_input: str, convo=None):
+    item_name, _ = find_item_in_input(player_input)
+    if not item_name and convo and convo.pending_item:
+        item_name = convo.pending_item
+        print(f"[DEBUG] Using pending item '{item_name}' for haggling.")
+
+    if not item_name:
+        print(f"[DEBUG] HAGGLE_NEEDS_ITEM: No item identified from input '{player_input}'")
+        return PlayerIntent.HAGGLE, None
+
+    return PlayerIntent.HAGGLE, item_name
+
+
 def detect_deposit_intent(player_input: str):
     lowered = normalize_input(player_input)
     match = re.search(r'\b\d+\b', lowered)
@@ -112,6 +125,8 @@ def interpret_input(player_input: str, convo=None):
             return {"intent": PlayerIntent.SELL_CONFIRM}
         elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
             return {"intent": PlayerIntent.BUY_CONFIRM}
+        elif convo and convo.player_intent == PlayerIntent.HAGGLE:
+            return {"intent": PlayerIntent.HAGGLE_CONFIRM}
         return {"intent": PlayerIntent.CONFIRM}
 
     # ✅ 2. Cancellation
@@ -120,6 +135,8 @@ def interpret_input(player_input: str, convo=None):
             return {"intent": PlayerIntent.SELL_CANCEL}
         elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
             return {"intent": PlayerIntent.BUY_CANCEL}
+        elif convo and convo.player_intent == PlayerIntent.HAGGLE:
+            return {"intent": PlayerIntent.HAGGLE_CANCEL}
         return {"intent": PlayerIntent.CANCEL}
 
     # ✅ 3. Gratitude / Small Talk
@@ -137,13 +154,17 @@ def interpret_input(player_input: str, convo=None):
             elif intent == PlayerIntent.SELL_ITEM:
                 intent_type, item = detect_sell_intent(player_input)
                 return {"intent": intent_type, "item": item}
+            elif intent == PlayerIntent.HAGGLE:
+                intent_type, item = detect_haggle_intent(player_input, convo)
+                return {"intent": intent_type, "item": item}
             elif intent == PlayerIntent.DEPOSIT_GOLD:
                 intent_type, amount = detect_deposit_intent(player_input)
                 return {"intent": intent_type, "amount": amount}
             elif intent == PlayerIntent.WITHDRAW_GOLD:
                 intent_type, amount = detect_withdraw_intent(player_input)
                 return {"intent": intent_type, "amount": amount}
-            return {"intent": intent}
+            else:
+                return {"intent": intent}
 
     # ✅ 5. Item Detection without action word
     item_name, _ = find_item_in_input(player_input)
@@ -156,6 +177,7 @@ def interpret_input(player_input: str, convo=None):
         if match:
             amount = int(match.group())
             return {"intent": PlayerIntent.DEPOSIT_CONFIRM, "amount": amount}
+
     # ✅ 7. If awaiting withdraw amount and numeric input
     if convo and convo.player_intent == PlayerIntent.WITHDRAW_NEEDS_AMOUNT:
         match = re.search(r'\d+', lowered)
@@ -165,7 +187,11 @@ def interpret_input(player_input: str, convo=None):
 
     # ✅ 8. GPT fallback
     gpt_result = check_confirmation_via_gpt(player_input, convo)
-    if gpt_result in [PlayerIntent.BUY_CONFIRM, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CONFIRM, PlayerIntent.SELL_CANCEL]:
+    if gpt_result in [
+        PlayerIntent.BUY_CONFIRM, PlayerIntent.BUY_CANCEL,
+        PlayerIntent.SELL_CONFIRM, PlayerIntent.SELL_CANCEL,
+        PlayerIntent.HAGGLE_CONFIRM, PlayerIntent.HAGGLE_CANCEL
+    ]:
         return {"intent": gpt_result}
 
     return {"intent": PlayerIntent.UNKNOWN}

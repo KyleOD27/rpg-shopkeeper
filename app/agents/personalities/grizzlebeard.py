@@ -1,6 +1,5 @@
 # app/agents/grizzlebeard.py
 
-from app.agents.base_agent import BaseAgent
 from app.agents.shopkeeper_agent import BaseShopkeeper
 
 class Grizzlebeard(BaseShopkeeper):

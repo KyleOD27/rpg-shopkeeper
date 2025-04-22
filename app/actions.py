@@ -23,6 +23,11 @@ SHOP_ACTIONS = [
         "label": "Withdraw Gold",
         "description": "Take gold out of your party stash."
     },
+    {
+        "intent": PlayerIntent.HAGGLE,
+        "label": "Haggle",
+        "description": "Try to negotiate a better price."
+    },
 ]
 
 QUERY_ACTIONS = [
@@ -44,11 +49,6 @@ QUERY_ACTIONS = [
 ]
 
 CONVERSE_ACTIONS = [
-    {
-        "intent": PlayerIntent.HAGGLE,
-        "label": "Haggle",
-        "description": "Try to negotiate a better price."
-    },
 {
         "intent": PlayerIntent.BARTER,
         "label": "Haggle",

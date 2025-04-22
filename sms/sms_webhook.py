@@ -6,7 +6,7 @@ from twilio.rest import Client
 import logging
 import os
 from dotenv import load_dotenv
-from SMS.sms_router import handle_sms_command
+from sms.sms_router import handle_sms_command
 from app.config import RuntimeFlags  # ✅ Import runtime debug flag
 
 # 🌱 Load environment variables

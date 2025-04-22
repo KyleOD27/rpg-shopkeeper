@@ -124,6 +124,11 @@ class ConversationService:
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CONFIRM): self.buy_handler.handle_confirm_purchase,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CANCEL): self.buy_handler.handle_cancel_purchase,
 
+            # Haggle Flow
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE): self.buy_handler.handle_haggle,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE_CONFIRM): self.buy_handler.handle_confirm_purchase,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE_CANCEL): self.buy_handler.handle_cancel_purchase,
+
             # Sell Flow
             (ConversationState.INTRODUCTION, PlayerIntent.SELL_ITEM): self.sell_handler.process_sell_item_flow,
             (ConversationState.INTRODUCTION, PlayerIntent.SELL_NEEDS_ITEM): self.sell_handler.process_sell_item_flow,

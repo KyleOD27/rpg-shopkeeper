@@ -10,13 +10,13 @@ def home():
 
 @app.route("/sms", methods=["POST"])
 def sms_reply():
-    print("📡 Incoming SMS webhook hit!", file=sys.stderr)
+    print("📡 Incoming sms webhook hit!", file=sys.stderr)
     print(f"Form data: {request.form}", file=sys.stderr)
 
     incoming_msg = request.form.get("Body")
     from_number = request.form.get("From")
 
-    print(f"📩 Received SMS from {from_number}: {incoming_msg}", file=sys.stderr)
+    print(f"📩 Received sms from {from_number}: {incoming_msg}", file=sys.stderr)
 
     # ✍️ Optional: Send an auto-response
     resp = MessagingResponse()

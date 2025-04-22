@@ -54,12 +54,17 @@ class BaseShopkeeper:
             f"Say 'yes' to proceed."
         )
 
-    def shopkeeper_buy_success_prompt(self, item, result_message) -> str:
+    def shopkeeper_buy_success_prompt(self, item, price_paid) -> str:
         name = item.get("item_name") if isinstance(item, dict) else str(item)
-        price = item.get("base_price") if isinstance(item, dict) else "???"
+        base_price = item.get("base_price", price_paid)
+
+        note = ""
+        if price_paid < base_price:
+            note = f" (discounted from {base_price}g!)"
+
         return (
-            f"You have just purchased a {name} for {price} gold. "
-            f"I'll add it to the list."
+            f"You have just purchased a {name} for {price_paid} gold{note}. "
+            f"I'll add it to the ledger!"
         )
 
     def shopkeeper_buy_failure_prompt(self, item, result_message, player_gold) -> str:

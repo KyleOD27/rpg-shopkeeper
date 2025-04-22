@@ -14,7 +14,6 @@ class PlayerIntent(Enum):
     WITHDRAW_GOLD = auto()
     CHECK_BALANCE = auto()
     VIEW_LEDGER = auto()
-    HAGGLE = auto()
     CONFIRM = auto()
     CANCEL = auto()
     SMALL_TALK = auto()
@@ -34,6 +33,10 @@ class PlayerIntent(Enum):
     BARTER_CANCEL = auto()
     BARTER_NEEDS_ITEM = auto()
     GREETING = auto()
+    HAGGLE = auto()
+    HAGGLE_NEEDS_AMOUNT = auto()
+    HAGGLE_CONFIRM = auto()
+    HAGGLE_CANCEL = auto()
 
 
 class ConversationState(Enum):
@@ -88,6 +91,16 @@ class Conversation:
     def clear_intent(self):
         self.player_intent = None
         self.pending_action = None
+
+    def set_discount(self, amount):
+        if not hasattr(self, "metadata"):
+            self.metadata = {}
+        self.metadata["discount"] = amount
+
+    @property
+    def discount(self):
+        return getattr(self, "metadata", {}).get("discount", None)
+
 
     def reset_state(self):
         self.state = ConversationState.INTRODUCTION
