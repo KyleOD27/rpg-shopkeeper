@@ -87,7 +87,11 @@ class BuyHandler:
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
         # Record transaction with actual cost
-        discount_note = f" (discounted from {base_price}g)" if discount_price is not None else ""
+        discount_note = (
+            f" (you saved {base_price - cost}g — discounted from {base_price}g)"
+            if discount_price is not None else ""
+        )
+
         record_transaction(
             party_id=self.party_id,
             character_id=self.player_id,

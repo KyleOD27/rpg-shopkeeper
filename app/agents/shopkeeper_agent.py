@@ -64,7 +64,7 @@ class BaseShopkeeper:
 
         return (
             f"You have just purchased a {name} for {price_paid} gold{note}. "
-            f"I'll add it to the ledger!"
+            f"I'll add it to the ledger."
         )
 
     def shopkeeper_buy_failure_prompt(self, item, result_message, player_gold) -> str:
@@ -164,6 +164,8 @@ class BaseShopkeeper:
             display_items += ", and more..."
         return f"Ah so you want to SELL something! Here's what I accept: {display_items}"
 
+    def shopkeeper_generic_say(self, text):
+        return text
 
 
 

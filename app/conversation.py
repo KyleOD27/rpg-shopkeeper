@@ -1,8 +1,7 @@
-# app/conversation.py
-
 from enum import Enum, auto
+from datetime import datetime, timedelta
 from app.db import get_convo_state, update_convo_state, log_convo_state
-from app.config import RuntimeFlags  # ✅ Use config object instead of raw DEBUG_MODE
+from app.config import RuntimeFlags
 
 
 class PlayerIntent(Enum):
@@ -55,7 +54,8 @@ class Conversation:
         self.pending_item = None
         self.latest_input = None
         self.player_intent = None
-        self.match_confirmed = False  # Used for confirmation flow
+        self.match_confirmed = False
+        self.metadata = {}
 
         saved = get_convo_state(self.character_id)
         if saved:
@@ -92,22 +92,66 @@ class Conversation:
         self.player_intent = None
         self.pending_action = None
 
-    def set_discount(self, amount):
-        if not hasattr(self, "metadata"):
-            self.metadata = {}
-        self.metadata["discount"] = amount
-
-    @property
-    def discount(self):
-        return getattr(self, "metadata", {}).get("discount", None)
-
-
     def reset_state(self):
         self.state = ConversationState.INTRODUCTION
         self.pending_action = None
         self.player_intent = None
         self.latest_input = None
         self.match_confirmed = False
+        self.save_state()
+
+    def set_discount(self, amount):
+        self.metadata["discount"] = amount
+
+    @property
+    def discount(self):
+        return self.metadata.get("discount", None)
+
+    def can_attempt_haggle(self):
+        now = datetime.utcnow()
+        history = self.metadata.get("haggle_history", {
+            "attempts": 0,
+            "success": False,
+            "last_reset": now.isoformat()
+        })
+
+        last_reset = datetime.fromisoformat(history["last_reset"])
+        if now - last_reset > timedelta(hours=24):
+            history = {
+                "attempts": 0,
+                "success": False,
+                "last_reset": now.isoformat()
+            }
+
+        if history["attempts"] >= 3:
+            return False, "You've used all 3 haggle attempts for today."
+
+        if history["success"]:
+            return False, "No can do, you have already successfully haggled today."
+
+        return True, None
+
+    def record_haggle_attempt(self, success: bool):
+        now = datetime.utcnow()
+        history = self.metadata.get("haggle_history", {
+            "attempts": 0,
+            "success": False,
+            "last_reset": now.isoformat()
+        })
+
+        last_reset = datetime.fromisoformat(history["last_reset"])
+        if now - last_reset > timedelta(hours=24):
+            history = {
+                "attempts": 0,
+                "success": False,
+                "last_reset": now.isoformat()
+            }
+
+        history["attempts"] += 1
+        if success:
+            history["success"] = True
+
+        self.metadata["haggle_history"] = history
         self.save_state()
 
     def save_state(self):
