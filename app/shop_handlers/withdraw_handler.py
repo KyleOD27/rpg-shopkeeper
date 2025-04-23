@@ -13,7 +13,8 @@ class WithdrawHandler:
         self.party_data = party_data
 
     def process_withdraw_gold_flow(self, player_input):
-        lowered = player_input.lower()
+        raw_text = player_input["text"] if isinstance(player_input, dict) else player_input
+        lowered = raw_text.lower()
         amount = self._extract_amount(lowered)
 
         if amount is None:
@@ -44,7 +45,8 @@ class WithdrawHandler:
         return self.agent.shopkeeper_withdraw_success_prompt(amount, self.party_data["party_gold"])
 
     def handle_confirm_withdraw(self, player_input):
-        match = re.search(r'\d+', player_input)
+        raw_text = player_input["text"] if isinstance(player_input, dict) else player_input
+        match = re.search(r'\d+', raw_text)
         if not match:
             return self.agent.shopkeeper_withdraw_gold_prompt()
 

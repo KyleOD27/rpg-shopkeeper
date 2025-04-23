@@ -36,6 +36,8 @@ class PlayerIntent(Enum):
     HAGGLE_NEEDS_AMOUNT = auto()
     HAGGLE_CONFIRM = auto()
     HAGGLE_CANCEL = auto()
+    NEXT = auto()
+    PREVIOUS = auto()
 
 
 class ConversationState(Enum):

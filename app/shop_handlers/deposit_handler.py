@@ -15,7 +15,8 @@ class DepositHandler:
         self.party_data = party_data
 
     def process_deposit_gold_flow(self, player_input):
-        lowered = player_input.lower()
+        text = player_input["text"] if isinstance(player_input, dict) else str(player_input)
+        lowered = text.lower()
         amount = self._extract_amount(lowered)
 
         if amount is None:
@@ -24,7 +25,6 @@ class DepositHandler:
             self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
             return self.agent.shopkeeper_deposit_gold_prompt()
 
-        # Perform the deposit
         party_gold = self.party_data.get("party_gold", 0)
         new_total = party_gold + amount
         self.party_data["party_gold"] = new_total
@@ -35,7 +35,7 @@ class DepositHandler:
             item_name=None,
             amount=amount,
             action="DEPOSIT",
-            balance_after=self.party_data["party_gold"],
+            balance_after=new_total,
             details=f"{self.player_name} deposited gold"
         )
 
@@ -50,13 +50,13 @@ class DepositHandler:
         return None
 
     def handle_confirm_deposit(self, player_input):
-        match = re.search(r'\d+', player_input)
+        text = player_input["text"] if isinstance(player_input, dict) else str(player_input)
+        match = re.search(r'\d+', text)
         if not match:
             return self.agent.shopkeeper_deposit_gold_prompt()
 
         amount = int(match.group())
 
-        # Update gold
         self.party_data["party_gold"] += amount
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
@@ -76,7 +76,8 @@ class DepositHandler:
         return self.agent.shopkeeper_deposit_success_prompt(amount, new_total)
 
     def handle_confirm_withdraw(self, player_input):
-        match = re.search(r'\d+', player_input)
+        text = player_input["text"] if isinstance(player_input, dict) else str(player_input)
+        match = re.search(r'\d+', text)
         if not match:
             return self.agent.shopkeeper_withdraw_gold_prompt()
 
@@ -86,11 +87,9 @@ class DepositHandler:
         if amount > current_gold:
             return self.agent.shopkeeper_withdraw_insufficient_funds_prompt(amount, current_gold)
 
-        # 💰 Deduct from balance
         self.party_data["party_gold"] -= amount
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
-        # 🧾 Record transaction
         record_transaction(
             party_id=self.party_id,
             character_id=self.character_id,

@@ -1,12 +1,11 @@
 # app/shop_handlers/buy_handler.py
 
-from app.interpreter import find_item_in_input, get_equipment_category_from_input
+from app.interpreter import find_item_in_input
 from app.models.items import get_item_by_name
 from app.models.parties import update_party_gold
 from app.models.ledger import record_transaction
 from app.conversation import ConversationState, PlayerIntent
 from app.shop_handlers.haggle_handler import HaggleHandler
-
 
 
 class BuyHandler:
@@ -23,39 +22,49 @@ class BuyHandler:
         return dict(get_item_by_name(name) or {})
 
     def process_buy_item_flow(self, player_input):
-        if isinstance(player_input, dict):
-            text = player_input.get("input", "") or self.convo.latest_input or ""
-        else:
-            text = player_input
+        # Unified input handling
+        raw_input = player_input.get("text", "") if isinstance(player_input, dict) else player_input
+        item_name = player_input.get("item") if isinstance(player_input, dict) else None
+        category = player_input.get("category") if isinstance(player_input, dict) else None
 
-        item_name, category = find_item_in_input(text, self.convo)
+        if not item_name and not category:
+            item_name, category = find_item_in_input(raw_input, self.convo)
 
+        # 🎯 Show items from category
         if category and not item_name:
-            return self.agent.shopkeeper_show_items_by_category(category)
+            self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
+            return self.agent.shopkeeper_show_items_by_category(category, page=1)
 
+        # 🛑 Still couldn't detect an item
         if not item_name:
             if self.convo.state == ConversationState.AWAITING_ACTION:
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 return self.agent.shopkeeper_buy_enquire_item()
             return self.agent.shopkeeper_clarify_item_prompt()
 
-        # Proceed with item confirmation
+        # ✅ Proceed with item confirmation
         self.convo.set_pending_item(item_name)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         item = self.get_dict_item(item_name)
         return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data["party_gold"])
 
-    def handle_haggle(self, _):
+    def handle_haggle(self, player_input):
         item_name = self.convo.pending_item
         item = self.get_dict_item(item_name)
+        price = item.get("base_price", None)
 
-        if not item:
-            return self.agent.say("Sorry, I’m not sure what you’re trying to haggle for.")
+        self.convo.debug(f"HAGGLE: state={self.convo.state}, pending_item={item_name}, base_price={price}, item={item}")
+
+        if not item or price is None:
+            return self.agent.say("There's nothing to haggle over just yet.")
+
+        if self.convo.state != ConversationState.AWAITING_CONFIRMATION:
+            return self.agent.say("Let’s decide what you’re buying first, then we can haggle!")
 
         haggle = HaggleHandler(self.agent, self.convo, self.party_data)
         return haggle.attempt_haggle(item)
 
-    def handle_confirm_purchase(self, _):
+    def handle_confirm_purchase(self, player_input):
         item_name = self.convo.pending_item
         item = self.get_dict_item(item_name)
 
@@ -64,7 +73,7 @@ class BuyHandler:
 
         return self.finalise_purchase()
 
-    def handle_cancel_purchase(self, _):
+    def handle_cancel_purchase(self, player_input):
         item_name = self.convo.pending_item
         item = self.get_dict_item(item_name)
 
@@ -116,5 +125,3 @@ class BuyHandler:
         self.convo.set_discount(None)
 
         return self.agent.shopkeeper_buy_success_prompt(item, cost)
-
-

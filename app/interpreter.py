@@ -18,9 +18,13 @@ INTENT_KEYWORDS = {
     PlayerIntent.WITHDRAW_GOLD: ["withdraw", "take gold", "collect"],
     PlayerIntent.CHECK_BALANCE: ["balance", "gold amount", "how much gold", "check funds"],
     PlayerIntent.VIEW_LEDGER: ["ledger", "transactions", "history"],
-    PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal", "cheaper", "too much"],
+    PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal", "cheaper", "too much", "discount"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
     PlayerIntent.GREETING: ["hello", "hi", "greetings", "hallo", "hey", "what up"],
+    PlayerIntent.NEXT: ["next", "more", "show more", "continue", "keep going"],
+    PlayerIntent.PREVIOUS: ["previous", "back", "go back", "last page"],
+
+
 }
 
 SMALL_TALK_KEYWORDS = ["goodbye", "farewell"]
@@ -31,25 +35,25 @@ GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "t
 def normalize_input(text: str):
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower().strip())
 
-def find_item_in_input(player_input: str, convo=None):
+def find_item_in_input(player_input, convo=None):
     items = get_all_items()
     item_names = [item['item_name'] for item in items]
     input_lower = normalize_input(player_input)
-    input_words = set(input_lower.split())
 
-    # ✅ First: check if the input matches a category
-    categories = get_all_equipment_categories()
-    for category in categories:
-        if category.lower() in input_lower:
-            return None, category
+    # Check if input contains all words in any item name
+    for name in item_names:
+        name_words = normalize_input(name).split()
+        if all(word in input_lower.split() for word in name_words):
+            return name, None
 
-    # 🔍 Word-wise match to item names
-    for item in item_names:
-        item_words = set(item.lower().split())
-        if item_words.issubset(input_words):
-            return item, None
+    # Exact substring match (fallback)
+    exact_matches = [item for item in item_names if normalize_input(item) in input_lower]
+    if len(exact_matches) == 1:
+        return exact_matches[0], None
+    elif len(exact_matches) > 1:
+        return None, exact_matches
 
-    # 🔍 Fallback to fuzzy match
+    # Fuzzy match (last resort)
     matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.7)
     if matches:
         matched = matches[0]
@@ -57,11 +61,12 @@ def find_item_in_input(player_input: str, convo=None):
             if item.lower() == matched:
                 return item, None
 
-    # ✅ NEW: fallback to pending item if in confirmation state
-    if convo and convo.state == ConversationState.AWAITING_CONFIRMATION and convo.pending_item:
+    # Use pending item from conversation if exists
+    if convo and convo.pending_item:
         return convo.pending_item, None
 
     return None, None
+
 
 
 

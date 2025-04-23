@@ -8,7 +8,11 @@ class HaggleHandler:
         self.convo = convo
         self.party_data = party_data
 
-    def attempt_haggle(self, item):
+    def attempt_haggle(self, player_input):
+        item = player_input
+        if not item:
+            return self.agent.shopkeeper_generic_say("There's nothing to haggle over just yet.")
+
         can_haggle, reason = self.convo.can_attempt_haggle()
         if not can_haggle:
             return self.agent.shopkeeper_generic_say(reason)

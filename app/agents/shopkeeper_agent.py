@@ -24,8 +24,6 @@ class BaseShopkeeper:
             "ITEMS – See what we have in stock\n"
         )
 
-        return "\n".join(lines)
-
     def shopkeeper_confirmation_reply(self, item_name, item_cost, new_balance) -> str:
         return (
             f"Very well. The '{item_name}' is yours for {item_cost} gold. "
@@ -37,31 +35,40 @@ class BaseShopkeeper:
         if not items:
             return "Ah, it seems the shelves are bare!"
 
-        # Get unique categories from the item list
         categories = sorted(set(dict(item).get("equipment_category", "Misc") for item in items))
-
         lines = ["Ah, so you want to BUY something! Here's what we have in stock:\n"]
         for cat in categories:
             lines.append(f" • {cat}")
-
         return "\n".join(lines)
 
-    def shopkeeper_show_items_by_category(self, category):
-        from app.models.items import get_items_by_category
+    def shopkeeper_show_items_by_category(self, player_input):
+        category = player_input.get("category")
+        page = player_input.get("page", 1)
+        page_size = 5
 
-        items = get_items_by_category(category)
+        all_items = [dict(item) for item in get_all_items() if
+                     dict(item).get("equipment_category", "").lower() == category.lower()]
+        total_items = len(all_items)
+        total_pages = max((total_items + page_size - 1) // page_size, 1)
 
-        if not items:
+        page = max(1, min(page, total_pages))
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_items = all_items[start:end]
+
+        if not page_items:
             return f"Hmm... looks like we don't have anything in the **{category}** category right now."
 
-        lines = [f"Here's what we have in the **{category}** category:\n"]
-        for row in items:
-            item = dict(row)
+        lines = [f"📦 **{category.title()} Items (Page {page} of {total_pages})**\n"]
+        for item in page_items:
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
             lines.append(f" • {name} — {price} gold")
 
-        return "\n".join(lines)
+        if page < total_pages:
+            lines.append("\nSay **next** to see more.")
+        if page > 1:
+            lines.append("Say **previous** to go back.")
 
         return "\n".join(lines)
 
@@ -77,15 +84,8 @@ class BaseShopkeeper:
     def shopkeeper_buy_success_prompt(self, item, price_paid) -> str:
         name = item.get("item_name") if isinstance(item, dict) else str(item)
         base_price = item.get("base_price", price_paid)
-
-        note = ""
-        if price_paid < base_price:
-            note = f" (discounted from {base_price}g!)"
-
-        return (
-            f"You have just purchased a {name} for {price_paid} gold{note}. "
-            f"I'll add it to the ledger."
-        )
+        note = f" (discounted from {base_price}g!)" if price_paid < base_price else ""
+        return f"You have just purchased a {name} for {price_paid} gold{note}. I'll add it to the ledger."
 
     def shopkeeper_buy_failure_prompt(self, item, result_message, player_gold) -> str:
         name = item.get("item_name") if isinstance(item, dict) else str(item)
@@ -97,9 +97,7 @@ class BaseShopkeeper:
 
     def shopkeeper_buy_cancel_prompt(self, item) -> str:
         name = item.get("item_name") if item and isinstance(item, dict) else None
-        if not name:
-            return "Changed your mind? No problem. Maybe next time."
-        return f"So you don't want the {name}? As you wish."
+        return f"So you don't want the {name}? As you wish." if name else "Changed your mind? No problem. Maybe next time."
 
     def shopkeeper_buy_enquire_item(self):
         item_names = [item["item_name"] for item in get_all_items()]
@@ -146,19 +144,13 @@ class BaseShopkeeper:
         return f"Got it! {amount} gold safely stored in the vault. Your balance is now {new_total} gold."
 
     def shopkeeper_withdraw_gold_prompt(self):
-        return "Planning to spend some coin? How much would you like to withdraw?"
-
-    def shopkeeper_withdraw_success_prompt(self, amount, new_total):
-        return f"Here's your {amount} gold. Don't spend it all at once! Your balance is now {new_total}."
-
-    def shopkeeper_withdraw_insufficient_gold(self, requested, available):
-        return f"Sorry, you only have {available} gold — not enough to withdraw {requested}."
-
-    def shopkeeper_withdraw_gold_prompt(self):
         return "Taking some coin out? How much would you like to withdraw?"
 
     def shopkeeper_withdraw_success_prompt(self, amount, new_total):
         return f"Done! {amount} gold withdrawn. Your balance is now {new_total} gold."
+
+    def shopkeeper_withdraw_insufficient_gold(self, requested, available):
+        return f"Sorry, you only have {available} gold — not enough to withdraw {requested}."
 
     def shopkeeper_withdraw_insufficient_funds_prompt(self, amount, current_gold):
         return f"Sorry, you tried to withdraw {amount} gold but only have {current_gold}. Try a smaller amount?"
@@ -167,10 +159,7 @@ class BaseShopkeeper:
         return f"Your party currently holds {gold_amount} gold."
 
     def shopkeeper_view_items_prompt(self):
-        from app.models.items import get_all_equipment_categories
-
         categories = get_all_equipment_categories()
-
         lines = ["Here’s what I can offer by category:\n"]
         for cat in categories:
             lines.append(f" • {cat}")
@@ -186,7 +175,3 @@ class BaseShopkeeper:
 
     def shopkeeper_generic_say(self, text):
         return text
-
-
-
-

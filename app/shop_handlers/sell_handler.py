@@ -21,7 +21,8 @@ class SellHandler:
         return dict(get_item_by_name(name) or {})
 
     def process_sell_item_flow(self, player_input):
-        item_name, _ = find_item_in_input(player_input)
+        raw_text = player_input["text"] if isinstance(player_input, dict) else str(player_input)
+        item_name, _ = find_item_in_input(raw_text)
 
         if not item_name:
             self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)

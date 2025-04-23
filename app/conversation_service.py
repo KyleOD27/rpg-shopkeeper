@@ -45,7 +45,18 @@ class ConversationService:
             return handle_admin_command(player_input)
 
         self.convo.set_input(player_input)
-        intent_data = interpret_input(player_input, self.convo)
+
+        # 🧠 Always work with a wrapped version
+        if isinstance(player_input, str):
+            raw_text = player_input
+            intent_data = interpret_input(player_input, self.convo)
+        elif isinstance(player_input, dict):
+            raw_text = player_input.get("text", "")
+            intent_data = player_input  # already parsed
+        else:
+            raw_text = str(player_input)
+            intent_data = interpret_input(raw_text, self.convo)
+
         intent = intent_data.get("intent")
         item = intent_data.get("item")
         self.convo.set_intent(intent)
@@ -53,15 +64,25 @@ class ConversationService:
         if item:
             self.convo.set_pending_item(item)
 
-        if intent == PlayerIntent.VIEW_LEDGER:
-            return self.handle_view_ledger(player_input)
+        # Wrap everything into a dict consistently
+        wrapped_input = {
+            "text": raw_text,
+            "intent": intent,
+            "item": item,
+            **intent_data
+        }
 
-        if intent in {PlayerIntent.CONFIRM, PlayerIntent.CANCEL} and self.convo.state != ConversationState.AWAITING_CONFIRMATION:
+        if intent == PlayerIntent.VIEW_LEDGER:
+            return self.handle_view_ledger(wrapped_input)
+
+        # Handle misaligned confirmation outside of CONFIRMATION state
+        if intent in {PlayerIntent.CONFIRM,
+                      PlayerIntent.CANCEL} and self.convo.state != ConversationState.AWAITING_CONFIRMATION:
             if self.convo.player_intent == PlayerIntent.BUY_ITEM and intent == PlayerIntent.CONFIRM:
-                self.convo.debug("User reconfirmed purchase outside of confirmation state — rerouting to BUY_CONFIRM.")
+                self.convo.debug(f"User reconfirmed purchase outside of confirmation state — rerouting to BUY_CONFIRM.")
                 intent = PlayerIntent.BUY_CONFIRM
             elif self.convo.player_intent == PlayerIntent.SELL_ITEM and intent == PlayerIntent.CONFIRM:
-                self.convo.debug("User reconfirmed sale outside of confirmation state — rerouting to SELL_CONFIRM.")
+                self.convo.debug(f"User reconfirmed sale outside of confirmation state — rerouting to SELL_CONFIRM.")
                 intent = PlayerIntent.SELL_CONFIRM
             else:
                 self.convo.debug(f"Ignoring {intent} — not in confirmation state.")
@@ -70,7 +91,7 @@ class ConversationService:
 
         handler = self.intent_router.get((self.convo.state, intent))
         if handler:
-            return handler(intent_data if intent_data else player_input)
+            return handler(wrapped_input)
 
         if self.convo.state == ConversationState.INTRODUCTION:
             return self.handle_introduction()
@@ -78,6 +99,7 @@ class ConversationService:
         return self.handle_fallback()
 
     def _build_router(self):
+
         def view_items_handler(player_input):
             if isinstance(player_input, dict):
                 category = player_input.get("category")
@@ -85,9 +107,48 @@ class ConversationService:
                 category = get_equipment_category_from_input(player_input)
 
             if category:
-                return self.agent.shopkeeper_show_items_by_category(category)
+                # Start at page 1 and store state
+                self.convo.metadata["current_category"] = category
+                self.convo.metadata["current_page"] = 1
+                self.convo.save_state()
+
+                # Send paginated response (first page)
+                return self.agent.shopkeeper_show_items_by_category({"category": category, "page": 1})
+
 
             return self.agent.shopkeeper_view_items_prompt()
+
+        def next_page_handler(_):
+            category = self.convo.metadata.get("current_category")
+            if not category:
+                return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
+
+            current_page = self.convo.metadata.get("current_page", 1)
+            next_page = current_page + 1
+
+            self.convo.metadata["current_page"] = next_page
+            self.convo.save_state()
+
+            return self.agent.shopkeeper_show_items_by_category({
+                "category": category,
+                "page": next_page
+            })
+
+        def handle_previous_page(_):
+            category = self.convo.metadata.get("current_category")
+            if not category:
+                return self.agent.shopkeeper_view_items_prompt()
+
+            current_page = self.convo.metadata.get("current_page", 1)
+            new_page = max(current_page - 1, 1)
+
+            self.convo.metadata["current_page"] = new_page
+            self.convo.save_state()
+
+            return self.agent.shopkeeper_show_items_by_category({
+                "category": category,
+                "page": new_page
+            })
 
         return {
             (ConversationState.INTRODUCTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
@@ -112,6 +173,17 @@ class ConversationService:
             (ConversationState.VIEWING_CATEGORIES, PlayerIntent.VIEW_ITEMS): self.buy_handler.process_buy_item_flow,
             (ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_ITEM): self.buy_handler.process_buy_item_flow,
             (ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_NEEDS_ITEM): self.buy_handler.process_buy_item_flow,
+
+            (ConversationState.INTRODUCTION, PlayerIntent.NEXT): next_page_handler,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.NEXT): next_page_handler,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.NEXT): next_page_handler,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.NEXT): next_page_handler,
+            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.NEXT): next_page_handler,
+
+            (ConversationState.AWAITING_ACTION, PlayerIntent.PREVIOUS): handle_previous_page,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.PREVIOUS): handle_previous_page,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.PREVIOUS): handle_previous_page,
+            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.PREVIOUS): handle_previous_page,
 
             (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
             (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
