@@ -6,9 +6,8 @@ import json
 from difflib import get_close_matches
 from dotenv import load_dotenv
 from openai import OpenAI
-
-from app.conversation import PlayerIntent
-from app.models.items import get_all_items
+from app.conversation import PlayerIntent, ConversationState
+from app.models.items import get_all_items, get_all_equipment_categories
 
 # === INTENT KEYWORDS ===
 INTENT_KEYWORDS = {
@@ -32,38 +31,39 @@ GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "t
 def normalize_input(text: str):
     return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower().strip())
 
-
-def find_item_in_input(player_input: str):
+def find_item_in_input(player_input: str, convo=None):
     items = get_all_items()
     item_names = [item['item_name'] for item in items]
     input_lower = normalize_input(player_input)
+    input_words = set(input_lower.split())
 
-    # Direct match
-    exact_matches = [item for item in item_names if item.lower() in input_lower]
-    if len(exact_matches) == 1:
-        return exact_matches[0], None
-    elif len(exact_matches) > 1:
-        return None, exact_matches
+    # ✅ First: check if the input matches a category
+    categories = get_all_equipment_categories()
+    for category in categories:
+        if category.lower() in input_lower:
+            return None, category
 
-    # Token match
-    partial_matches = []
+    # 🔍 Word-wise match to item names
     for item in item_names:
-        if any(token in input_lower.split() for token in item.lower().split()):
-            partial_matches.append(item)
-    if len(partial_matches) == 1:
-        return partial_matches[0], None
-    elif partial_matches:
-        return None, partial_matches
+        item_words = set(item.lower().split())
+        if item_words.issubset(input_words):
+            return item, None
 
-    # Fuzzy match
-    matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.6)
+    # 🔍 Fallback to fuzzy match
+    matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.7)
     if matches:
         matched = matches[0]
         for item in item_names:
             if item.lower() == matched:
                 return item, None
 
+    # ✅ NEW: fallback to pending item if in confirmation state
+    if convo and convo.state == ConversationState.AWAITING_CONFIRMATION and convo.pending_item:
+        return convo.pending_item, None
+
     return None, None
+
+
 
 
 def detect_buy_intent(player_input: str):
@@ -81,16 +81,19 @@ def detect_sell_intent(player_input: str):
     return PlayerIntent.SELL_ITEM, item_name
 
 def detect_haggle_intent(player_input: str, convo=None):
-    item_name, _ = find_item_in_input(player_input)
-    if not item_name and convo and convo.pending_item:
-        item_name = convo.pending_item
-        print(f"[DEBUG] Using pending item '{item_name}' for haggling.")
+    input_lower = normalize_input(player_input)
 
+    if convo and convo.pending_item:
+        print(f"[DEBUG] Using pending item '{convo.pending_item}' for haggling.")
+        return PlayerIntent.HAGGLE, convo.pending_item
+
+    item_name, _ = find_item_in_input(player_input)
     if not item_name:
         print(f"[DEBUG] HAGGLE_NEEDS_ITEM: No item identified from input '{player_input}'")
         return PlayerIntent.HAGGLE, None
 
     return PlayerIntent.HAGGLE, item_name
+
 
 
 def detect_deposit_intent(player_input: str):
@@ -112,11 +115,39 @@ def detect_withdraw_intent(player_input: str):
     return PlayerIntent.WITHDRAW_NEEDS_AMOUNT, None
 
 
+def get_equipment_category_from_input(player_input: str):
+    from app.models.items import get_all_equipment_categories
+    from difflib import get_close_matches
+
+    input_lower = normalize_input(player_input)
+    input_words = input_lower.split()
+
+    categories = get_all_equipment_categories()
+    category_names = [c.lower() for c in categories]
+
+    # 1. Exact match
+    for cat in category_names:
+        if cat in input_lower:
+            return cat.title()
+
+    # 2. Partial word match
+    for cat in category_names:
+        cat_tokens = cat.split()
+        if any(word in input_words for word in cat_tokens):
+            return cat.title()
+
+    # 3. Fuzzy match
+    close = get_close_matches(input_lower, category_names, n=1, cutoff=0.6)
+    if close:
+        return close[0].title()
+
+    return None
 
 
 
 def interpret_input(player_input: str, convo=None):
-    lowered = normalize_input(player_input)
+    input_text = player_input if isinstance(player_input, str) else player_input.get("input", "")
+    lowered = normalize_input(input_text)
     words = lowered.split()
 
     # ✅ 1. Confirmation
@@ -170,6 +201,11 @@ def interpret_input(player_input: str, convo=None):
     item_name, _ = find_item_in_input(player_input)
     if item_name:
         return {"intent": PlayerIntent.BUY_ITEM, "item": item_name}
+
+    # ✅ 5.5. Equipment Category Detection (e.g. "armor", "tools")
+    category = get_equipment_category_from_input(player_input)
+    if category:
+        return {"intent": PlayerIntent.VIEW_ITEMS, "category": category}
 
     # ✅ 6. If awaiting deposit amount and numeric input
     if convo and convo.player_intent == PlayerIntent.DEPOSIT_NEEDS_AMOUNT:

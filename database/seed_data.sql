@@ -32,13 +32,7 @@ INSERT INTO characters (user_id, party_id, player_name, character_name, role) VA
 (3, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
 
 -- Insert Shop Items
-INSERT INTO items (item_name, description, base_price, rarity) VALUES
-('Healing Potion', 'Restores 2d4+2 HP', 50, 'Common'),
-('Iron Dagger', 'Simple but sharp', 5, 'Common'),
-('Scroll of Identify', 'Reveals item properties', 80, 'Uncommon'),
-('Cloak of Billowing', 'Dramatic wind effect on demand', 100, 'Uncommon'),
-('Bag of Holding', 'Stores far more than it should', 500, 'Rare'),
-('Mystery Box', 'Who knows what is inside? Might be cursed.', 150, 'Rare');
+
 
 -- Grant RPG Shop (shop_id = 1) access to all users
 INSERT INTO user_shop_access (user_id, shop_id) VALUES

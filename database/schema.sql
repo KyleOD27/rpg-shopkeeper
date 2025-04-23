@@ -47,13 +47,21 @@ CREATE TABLE characters (
     UNIQUE(party_id, player_name)
 );
 
--- ITEMS TABLE
+-- ITEMS TABLE (COMPATIBLE WITH SRD)
 CREATE TABLE items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_name TEXT NOT NULL,
-    description TEXT,
-    base_price INTEGER NOT NULL,
-    rarity TEXT CHECK(rarity IN ('Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary'))
+    srd_index TEXT UNIQUE,                     -- SRD index (e.g., "longsword")
+    item_name TEXT NOT NULL,                   -- SRD name
+    equipment_category TEXT,              -- From equipment_category.name
+    gear_category TEXT,                   -- From gear_category.name (if present)
+    tool_category TEXT,                   -- From tool_category (if present)
+    weapon_category TEXT,                 -- From weapon_category (if present)
+    armour_category TEXT,                 -- From armor_category (if present)
+    base_price INTEGER DEFAULT 0,      -- SRD cost.quantity (converted to GP for logic)
+    price_unit TEXT DEFAULT 'gp',          -- SRD cost.unit (cp/sp/gp/ep)
+    weight REAL,                          -- SRD weight
+    desc TEXT,                            -- SRD desc[] joined
+    rarity TEXT CHECK(rarity IN ('Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary')) DEFAULT 'Common'
 );
 
 -- TRANSACTION LEDGER
@@ -136,4 +144,3 @@ CREATE TABLE system_logs (
     action TEXT,
     details TEXT
 );
-

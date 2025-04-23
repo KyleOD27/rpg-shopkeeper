@@ -1,6 +1,7 @@
-from app.models.items import get_all_items
+from app.conversation import ConversationState
+from app.models.items import get_all_items, get_items_by_category, get_all_equipment_categories
+from app.interpreter import get_equipment_category_from_input
 from datetime import datetime
-
 
 class BaseShopkeeper:
     def shopkeeper_greeting(self, party_name: str, visit_count: int, player_name: str) -> str:
@@ -36,12 +37,31 @@ class BaseShopkeeper:
         if not items:
             return "Ah, it seems the shelves are bare!"
 
-        lines = ["Ah, so you want to BUY something! Here's what we have:\n"]
-        for item in items:
-            item_dict = dict(item)  # Convert sqlite3.Row to regular dict
-            name = item_dict.get("item_name", "Unknown Item")
-            price = item_dict.get("base_price", "?")
+        # Get unique categories from the item list
+        categories = sorted(set(dict(item).get("equipment_category", "Misc") for item in items))
+
+        lines = ["Ah, so you want to BUY something! Here's what we have in stock:\n"]
+        for cat in categories:
+            lines.append(f" • {cat}")
+
+        return "\n".join(lines)
+
+    def shopkeeper_show_items_by_category(self, category):
+        from app.models.items import get_items_by_category
+
+        items = get_items_by_category(category)
+
+        if not items:
+            return f"Hmm... looks like we don't have anything in the **{category}** category right now."
+
+        lines = [f"Here's what we have in the **{category}** category:\n"]
+        for row in items:
+            item = dict(row)
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
             lines.append(f" • {name} — {price} gold")
+
+        return "\n".join(lines)
 
         return "\n".join(lines)
 
@@ -147,15 +167,15 @@ class BaseShopkeeper:
         return f"Your party currently holds {gold_amount} gold."
 
     def shopkeeper_view_items_prompt(self):
-        from app.models.items import get_all_items
+        from app.models.items import get_all_equipment_categories
 
-        items = [dict(row) for row in get_all_items()]  # Convert to dicts to avoid .get errors
+        categories = get_all_equipment_categories()
 
-        if not items:
-            return "The shelves are empty at the moment — check back later!"
-
-        lines = [f" • {item['item_name']} — {item['base_price']} gold" for item in items]
-        return "Here’s what I have in stock:\n\n" + "\n".join(lines)
+        lines = ["Here’s what I can offer by category:\n"]
+        for cat in categories:
+            lines.append(f" • {cat}")
+        lines.append("\nJust say the category name to see what’s inside.")
+        return "\n".join(lines)
 
     def shopkeeper_sell_enquire_item(self):
         item_names = [item["item_name"] for item in get_all_items()]

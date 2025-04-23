@@ -10,6 +10,6 @@ print("\n=== Search for 'Bag of Holding' ===")
 item = get_item_by_name('Bag of Holding')
 
 if item:
-    print(f"Found: {item['item_name']} - {item['description']} - {item['base_price']} gold")
+    print(f"Found: {item['item_name']} - {item['equipment_category']} - {item['base_price']} gold")
 else:
     print("Item not found!")

@@ -1,6 +1,6 @@
 # app/shop_handlers/buy_handler.py
 
-from app.interpreter import find_item_in_input
+from app.interpreter import find_item_in_input, get_equipment_category_from_input
 from app.models.items import get_item_by_name
 from app.models.parties import update_party_gold
 from app.models.ledger import record_transaction
@@ -23,7 +23,15 @@ class BuyHandler:
         return dict(get_item_by_name(name) or {})
 
     def process_buy_item_flow(self, player_input):
-        item_name, _ = find_item_in_input(player_input)
+        if isinstance(player_input, dict):
+            text = player_input.get("input", "") or self.convo.latest_input or ""
+        else:
+            text = player_input
+
+        item_name, category = find_item_in_input(text, self.convo)
+
+        if category and not item_name:
+            return self.agent.shopkeeper_show_items_by_category(category)
 
         if not item_name:
             if self.convo.state == ConversationState.AWAITING_ACTION:
@@ -31,9 +39,9 @@ class BuyHandler:
                 return self.agent.shopkeeper_buy_enquire_item()
             return self.agent.shopkeeper_clarify_item_prompt()
 
+        # Proceed with item confirmation
         self.convo.set_pending_item(item_name)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-
         item = self.get_dict_item(item_name)
         return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data["party_gold"])
 

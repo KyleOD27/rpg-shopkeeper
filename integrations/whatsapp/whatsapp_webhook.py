@@ -1,6 +1,6 @@
 from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
-from whatsapp.whatsapp_router import handle_whatsapp_command
+from integrations.whatsapp.whatsapp_router import handle_whatsapp_command
 import logging
 import os
 from dotenv import load_dotenv
@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 # 🌱 Load environment variables
-env_path = "../.env"
+env_path = "../../.env"
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
