@@ -4,12 +4,14 @@ from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input, get_equipment_category_from_input
 from app.models.items import get_item_by_name
 from commands.dm_commands import handle_dm_command
-from app.models.ledger import get_last_transactions
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
 from app.shop_handlers.withdraw_handler import WithdrawHandler
 from commands.admin_commands import handle_admin_command
+from app.shop_handlers.generic_chat_handler import GenericChatHandler
+from typing import Callable, Dict, Tuple, Any
+
 
 
 class ConversationService:
@@ -19,6 +21,7 @@ class ConversationService:
         self.party_id = party_id
         self.player_id = player_id
 
+
         self.party_data = dict(party_data)
         self.party_data["player_name"] = player_name
         self.party_data["visit_count"] = self.party_data.get("visit_count", 1)
@@ -27,8 +30,8 @@ class ConversationService:
         self.sell_handler = SellHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.deposit_handler = DepositHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
-
-        self.intent_router = self._build_router()
+        self.generic_handler = GenericChatHandler(agent, self.party_data, self.convo, party_id)
+        self.intent_router: Dict[Tuple[str, str], Callable[[dict], Any]] = self._build_router()
 
     def say(self, message):
         return message
@@ -73,7 +76,7 @@ class ConversationService:
         }
 
         if intent == PlayerIntent.VIEW_LEDGER:
-            return self.handle_view_ledger(wrapped_input)
+            return self.generic_handler.handle_view_ledger(wrapped_input)
 
         # Handle misaligned confirmation outside of CONFIRMATION state
         if intent in {PlayerIntent.CONFIRM,
@@ -94,9 +97,9 @@ class ConversationService:
             return handler(wrapped_input)
 
         if self.convo.state == ConversationState.INTRODUCTION:
-            return self.handle_introduction()
+            return self.handle_introduction(player_input)
 
-        return self.handle_fallback()
+        return self.generic_handler.handle_fallback(player_input)
 
     def _build_router(self):
 
@@ -151,20 +154,20 @@ class ConversationService:
             })
 
         return {
-            (ConversationState.INTRODUCTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
-            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.GREETING): self.handle_reply_to_greeting,
+            (ConversationState.INTRODUCTION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
 
-            (ConversationState.INTRODUCTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
-            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.SHOW_GRATITUDE): self.handle_accept_thanks,
-            (ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN): self.handle_fallback,
+            (ConversationState.INTRODUCTION, PlayerIntent.SHOW_GRATITUDE): self.generic_handler.handle_accept_thanks,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.SHOW_GRATITUDE): self.generic_handler.handle_accept_thanks,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.SHOW_GRATITUDE): self.generic_handler.handle_accept_thanks,
+            (ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN): self.generic_handler.handle_fallback,
 
-            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
-            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.VIEW_LEDGER): self.handle_view_ledger,
+            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_LEDGER): self.generic_handler.handle_view_ledger,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_LEDGER): self.generic_handler.handle_view_ledger,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.VIEW_LEDGER): self.generic_handler.handle_view_ledger,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.VIEW_LEDGER): self.generic_handler.handle_view_ledger,
 
             (ConversationState.INTRODUCTION, PlayerIntent.VIEW_ITEMS): view_items_handler,
             (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_ITEMS): view_items_handler,
@@ -185,10 +188,10 @@ class ConversationService:
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.PREVIOUS): handle_previous_page,
             (ConversationState.VIEWING_CATEGORIES, PlayerIntent.PREVIOUS): handle_previous_page,
 
-            (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
-            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CHECK_BALANCE): self.handle_check_balance,
+            (ConversationState.INTRODUCTION, PlayerIntent.CHECK_BALANCE): self.generic_handler.handle_check_balance,
+            (ConversationState.AWAITING_ACTION, PlayerIntent.CHECK_BALANCE): self.generic_handler.handle_check_balance,
+            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.CHECK_BALANCE): self.generic_handler.handle_check_balance,
+            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CHECK_BALANCE): self.generic_handler.handle_check_balance,
 
             (ConversationState.INTRODUCTION, PlayerIntent.BUY_ITEM): self.buy_handler.process_buy_item_flow,
             (ConversationState.INTRODUCTION, PlayerIntent.BUY_NEEDS_ITEM): self.buy_handler.process_buy_item_flow,
@@ -232,37 +235,13 @@ class ConversationService:
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.WITHDRAW_CONFIRM): self.withdraw_handler.handle_confirm_withdraw,
         }
 
-    def handle_introduction(self):
+    def handle_introduction(self, player_input):
         intent = self.convo.player_intent
         if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
             return self.buy_handler.process_buy_item_flow(self.convo.input_text)
         elif intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
             return self.sell_handler.process_sell_item_flow(self.convo.input_text)
-        return self.handle_fallback()
+        return self.generic_handler.handle_fallback(player_input)
 
-    def handle_reply_to_greeting(self, _):
-        return self.agent.shopkeeper_greeting(
-            party_name=self.party_data["party_name"],
-            visit_count=self.party_data["visit_count"],
-            player_name=self.party_data["player_name"]
-        )
 
-    def handle_fallback(self, *_):
-        return self.agent.shopkeeper_fallback_prompt()
 
-    def handle_view_ledger(self, _):
-        raw_entries = get_last_transactions(self.party_id)
-        entries = [dict(row) for row in raw_entries]
-        return self.agent.shopkeeper_show_ledger(entries)
-
-    def handle_accept_thanks(self, _):
-        return self.agent.shopkeeper_accept_thanks()
-
-    def handle_check_balance(self, _):
-        current_gold = self.party_data.get("party_gold", 0)
-        return self.agent.shopkeeper_check_balance_prompt(current_gold)
-
-    def handle_view_items(self, player_input):
-        if isinstance(player_input, dict) and "category" in player_input:
-            return self.agent.shopkeeper_show_items_by_category(player_input["category"])
-        return self.agent.shopkeeper_view_items_prompt()

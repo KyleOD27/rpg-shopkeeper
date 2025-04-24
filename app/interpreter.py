@@ -40,36 +40,35 @@ def find_item_in_input(player_input, convo=None):
     item_names = [item['item_name'] for item in items]
     input_lower = normalize_input(player_input)
 
-    # Check if input contains all words in any item name
+    # Guard: if it's an exact equipment category, don't match it as an item
+    if get_equipment_category_from_input(player_input):
+        return None, None
+
+    # 1. Full word match
     for name in item_names:
         name_words = normalize_input(name).split()
         if all(word in input_lower.split() for word in name_words):
             return name, None
 
-    # Exact substring match (fallback)
+    # 2. Substring match
     exact_matches = [item for item in item_names if normalize_input(item) in input_lower]
     if len(exact_matches) == 1:
         return exact_matches[0], None
     elif len(exact_matches) > 1:
         return None, exact_matches
 
-    # Fuzzy match (last resort)
-    matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.7)
+    # 3. Fuzzy match with stricter cutoff
+    matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.9)
     if matches:
         matched = matches[0]
         for item in item_names:
             if item.lower() == matched:
                 return item, None
 
-    # Use pending item from conversation if exists
     if convo and convo.pending_item:
         return convo.pending_item, None
 
     return None, None
-
-
-
-
 
 def detect_buy_intent(player_input: str):
     item_name, _ = find_item_in_input(player_input)
