@@ -146,28 +146,31 @@ def detect_withdraw_intent(player_input: str):
 def get_equipment_category_from_input(player_input: str):
     from app.models.items import get_all_equipment_categories
     from difflib import get_close_matches
+    print(f"[DEBUG] get_equipment_category_from_input: input={player_input}")
 
     input_lower = normalize_input(player_input)
     input_words = input_lower.split()
 
     categories = get_all_equipment_categories()
-    category_names = [c.lower() for c in categories]
+    category_names = [normalize_input(c) for c in categories]
 
-    # 1. Exact match
-    for cat in category_names:
-        if cat in input_lower:
-            return cat.title()
+    # 1. Full exact normalized match
+    for i, norm_cat in enumerate(category_names):
+        if norm_cat == input_lower:
+            print(f"[DEBUG] Matched category: {categories[i]}")
+            return categories[i]  # return original name with formatting
 
     # 2. Partial word match
-    for cat in category_names:
-        cat_tokens = cat.split()
-        if any(word in input_words for word in cat_tokens):
-            return cat.title()
+    for i, norm_cat in enumerate(category_names):
+        if all(word in input_words for word in norm_cat.split()):
+            return categories[i]
 
     # 3. Fuzzy match
-    close = get_close_matches(input_lower, category_names, n=1, cutoff=0.6)
-    if close:
-        return close[0].title()
+    match = get_close_matches(input_lower, category_names, n=1, cutoff=0.7)
+    if match:
+        i = category_names.index(match[0])
+        print(f"[DEBUG] Matched category: {categories[i]}")
+        return categories[i]
 
     return None
 
@@ -204,9 +207,9 @@ def interpret_input(player_input: str, convo=None):
     if any(word in words for word in SMALL_TALK_KEYWORDS):
         return {"intent": PlayerIntent.SMALL_TALK}
 
-    # ✅ 4. Keyword-Based Action Matching
+    # ✅ 4. Keyword-Based Action Matching (strict word match)
     for intent, keywords in INTENT_KEYWORDS.items():
-        if any(keyword in lowered for keyword in keywords):
+        if any(keyword in words for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
                 intent_type, item = detect_buy_intent(player_input, convo)
                 return {"intent": intent_type, "item": item}
