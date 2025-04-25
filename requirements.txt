@@ -3,3 +3,6 @@ openai~=1.72.0
 python-dotenv~=1.1.0
 python-dotenv~=1.1.0
 twilio~=9.5.2
+requests~=2.32.3
+pyngrok~=7.2.5
+pyperclip~=1.9.0

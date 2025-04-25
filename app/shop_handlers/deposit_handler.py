@@ -28,7 +28,7 @@ class DepositHandler:
         party_gold = self.party_data.get("party_gold", 0)
         new_total = party_gold + amount
         self.party_data["party_gold"] = new_total
-
+        update_party_gold(self.party_id, new_total)
         record_transaction(
             party_id=self.party_id,
             character_id=self.character_id,

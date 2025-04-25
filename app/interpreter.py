@@ -33,45 +33,69 @@ CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not 
 GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "ty", "cheers", "farewell"]
 
 def normalize_input(text: str):
-    return re.sub(r'[^a-zA-Z0-9\s]', '', text.lower().strip())
+    text = text.lower().strip()
+    text = re.sub(r'[^a-z0-9\s]', '', text)        # remove punctuation
+    text = re.sub(r'\s+', ' ', text)               # collapse extra spaces
+    return text
+
+def normalize_input(text: str):
+    text = text.lower().strip()
+    text = re.sub(r'[^a-z0-9\s]', '', text)        # remove punctuation
+    text = re.sub(r'\s+', ' ', text)               # collapse extra spaces
+    return text
 
 def find_item_in_input(player_input, convo=None):
     items = get_all_items()
     item_names = [item['item_name'] for item in items]
     input_lower = normalize_input(player_input)
 
-    # Guard: if it's an exact equipment category, don't match it as an item
-    if get_equipment_category_from_input(player_input):
+    print(f"[DEBUG] Normalized Input: '{input_lower}'")
+
+    # Guard: if it's an exact equipment category, don’t match it as an item
+    category = get_equipment_category_from_input(player_input)
+    if category and normalize_input(player_input) == normalize_input(category):
         return None, None
 
-    # 1. Full word match
+    # 1. Full phrase match
     for name in item_names:
-        name_words = normalize_input(name).split()
-        if all(word in input_lower.split() for word in name_words):
+        norm_name = normalize_input(name)
+        print(f"[DEBUG] Comparing item: '{norm_name}'")
+        if norm_name in input_lower:
+            print(f"[DEBUG] Item matched by full phrase: '{name}'")
             return name, None
 
     # 2. Substring match
     exact_matches = [item for item in item_names if normalize_input(item) in input_lower]
     if len(exact_matches) == 1:
+        print(f"[DEBUG] Item matched by substring: '{exact_matches[0]}'")
         return exact_matches[0], None
     elif len(exact_matches) > 1:
+        print(f"[DEBUG] Multiple substring matches found: {exact_matches}")
         return None, exact_matches
 
-    # 3. Fuzzy match with stricter cutoff
-    matches = get_close_matches(input_lower, [i.lower() for i in item_names], n=1, cutoff=0.9)
+    # 3. Fuzzy match
+    matches = get_close_matches(input_lower, [normalize_input(i) for i in item_names], n=1, cutoff=0.7)
     if matches:
         matched = matches[0]
         for item in item_names:
-            if item.lower() == matched:
+            if normalize_input(item) == matched:
+                print(f"[DEBUG] Item matched by fuzzy match: '{item}'")
                 return item, None
 
+    # 4. Fallback to pending item
     if convo and convo.pending_item:
+        print(f"[DEBUG] Using pending item: {convo.pending_item}")
         return convo.pending_item, None
 
+    print("[DEBUG] No item matched.")
     return None, None
 
-def detect_buy_intent(player_input: str):
-    item_name, _ = find_item_in_input(player_input)
+
+
+
+
+def detect_buy_intent(player_input: str, convo=None):
+    item_name, _ = find_item_in_input(player_input, convo)
     if not item_name:
         print(f"[DEBUG] BUY_NEEDS_ITEM: No item identified from input '{player_input}'")
         return PlayerIntent.BUY_NEEDS_ITEM, None
@@ -184,7 +208,7 @@ def interpret_input(player_input: str, convo=None):
     for intent, keywords in INTENT_KEYWORDS.items():
         if any(keyword in lowered for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
-                intent_type, item = detect_buy_intent(player_input)
+                intent_type, item = detect_buy_intent(player_input, convo)
                 return {"intent": intent_type, "item": item}
             elif intent == PlayerIntent.SELL_ITEM:
                 intent_type, item = detect_sell_intent(player_input)
