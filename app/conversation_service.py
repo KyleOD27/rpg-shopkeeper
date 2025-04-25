@@ -2,7 +2,8 @@
 
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input, get_equipment_category_from_input, normalize_input
-from app.models.items import get_item_by_name, get_weapon_categories, get_armour_categories
+from app.models.items import get_item_by_name, get_weapon_categories, get_armour_categories, get_gear_categories, \
+    get_tool_categories
 from commands.dm_commands import handle_dm_command
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
@@ -111,7 +112,7 @@ class ConversationService:
 
             input_normalized = normalize_input(input_text)
 
-            # ✅ FIRST: Handle subcategory if it's already detected
+            # ✅ FIRST: Handle subcategory if already detected
             subcategory = player_input.get("subcategory")
             if subcategory:
                 self.convo.metadata["current_weapon_category"] = subcategory
@@ -122,7 +123,7 @@ class ConversationService:
                     "page": 1
                 })
 
-            # 1. Top-level category match (e.g. "weapons", "armor")
+            # 1. Top-level category match (e.g. "weapons", "armor", "gear", etc.)
             category = get_equipment_category_from_input(input_text)
             if category:
                 self.convo.metadata["current_category"] = category
@@ -131,12 +132,16 @@ class ConversationService:
 
                 if category.lower() == "weapon":
                     return self.agent.shopkeeper_list_weapon_categories(get_weapon_categories())
-                elif category.lower() == "armor":
+                elif category.lower() == "armor" or category.lower() == "armour":
                     return self.agent.shopkeeper_list_armour_categories(get_armour_categories())
+                elif category.lower() == "adventuring gear":
+                    return self.agent.shopkeeper_list_gear_categories(get_gear_categories())
+                elif category.lower() == "tools":
+                    return self.agent.shopkeeper_list_gear_categories(get_tool_categories())
 
                 return self.agent.shopkeeper_show_items_by_category({"category": category, "page": 1})
 
-            # 2. Try match by weapon subcategory (e.g. "martial weapons", "simple")
+            # 2. Match weapon subcategory (e.g. "martial", "simple")
             for weapon_cat in get_weapon_categories():
                 weapon_cat_norm = normalize_input(weapon_cat)
                 if weapon_cat_norm in input_normalized or (weapon_cat_norm + " weapons") in input_normalized:
@@ -147,6 +152,48 @@ class ConversationService:
                         "weapon_category": weapon_cat,
                         "page": 1
                     })
+
+            # 3. Match armour subcategory (e.g. "light", "medium", "heavy", "shield")
+            for armour_cat in get_armour_categories():
+                armour_cat_norm = normalize_input(armour_cat)
+                if (
+                        armour_cat_norm in input_normalized
+                        or (armour_cat_norm + " armor") in input_normalized
+                        or (armour_cat_norm + " armour") in input_normalized
+                ):
+                    self.convo.metadata["current_armour_category"] = armour_cat
+                    self.convo.metadata["current_page"] = 1
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_show_items_by_armour_category({
+                        "armour_category": armour_cat,
+                        "page": 1
+                    })
+
+            # 4. Match gear subcategory (e.g. "ammunition", "kits", etc.)
+            for gear_cat in get_gear_categories():
+                gear_cat_norm = normalize_input(gear_cat)
+                if gear_cat_norm in input_normalized:
+                    self.convo.metadata["current_gear_category"] = gear_cat
+                    self.convo.metadata["current_page"] = 1
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_show_items_by_gear_category({
+                        "gear_category": gear_cat,
+                        "page": 1
+                    })
+
+            # 5. Match tool subcategory (e.g. "Artisan's Tools" etc)
+            for tool_cat in get_tool_categories():
+                tool_cat_norm = normalize_input(tool_cat)
+                if tool_cat_norm in input_normalized:
+                    self.convo.metadata["current_tool_category"] = tool_cat
+                    self.convo.metadata["current_page"] = 1
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_show_items_by_tool_category({
+                        "tool_category": tool_cat,
+                        "page": 1
+                   })
+
+            # ❌ Nothing matched, fallback
             return self.agent.shopkeeper_view_items_prompt()
 
         def view_subcategory_handler(player_input):

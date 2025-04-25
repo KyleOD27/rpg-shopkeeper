@@ -31,7 +31,6 @@ def get_items_by_category(category):
     """
     return query_db(sql, (f"%{category}%", f"%{category}%"))
 
-
     if not rows:
         return [f"Hmm... looks like we don't have anything in the '{category}' category right now."]
 
@@ -66,15 +65,16 @@ def get_weapon_categories():
     rows = query_db(sql)
     return [row["weapon_category"] for row in rows if row["weapon_category"]]
 
-
-
 def get_armour_categories():
-    return [
-        "Light Armor",
-        "Medium Armor",
-        "Heavy Armor",
-        "Shield"
-    ]
+    sql = """
+    SELECT DISTINCT armour_category
+    FROM items
+    WHERE equipment_category = 'Armor'
+      AND armour_category IS NOT NULL
+    ORDER BY armour_category
+    """
+    rows = query_db(sql)
+    return [row["armour_category"] for row in rows if row["armour_category"]]
 
 def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -96,4 +96,29 @@ def get_weapon_categories_from_db():
     """
     rows = query_db(sql)
     return [row["weapon_category"] for row in rows if row["weapon_category"]]
+
+
+def get_gear_categories():
+    sql = """
+    SELECT DISTINCT gear_category
+    FROM items
+    WHERE gear_category IS NOT NULL
+      AND TRIM(gear_category) != ''
+    ORDER BY gear_category
+    """
+    rows = query_db(sql)
+    return [row["gear_category"] for row in rows if row["gear_category"]]
+
+
+def get_tool_categories():
+    sql = """
+    SELECT DISTINCT tool_category
+    FROM items
+    WHERE tool_category IS NOT NULL
+      AND TRIM(tool_category) != ''
+    ORDER BY tool_category
+    """
+    rows = query_db(sql)
+    return [row["tool_category"] for row in rows if row["tool_category"]]
+
 

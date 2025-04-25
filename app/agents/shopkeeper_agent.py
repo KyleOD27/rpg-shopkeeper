@@ -205,6 +205,15 @@ class BaseShopkeeper:
             "Pick a type and I'll show you what's available!"
         )
 
+    def shopkeeper_list_gear_categories(self, categories):
+        category_list = "\n • " + "\n • ".join(categories)
+
+        return (
+            "Here's the gear types we carry:"
+            f"{category_list}\n\n"
+            "Tell me which one you'd like to browse!"
+        )
+
 
     def shopkeeper_show_items_by_weapon_category(self, player_input):
         weapon_category = player_input.get("weapon_category")
@@ -240,15 +249,17 @@ class BaseShopkeeper:
 
         return "\n".join(lines)
 
-    def shopkeeper_show_items_by_weapon_category(self, player_input):
-        weapon_category = player_input.get("weapon_category")
+    def shopkeeper_show_items_by_gear_category(self, player_input):
+        gear_category = player_input.get("gear_category")
         page = player_input.get("page", 1)
         page_size = 5
 
+        # 🔥 FIX: Wrap each item in dict() first
         all_items = [
             dict(item) for item in get_all_items()
-            if item and normalize_input(dict(item).get("weapon_category", "")) == normalize_input(weapon_category)
+            if item and normalize_input(dict(item).get("gear_category", "")) == normalize_input(gear_category)
         ]
+
         total_items = len(all_items)
         total_pages = max((total_items + page_size - 1) // page_size, 1)
 
@@ -258,11 +269,11 @@ class BaseShopkeeper:
         page_items = all_items[start:end]
 
         if not page_items:
-            return f"Hmm... looks like we don't have any **{weapon_category}** weapons in stock right now."
+            return f"Hmm... looks like we don't have any **{gear_category}** items in stock right now."
 
-        lines = [f"⚔️ **{weapon_category.title()} Weapons (Page {page} of {total_pages})**\n"]
+        lines = [f"🎒 **{gear_category.title()} (Page {page} of {total_pages})**\n"]
         for item in page_items:
-            name = item.get("item_name", "Unknown Weapon")
+            name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
             lines.append(f" • {name} — {price} gold")
 
@@ -273,5 +284,68 @@ class BaseShopkeeper:
 
         return "\n".join(lines)
 
+    def shopkeeper_show_items_by_armour_category(self, player_input):
+        armour_category = player_input.get("armour_category")
+        page = player_input.get("page", 1)
+        page_size = 5
 
+        all_items = [
+            dict(item) for item in get_all_items()
+            if item and normalize_input(dict(item).get("armour_category", "")) == normalize_input(armour_category)
+        ]
+        total_items = len(all_items)
+        total_pages = max((total_items + page_size - 1) // page_size, 1)
 
+        page = max(1, min(page, total_pages))
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_items = all_items[start:end]
+
+        if not page_items:
+            return f"Hmm... looks like we don't have any **{armour_category}** armour in stock right now."
+
+        lines = [f"🛡️ **{armour_category.title()} Armour (Page {page} of {total_pages})**\n"]
+        for item in page_items:
+            name = item.get("item_name", "Unknown Armour")
+            price = item.get("base_price", "?")
+            lines.append(f" • {name} — {price} gold")
+
+        if page < total_pages:
+            lines.append("\nSay **next** to see more.")
+        if page > 1:
+            lines.append("Say **previous** to go back.")
+
+        return "\n".join(lines)
+
+    def shopkeeper_show_items_by_tool_category(self, player_input):
+            tool_category = player_input.get("tool_category")
+            page = player_input.get("page", 1)
+            page_size = 5
+
+            all_items = [
+                dict(item) for item in get_all_items()
+                if item and normalize_input(dict(item).get("tool_category", "")) == normalize_input(tool_category)
+            ]
+            total_items = len(all_items)
+            total_pages = max((total_items + page_size - 1) // page_size, 1)
+
+            page = max(1, min(page, total_pages))
+            start = (page - 1) * page_size
+            end = start + page_size
+            page_items = all_items[start:end]
+
+            if not page_items:
+                return f"Hmm... looks like we don't have any **{tool_category}** in stock right now."
+
+            lines = [f"🛡️ **{tool_category.title()} Tool (Page {page} of {total_pages})**\n"]
+            for item in page_items:
+                name = item.get("item_name", "Unknown Tool")
+                price = item.get("base_price", "?")
+                lines.append(f" • {name} — {price} gold")
+
+            if page < total_pages:
+                lines.append("\nSay **next** to see more.")
+            if page > 1:
+                lines.append("Say **previous** to go back.")
+
+            return "\n".join(lines)

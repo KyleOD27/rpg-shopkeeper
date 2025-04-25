@@ -192,6 +192,84 @@ def get_weapon_category_from_input(player_input: str):
 
     return None
 
+def get_gear_category_from_input(player_input: str) -> Optional[str]:
+    from app.models.items import get_gear_categories
+
+    print(f"[DEBUG] get_gear_category_from_input: input={player_input}")
+    input_lower = normalize_input(player_input)
+    categories = get_gear_categories()
+    category_names = [normalize_input(c) for c in categories]
+
+    for i, norm_cat in enumerate(category_names):
+        if norm_cat == input_lower or all(word in input_lower.split() for word in norm_cat.split()):
+            print(f"[DEBUG] Matched gear category: {categories[i]}")
+            return categories[i]
+
+    return None
+
+def get_armour_category_from_input(player_input: str) -> Optional[str]:
+    from app.models.items import get_armour_categories
+    from difflib import get_close_matches
+
+    print(f"[DEBUG] get_armour_category_from_input: input={player_input}")
+    input_lower = normalize_input(player_input)
+    input_words = input_lower.split()
+
+    categories = get_armour_categories()
+    category_names = [normalize_input(c) for c in categories]
+
+    # Exact match
+    for i, norm_cat in enumerate(category_names):
+        if norm_cat == input_lower:
+            print(f"[DEBUG] Matched armour category: {categories[i]}")
+            return categories[i]
+
+    # All words match
+    for i, norm_cat in enumerate(category_names):
+        if all(word in input_words for word in norm_cat.split()):
+            print(f"[DEBUG] Matched armour category: {categories[i]}")
+            return categories[i]
+
+    # Fuzzy match
+    match = get_close_matches(input_lower, category_names, n=1, cutoff=0.7)
+    if match:
+        i = category_names.index(match[0])
+        print(f"[DEBUG] Matched armour category: {categories[i]}")
+        return categories[i]
+
+    return None
+
+def get_tool_category_from_input(player_input: str) -> Optional[str]:
+    from app.models.items import get_tool_categories
+    from difflib import get_close_matches
+
+    print(f"[DEBUG] get_tool_category_from_input: input={player_input}")
+    input_lower = normalize_input(player_input)
+    input_words = input_lower.split()
+
+    categories = get_tool_categories()
+    category_names = [normalize_input(c) for c in categories]
+
+    # Exact match
+    for i, norm_cat in enumerate(category_names):
+        if norm_cat == input_lower:
+            print(f"[DEBUG] Matched tool category: {categories[i]}")
+            return categories[i]
+
+    # All words match
+    for i, norm_cat in enumerate(category_names):
+        if all(word in input_words for word in norm_cat.split()):
+            print(f"[DEBUG] Matched tool category: {categories[i]}")
+            return categories[i]
+
+    # Fuzzy match
+    match = get_close_matches(input_lower, category_names, n=1, cutoff=0.7)
+    if match:
+        i = category_names.index(match[0])
+        print(f"[DEBUG] Matched tool category: {categories[i]}")
+        return categories[i]
+
+    return None
 
 
 def interpret_input(player_input: str, convo=None):
@@ -214,7 +292,26 @@ def interpret_input(player_input: str, convo=None):
         print(f"[DEBUG] Matched weapon category: {weapon_category}")
         return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
 
+    # === Gear Category Check ===
+    gear_category = get_gear_category_from_input(player_input)
+    if gear_category:
+        metadata["gear_category"] = gear_category
+        print(f"[DEBUG] Matched gear category: {gear_category}")
+        return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
 
+    # === Armour Category Check ===
+    armour_category = get_armour_category_from_input(player_input)
+    if armour_category:
+       metadata["armour_category"] = armour_category
+       print(f"[DEBUG] Matched armour category: {armour_category}")
+       return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
+
+    # === Tool Category Check ===
+    tool_category = get_tool_category_from_input(player_input)
+    if tool_category:
+       metadata["tool_category"] = tool_category
+       print(f"[DEBUG] Matched tool category: {tool_category}")
+       return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
 
     # === Confirmation / Cancellation ===
     if any(word in words for word in CONFIRMATION_WORDS):
