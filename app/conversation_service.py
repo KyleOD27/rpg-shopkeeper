@@ -1,8 +1,8 @@
 # app/conversation_service.py
 
 from app.conversation import ConversationState, PlayerIntent
-from app.interpreter import interpret_input, get_equipment_category_from_input
-from app.models.items import get_item_by_name
+from app.interpreter import interpret_input, get_equipment_category_from_input, normalize_input
+from app.models.items import get_item_by_name, get_weapon_categories, get_armour_categories
 from commands.dm_commands import handle_dm_command
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
@@ -67,12 +67,12 @@ class ConversationService:
         if item:
             self.convo.set_pending_item(item)
 
-        # Wrap everything into a dict consistently
         wrapped_input = {
             "text": raw_text,
             "intent": intent,
             "item": item,
-            **intent_data
+            **intent_data,
+            **intent_data.get("metadata", {})
         }
 
         if intent == PlayerIntent.VIEW_LEDGER:
@@ -94,7 +94,7 @@ class ConversationService:
 
         handler = self.intent_router.get((self.convo.state, intent))
         if handler:
-            return handler(wrapped_input)
+            return handler(wrapped_input)  # ✅ wrapped_input includes text + metadata
 
         if self.convo.state == ConversationState.INTRODUCTION:
             return self.handle_introduction(player_input)
@@ -105,21 +105,71 @@ class ConversationService:
 
         def view_items_handler(player_input):
             if isinstance(player_input, dict):
-                category = player_input.get("category")
+                input_text = player_input.get("text", "")
             else:
-                category = get_equipment_category_from_input(player_input)
+                input_text = str(player_input)
 
+            input_normalized = normalize_input(input_text)
+
+            # ✅ FIRST: Handle subcategory if it's already detected
+            subcategory = player_input.get("subcategory")
+            if subcategory:
+                self.convo.metadata["current_weapon_category"] = subcategory
+                self.convo.metadata["current_page"] = 1
+                self.convo.save_state()
+                return self.agent.shopkeeper_show_items_by_weapon_category({
+                    "weapon_category": subcategory,
+                    "page": 1
+                })
+
+            # 1. Top-level category match (e.g. "weapons", "armor")
+            category = get_equipment_category_from_input(input_text)
             if category:
-                # Start at page 1 and store state
                 self.convo.metadata["current_category"] = category
                 self.convo.metadata["current_page"] = 1
                 self.convo.save_state()
 
-                # Send paginated response (first page)
+                if category.lower() == "weapon":
+                    return self.agent.shopkeeper_list_weapon_categories(get_weapon_categories())
+                elif category.lower() == "armor":
+                    return self.agent.shopkeeper_list_armour_categories(get_armour_categories())
+
                 return self.agent.shopkeeper_show_items_by_category({"category": category, "page": 1})
 
-
+            # 2. Try match by weapon subcategory (e.g. "martial weapons", "simple")
+            for weapon_cat in get_weapon_categories():
+                weapon_cat_norm = normalize_input(weapon_cat)
+                if weapon_cat_norm in input_normalized or (weapon_cat_norm + " weapons") in input_normalized:
+                    self.convo.metadata["current_weapon_category"] = weapon_cat
+                    self.convo.metadata["current_page"] = 1
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_show_items_by_weapon_category({
+                        "weapon_category": weapon_cat,
+                        "page": 1
+                    })
             return self.agent.shopkeeper_view_items_prompt()
+
+        def view_subcategory_handler(player_input):
+            text = player_input["text"] if isinstance(player_input, dict) else str(player_input)
+            lowered = normalize_input(text)
+
+            # Check if it matches weapon category
+            for cat in get_weapon_categories():
+                if normalize_input(cat) in lowered:
+                    self.convo.metadata["weapon_category"] = cat
+                    self.convo.metadata["current_page"] = 1
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_show_items_by_category({"category": cat, "page": 1})
+
+            # Check if it matches armour category
+            for cat in get_armour_categories():
+                if normalize_input(cat) in lowered:
+                    self.convo.metadata["armour_category"] = cat
+                    self.convo.metadata["current_page"] = 1
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_show_items_by_category({"category": cat, "page": 1})
+
+            return self.agent.shopkeeper_generic_say("Hmm, I didn’t catch that subcategory. Could you try again?")
 
         def next_page_handler(_):
             category = self.convo.metadata.get("current_category")
@@ -182,6 +232,10 @@ class ConversationService:
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.NEXT): next_page_handler,
             (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.NEXT): next_page_handler,
             (ConversationState.VIEWING_CATEGORIES, PlayerIntent.NEXT): next_page_handler,
+
+            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_ITEMS): view_items_handler,
+            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.VIEW_ITEMS): view_subcategory_handler,
+            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_ITEM): view_subcategory_handler,
 
             (ConversationState.AWAITING_ACTION, PlayerIntent.PREVIOUS): handle_previous_page,
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.PREVIOUS): handle_previous_page,

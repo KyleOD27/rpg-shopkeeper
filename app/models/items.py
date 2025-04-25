@@ -44,7 +44,6 @@ def get_items_by_category(category):
 
     return lines
 
-
 def get_all_equipment_categories():
     sql = """
     SELECT DISTINCT equipment_category
@@ -54,3 +53,47 @@ def get_all_equipment_categories():
     """
     rows = query_db(sql)
     return [row["equipment_category"] for row in rows if row["equipment_category"]]
+
+
+def get_weapon_categories():
+    sql = """
+    SELECT DISTINCT weapon_category
+    FROM items
+    WHERE equipment_category = 'Weapon'
+      AND weapon_category IS NOT NULL
+    ORDER BY weapon_category
+    """
+    rows = query_db(sql)
+    return [row["weapon_category"] for row in rows if row["weapon_category"]]
+
+
+
+def get_armour_categories():
+    return [
+        "Light Armor",
+        "Medium Armor",
+        "Heavy Armor",
+        "Shield"
+    ]
+
+def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(weapon_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f"%{weapon_category}%", page_size, offset))
+
+def get_weapon_categories_from_db():
+    sql = """
+    SELECT DISTINCT weapon_category
+    FROM items
+    WHERE weapon_category IS NOT NULL
+    ORDER BY weapon_category
+    """
+    rows = query_db(sql)
+    return [row["weapon_category"] for row in rows if row["weapon_category"]]
+

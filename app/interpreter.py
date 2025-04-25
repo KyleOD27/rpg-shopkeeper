@@ -6,6 +6,7 @@ import json
 from difflib import get_close_matches
 from dotenv import load_dotenv
 from openai import OpenAI
+from typing import Optional
 from app.conversation import PlayerIntent, ConversationState
 from app.models.items import get_all_items, get_all_equipment_categories
 
@@ -18,13 +19,11 @@ INTENT_KEYWORDS = {
     PlayerIntent.WITHDRAW_GOLD: ["withdraw", "take gold", "collect"],
     PlayerIntent.CHECK_BALANCE: ["balance", "gold amount", "how much gold", "check funds"],
     PlayerIntent.VIEW_LEDGER: ["ledger", "transactions", "history"],
-    PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal", "cheaper", "too much", "discount"],
+    PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal", "cheaper", "discount"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
     PlayerIntent.GREETING: ["hello", "hi", "greetings", "hallo", "hey", "what up"],
     PlayerIntent.NEXT: ["next", "more", "show more", "continue", "keep going"],
     PlayerIntent.PREVIOUS: ["previous", "back", "go back", "last page"],
-
-
 }
 
 SMALL_TALK_KEYWORDS = ["goodbye", "farewell"]
@@ -32,17 +31,16 @@ CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", 
 CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
 GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "ty", "cheers", "farewell"]
 
-def normalize_input(text: str):
+import re
+
+def normalize_input(text: str) -> str:
+    if not isinstance(text, str):
+        return ""
     text = text.lower().strip()
-    text = re.sub(r'[^a-z0-9\s]', '', text)        # remove punctuation
-    text = re.sub(r'\s+', ' ', text)               # collapse extra spaces
+    text = re.sub(r'[^a-z0-9\s]', '', text)  # remove punctuation
+    text = re.sub(r'\s+', ' ', text)         # collapse extra spaces
     return text
 
-def normalize_input(text: str):
-    text = text.lower().strip()
-    text = re.sub(r'[^a-z0-9\s]', '', text)        # remove punctuation
-    text = re.sub(r'\s+', ' ', text)               # collapse extra spaces
-    return text
 
 def find_item_in_input(player_input, convo=None):
     items = get_all_items()
@@ -51,12 +49,10 @@ def find_item_in_input(player_input, convo=None):
 
     print(f"[DEBUG] Normalized Input: '{input_lower}'")
 
-    # Guard: if it's an exact equipment category, don’t match it as an item
     category = get_equipment_category_from_input(player_input)
     if category and normalize_input(player_input) == normalize_input(category):
         return None, None
 
-    # 1. Full phrase match
     for name in item_names:
         norm_name = normalize_input(name)
         print(f"[DEBUG] Comparing item: '{norm_name}'")
@@ -64,7 +60,6 @@ def find_item_in_input(player_input, convo=None):
             print(f"[DEBUG] Item matched by full phrase: '{name}'")
             return name, None
 
-    # 2. Substring match
     exact_matches = [item for item in item_names if normalize_input(item) in input_lower]
     if len(exact_matches) == 1:
         print(f"[DEBUG] Item matched by substring: '{exact_matches[0]}'")
@@ -73,7 +68,6 @@ def find_item_in_input(player_input, convo=None):
         print(f"[DEBUG] Multiple substring matches found: {exact_matches}")
         return None, exact_matches
 
-    # 3. Fuzzy match
     matches = get_close_matches(input_lower, [normalize_input(i) for i in item_names], n=1, cutoff=0.7)
     if matches:
         matched = matches[0]
@@ -82,17 +76,12 @@ def find_item_in_input(player_input, convo=None):
                 print(f"[DEBUG] Item matched by fuzzy match: '{item}'")
                 return item, None
 
-    # 4. Fallback to pending item
     if convo and convo.pending_item:
         print(f"[DEBUG] Using pending item: {convo.pending_item}")
         return convo.pending_item, None
 
     print("[DEBUG] No item matched.")
     return None, None
-
-
-
-
 
 def detect_buy_intent(player_input: str, convo=None):
     item_name, _ = find_item_in_input(player_input, convo)
@@ -122,8 +111,6 @@ def detect_haggle_intent(player_input: str, convo=None):
 
     return PlayerIntent.HAGGLE, item_name
 
-
-
 def detect_deposit_intent(player_input: str):
     lowered = normalize_input(player_input)
     match = re.search(r'\b\d+\b', lowered)
@@ -142,34 +129,65 @@ def detect_withdraw_intent(player_input: str):
     print(f"[DEBUG] WITHDRAW_NEEDS_AMOUNT: No amount found in input '{player_input}'")
     return PlayerIntent.WITHDRAW_NEEDS_AMOUNT, None
 
-
 def get_equipment_category_from_input(player_input: str):
     from app.models.items import get_all_equipment_categories
-    from difflib import get_close_matches
+
     print(f"[DEBUG] get_equipment_category_from_input: input={player_input}")
 
     input_lower = normalize_input(player_input)
     input_words = input_lower.split()
 
+
     categories = get_all_equipment_categories()
     category_names = [normalize_input(c) for c in categories]
 
-    # 1. Full exact normalized match
     for i, norm_cat in enumerate(category_names):
         if norm_cat == input_lower:
             print(f"[DEBUG] Matched category: {categories[i]}")
-            return categories[i]  # return original name with formatting
+            return categories[i]
 
-    # 2. Partial word match
     for i, norm_cat in enumerate(category_names):
         if all(word in input_words for word in norm_cat.split()):
             return categories[i]
 
-    # 3. Fuzzy match
+
     match = get_close_matches(input_lower, category_names, n=1, cutoff=0.7)
     if match:
         i = category_names.index(match[0])
         print(f"[DEBUG] Matched category: {categories[i]}")
+        return categories[i]
+
+    return None
+
+def get_weapon_category_from_input(player_input: str):
+    from app.models.items import get_weapon_categories
+    from difflib import get_close_matches
+
+    print(f"[DEBUG] get_weapon_category_from_input: input={player_input}")
+
+    input_lower = normalize_input(player_input)
+    input_words = input_lower.split()
+
+    categories = get_weapon_categories()
+    category_names = [normalize_input(c) for c in categories]
+
+    # Exact match
+    for i, norm_cat in enumerate(category_names):
+        if norm_cat == input_lower:
+            print(f"[DEBUG] Matched weapon category: {categories[i]}")
+            return categories[i]
+
+    # All words match
+    for i, norm_cat in enumerate(category_names):
+        if all(word in input_words for word in norm_cat.split()):
+            print(f"[DEBUG] Matched weapon category: {categories[i]}")
+            return categories[i]
+
+    # Fuzzy match
+    match = get_close_matches(input_lower, category_names, n=1, cutoff=0.7)
+    if match:
+        i = category_names.index(match[0])
+        print(f"[DEBUG] Matched weapon category: {categories[i]}")
         return categories[i]
 
     return None
@@ -180,8 +198,25 @@ def interpret_input(player_input: str, convo=None):
     input_text = player_input if isinstance(player_input, str) else player_input.get("input", "")
     lowered = normalize_input(input_text)
     words = lowered.split()
+    metadata = {}
 
-    # ✅ 1. Confirmation
+    # === Equipment Category Check ===
+    equipment_category = get_equipment_category_from_input(lowered)
+    if equipment_category:
+        metadata["equipment_category"] = equipment_category
+        print(f"[DEBUG] Matched equipment category: {equipment_category}")
+        return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
+
+    # === Weapon Category Check ===
+    weapon_category = get_weapon_category_from_input(lowered)
+    if weapon_category:
+        metadata["weapon_category"] = weapon_category
+        print(f"[DEBUG] Matched weapon category: {weapon_category}")
+        return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
+
+
+
+    # === Confirmation / Cancellation ===
     if any(word in words for word in CONFIRMATION_WORDS):
         if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
             return {"intent": PlayerIntent.SELL_CONFIRM}
@@ -191,7 +226,6 @@ def interpret_input(player_input: str, convo=None):
             return {"intent": PlayerIntent.HAGGLE_CONFIRM}
         return {"intent": PlayerIntent.CONFIRM}
 
-    # ✅ 2. Cancellation
     if any(word in words for word in CANCELLATION_WORDS):
         if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
             return {"intent": PlayerIntent.SELL_CANCEL}
@@ -201,76 +235,78 @@ def interpret_input(player_input: str, convo=None):
             return {"intent": PlayerIntent.HAGGLE_CANCEL}
         return {"intent": PlayerIntent.CANCEL}
 
-    # ✅ 3. Gratitude / Small Talk
+    # === Basic Keywords ===
     if any(word in words for word in GRATITUDE_KEYWORDS):
         return {"intent": PlayerIntent.SHOW_GRATITUDE}
     if any(word in words for word in SMALL_TALK_KEYWORDS):
         return {"intent": PlayerIntent.SMALL_TALK}
 
-    # ✅ 4. Keyword-Based Action Matching (strict word match)
+    # === Intent Keyword Matching with Metadata ===
     for intent, keywords in INTENT_KEYWORDS.items():
         if any(keyword in words for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
-                intent_type, item = detect_buy_intent(player_input, convo)
-                return {"intent": intent_type, "item": item}
+                detected_intent, item = detect_buy_intent(player_input, convo)
+                if item:
+                    metadata["item"] = item
+                return {"intent": detected_intent, "metadata": metadata}
             elif intent == PlayerIntent.SELL_ITEM:
-                intent_type, item = detect_sell_intent(player_input)
-                return {"intent": intent_type, "item": item}
+                detected_intent, item = detect_sell_intent(player_input)
+                if item:
+                    metadata["item"] = item
+                return {"intent": detected_intent, "metadata": metadata}
             elif intent == PlayerIntent.HAGGLE:
-                intent_type, item = detect_haggle_intent(player_input, convo)
-                return {"intent": intent_type, "item": item}
+                detected_intent, item = detect_haggle_intent(player_input, convo)
+                if item:
+                    metadata["item"] = item
+                return {"intent": detected_intent, "metadata": metadata}
             elif intent == PlayerIntent.DEPOSIT_GOLD:
-                intent_type, amount = detect_deposit_intent(player_input)
-                return {"intent": intent_type, "amount": amount}
+                detected_intent, amount = detect_deposit_intent(player_input)
+                if amount is not None:
+                    metadata["amount"] = amount
+                return {"intent": detected_intent, "metadata": metadata}
             elif intent == PlayerIntent.WITHDRAW_GOLD:
-                intent_type, amount = detect_withdraw_intent(player_input)
-                return {"intent": intent_type, "amount": amount}
+                detected_intent, amount = detect_withdraw_intent(player_input)
+                if amount is not None:
+                    metadata["amount"] = amount
+                return {"intent": detected_intent, "metadata": metadata}
             else:
                 return {"intent": intent}
 
-    # ✅ 5. Item Detection without action word
-    item_name, _ = find_item_in_input(player_input)
+    # === Item Match Fallback ===
+    item_name, _ = find_item_in_input(player_input, convo)
     if item_name:
-        return {"intent": PlayerIntent.BUY_ITEM, "item": item_name}
+        metadata["item"] = item_name
+        return {"intent": PlayerIntent.BUY_ITEM, "metadata": metadata}
 
-    # ✅ 5.5. Equipment Category Detection (e.g. "armor", "tools")
-    category = get_equipment_category_from_input(player_input)
-    if category:
-        return {"intent": PlayerIntent.VIEW_ITEMS, "category": category}
-
-    # ✅ 6. If awaiting deposit amount and numeric input
+    # === Deferred Gold Amount Confirmation ===
     if convo and convo.player_intent == PlayerIntent.DEPOSIT_NEEDS_AMOUNT:
         match = re.search(r'\d+', lowered)
         if match:
-            amount = int(match.group())
-            return {"intent": PlayerIntent.DEPOSIT_CONFIRM, "amount": amount}
+            metadata["amount"] = int(match.group())
+            return {"intent": PlayerIntent.DEPOSIT_CONFIRM, "metadata": metadata}
 
-    # ✅ 7. If awaiting withdraw amount and numeric input
     if convo and convo.player_intent == PlayerIntent.WITHDRAW_NEEDS_AMOUNT:
         match = re.search(r'\d+', lowered)
         if match:
-            amount = int(match.group())
-            return {"intent": PlayerIntent.WITHDRAW_CONFIRM, "amount": amount}
+            metadata["amount"] = int(match.group())
+            return {"intent": PlayerIntent.WITHDRAW_CONFIRM, "metadata": metadata}
 
-    # ✅ 8. GPT fallback
+    # === GPT Confirmation Check Fallback ===
     gpt_result = check_confirmation_via_gpt(player_input, convo)
-    if gpt_result in [
+    if gpt_result in {
         PlayerIntent.BUY_CONFIRM, PlayerIntent.BUY_CANCEL,
         PlayerIntent.SELL_CONFIRM, PlayerIntent.SELL_CANCEL,
         PlayerIntent.HAGGLE_CONFIRM, PlayerIntent.HAGGLE_CANCEL
-    ]:
+    }:
         return {"intent": gpt_result}
 
     return {"intent": PlayerIntent.UNKNOWN}
 
 
-
-# === GPT FALLBACK CLASSIFIER ===
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def check_confirmation_via_gpt(user_input: str, convo=None):
-
     system_prompt = (
         "You are a classifier that determines whether a user's sentence is a CONFIRMATION, "
         "a CANCELLATION, or UNKNOWN. "
@@ -303,8 +339,6 @@ def check_confirmation_via_gpt(user_input: str, convo=None):
                 elif convo and convo.player_intent == PlayerIntent.BUY_ITEM:
                     return PlayerIntent.BUY_CANCEL
                 return PlayerIntent.CANCEL
-
-
     except Exception as e:
         print("[GPT CONFIRM CHECK ERROR]", e)
 

@@ -32,14 +32,23 @@ class GenericChatHandler:
         return self.agent.shopkeeper_check_balance_prompt(current_gold)
 
     def handle_view_items(self, player_input):
-        if isinstance(player_input, dict) and "category" in player_input:
-            return self.agent.shopkeeper_show_items_by_category(player_input["category"])
+        metadata = player_input.get("metadata", {}) if isinstance(player_input, dict) else {}
 
-        category = get_equipment_category_from_input(player_input)
-        if category:
+        # First, handle subcategory
+        if "subcategory" in metadata:
+            return self.agent.shopkeeper_show_items_by_subcategory(metadata["subcategory"])
+
+        # Then handle full category
+        if "category" in metadata:
+            category = metadata["category"]
             self.convo.metadata["current_category"] = category
             self.convo.metadata["current_page"] = 1
             self.convo.save_state()
             return self.agent.shopkeeper_show_items_by_category({"category": category, "page": 1})
 
+        # Fallback prompt
         return self.agent.shopkeeper_view_items_prompt()
+
+
+
+
