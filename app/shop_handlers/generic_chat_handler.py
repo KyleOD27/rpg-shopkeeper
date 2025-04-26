@@ -31,24 +31,41 @@ class GenericChatHandler:
         current_gold = self.party_data.get("party_gold", 0)
         return self.agent.shopkeeper_check_balance_prompt(current_gold)
 
-    def handle_view_items(self, player_input):
-        metadata = player_input.get("metadata", {}) if isinstance(player_input, dict) else {}
+    def handle_next_page(self, _input):
+        category = self.convo.metadata.get("current_category")
+        if not category:
+            return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
 
-        # First, handle subcategory
-        if "subcategory" in metadata:
-            return self.agent.shopkeeper_show_items_by_subcategory(metadata["subcategory"])
+        current_page = self.convo.metadata.get("current_page", 1)
+        next_page = current_page + 1
 
-        # Then handle full category
-        if "category" in metadata:
-            category = metadata["category"]
-            self.convo.metadata["current_category"] = category
-            self.convo.metadata["current_page"] = 1
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_category({"category": category, "page": 1})
+        self.convo.metadata["current_page"] = next_page
+        self.convo.save_state()
 
-        # Fallback prompt
-        return self.agent.shopkeeper_view_items_prompt()
+        return self.agent.shopkeeper_show_items_by_category({
+            "category": category,
+            "page": next_page
+        })
 
+    def handle_previous_page(self, _input):
+        category = self.convo.metadata.get("current_category")
+        if not category:
+            return self.agent.shopkeeper_view_items_prompt()
 
+        current_page = self.convo.metadata.get("current_page", 1)
+        new_page = max(current_page - 1, 1)
 
+        self.convo.metadata["current_page"] = new_page
+        self.convo.save_state()
 
+        return self.agent.shopkeeper_show_items_by_category({
+            "category": category,
+            "page": new_page
+        })
+
+    def handle_confirm(self, player_input):
+        # Generic fallback if no special confirmation handler was active
+        return self.agent.shopkeeper_generic_say("Thanks for confirming!")
+
+    def handle_cancel(self, player_input):
+        return self.agent.shopkeeper_generic_say("Alright, I’ve cancelled that action.")

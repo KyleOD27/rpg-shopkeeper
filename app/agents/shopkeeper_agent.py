@@ -349,3 +349,9 @@ class BaseShopkeeper:
                 lines.append("Say **previous** to go back.")
 
             return "\n".join(lines)
+
+    def shopkeeper_pending_item_reminder(self, pending_item):
+        return (
+            f"⚠️ Hold on! You were about to buy **{pending_item}**. "
+            "Let's finish that first! (Say 'yes' to confirm or 'no' to cancel.)"
+        )

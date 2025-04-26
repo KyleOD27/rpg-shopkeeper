@@ -22,7 +22,6 @@ class BuyHandler:
         return dict(get_item_by_name(name) or {})
 
     def process_buy_item_flow(self, player_input):
-        # Unified input handling
         raw_input = player_input.get("text", "") if isinstance(player_input, dict) else player_input
         item_name = player_input.get("item") if isinstance(player_input, dict) else None
         category = player_input.get("category") if isinstance(player_input, dict) else None
@@ -30,32 +29,27 @@ class BuyHandler:
         if not item_name and not category:
             item_name, category = find_item_in_input(raw_input, self.convo)
 
-        # 🎯 Show items from category
         if category and not item_name:
             self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
             return self.agent.shopkeeper_show_items_by_category(category, page=1)
 
-        # 🛑 Still couldn't detect an item
         if not item_name:
             if self.convo.state == ConversationState.AWAITING_ACTION:
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 return self.agent.shopkeeper_buy_enquire_item()
             return self.agent.shopkeeper_clarify_item_prompt()
 
-        # ✅ Proceed with item confirmation
+        # Proceed with item confirmation
         self.convo.set_pending_item(item_name)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         item = self.get_dict_item(item_name)
-        return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data["party_gold"])
+        return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
 
     def handle_haggle(self, player_input):
         item_name = self.convo.pending_item
         item = self.get_dict_item(item_name)
-        price = item.get("base_price", None)
 
-        self.convo.debug(f"HAGGLE: state={self.convo.state}, pending_item={item_name}, base_price={price}, item={item}")
-
-        if not item or price is None:
+        if not item or item.get("base_price") is None:
             return self.agent.say("There's nothing to haggle over just yet.")
 
         if self.convo.state != ConversationState.AWAITING_CONFIRMATION:
@@ -71,7 +65,13 @@ class BuyHandler:
         if not item:
             return self.agent.say("Something went wrong — I can't find that item in stock.")
 
-        return self.finalise_purchase()
+        response = self.finalise_purchase()
+
+        # ✅ Fix: Reset after finalizing
+        self.convo.set_state(ConversationState.AWAITING_ACTION)
+        self.convo.save_state()
+
+        return response
 
     def handle_cancel_purchase(self, player_input):
         item_name = self.convo.pending_item
@@ -79,6 +79,10 @@ class BuyHandler:
 
         self.convo.reset_state()
         self.convo.set_pending_item(None)
+        self.convo.set_discount(None)
+
+        self.convo.set_state(ConversationState.AWAITING_ACTION)  # ✅ Fix: Reset after cancelling
+        self.convo.save_state()
 
         return self.agent.shopkeeper_buy_cancel_prompt(item)
 
@@ -89,11 +93,9 @@ class BuyHandler:
         if not item:
             return self.agent.say("Something went wrong — I can't find that item in stock.")
 
-        # Determine cost with discount if applicable
         discount_price = self.convo.discount
         base_price = item.get("base_price", 0)
         cost = discount_price if discount_price is not None else base_price
-
         name = item.get("name") or item.get("title") or item_name
 
         if self.party_data["party_gold"] < cost:
@@ -103,7 +105,7 @@ class BuyHandler:
         self.party_data["party_gold"] -= cost
         update_party_gold(self.party_id, self.party_data["party_gold"])
 
-        # Record transaction with actual cost
+        # Record transaction
         discount_note = (
             f" (you saved {base_price - cost}g — discounted from {base_price}g)"
             if discount_price is not None else ""
@@ -119,9 +121,12 @@ class BuyHandler:
             details=f"Purchased item{discount_note}"
         )
 
-        # Reset conversation state
+        # ✅ Reset conversation state properly
         self.convo.reset_state()
         self.convo.set_pending_item(None)
         self.convo.set_discount(None)
+        self.convo.set_state(ConversationState.AWAITING_ACTION)
+        self.convo.save_state()
 
         return self.agent.shopkeeper_buy_success_prompt(item, cost)
+

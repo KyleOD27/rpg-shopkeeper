@@ -54,6 +54,25 @@ def handle_admin_command(admin_input):
         RuntimeFlags.DEBUG_MODE = False
         return "🐞 Debug mode DISABLED."
 
+
+    elif command == "reset_state":
+
+        execute_db("""
+
+            UPDATE character_sessions
+
+            SET current_state = NULL,
+
+                pending_action = NULL,
+
+                pending_item = NULL,
+
+                updated_at = CURRENT_TIMESTAMP
+
+        """)
+
+        return "🔄 All character session states have been reset."
+
     return (
         "Unknown admin command. Available commands:\n"
         "- admin shutdown\n"
@@ -61,5 +80,6 @@ def handle_admin_command(admin_input):
         "- admin log\n"
         "- admin restart\n"
         "- admin clear_cache\n"
-        "- admin debug_on / debug_off"
+        "- admin debug_on / debug_off\n"
+        "- admin reset_state"
     )

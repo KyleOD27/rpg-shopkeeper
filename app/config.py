@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class RuntimeFlags:
-    DEBUG_MODE = False
+    DEBUG_MODE = True
 
 TRACE_MODE = False
 

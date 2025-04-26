@@ -8,6 +8,9 @@ import os
 from dotenv import load_dotenv
 from integrations.sms.sms_router import handle_sms_command
 from app.config import RuntimeFlags  # ✅ Import runtime debug flag
+from flask import Flask, request, Response
+from twilio.twiml.messaging_response import MessagingResponse
+import logging
 
 # 🌱 Load environment variables
 load_dotenv()
@@ -26,30 +29,46 @@ client = Client(ACCOUNT_SID, AUTH_TOKEN)
 logging.basicConfig(
     level=logging.DEBUG if RuntimeFlags.DEBUG_MODE else logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
+    handlers=[
+        logging.StreamHandler(),  # Still print to console
+        logging.FileHandler("sms_debug.log", mode="a")  # Also write to file
+    ]
 )
 
 @app.route("/sms", methods=["POST"])
 def sms():
     try:
+        # --- Parse incoming form data ---
         form_data = request.form.to_dict()
-        app.logger.debug(f"📨 Raw form data: {form_data}")
+        app.logger.debug(f"📨 Full form data received: {form_data}")
 
-        sender = form_data.get("From", "")
+        sender = form_data.get("From", "").strip()
         body = form_data.get("Body", "").strip()
-        app.logger.info(f"📩 Received SMS from {sender}: {body}")
 
-        # 🧙 Route to RPG Shopkeeper logic
-        reply = handle_sms_command(sender=sender, text=body)
-        app.logger.info(f"📤 Responding with: {reply}")
+        if not sender or not body:
+            app.logger.warning(f"⚠️ Missing sender or body! Sender: '{sender}', Body: '{body}'")
+            return Response("<Response><Message>Invalid message received.</Message></Response>", mimetype="application/xml")
 
+        app.logger.info(f"📩 SMS received from {sender}: '{body}' (length: {len(body)})")
+
+        # --- Try handling the SMS command ---
+        try:
+            reply = handle_sms_command(sender=sender, text=body)
+        except Exception as e:
+            app.logger.error("❌ Error inside handle_sms_command", exc_info=True)
+            reply = "Oops! Something went wrong talking to the shopkeeper. Please tell the Game Master."
+
+        # --- Respond to Twilio ---
         resp = MessagingResponse()
         resp.message(reply)
+        app.logger.info(f"📤 Responding to {sender} with: '{reply}'")
+
         return Response(str(resp), mimetype="application/xml")
 
     except Exception as e:
-        app.logger.error("❌ Error in /sms route", exc_info=True)
-        return Response("<Response><Message>Oops! Something broke.</Message></Response>", mimetype="application/xml")
+        app.logger.error("❌ Top-level error in /sms route", exc_info=True)
+        return Response("<Response><Message>Major error occurred. Please try again later.</Message></Response>", mimetype="application/xml")
+
 
 
 def send_startup_sms():
