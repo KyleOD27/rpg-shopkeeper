@@ -1,5 +1,5 @@
 import random
-from app.conversation import ConversationState
+from app.conversation import ConversationState, PlayerIntent
 
 
 class HaggleHandler:
@@ -41,6 +41,10 @@ class HaggleHandler:
 
             self.convo.set_discount(discounted_price)
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+            self.convo.record_haggle_attempt(success=True)
+
+            self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
+
             self.convo.record_haggle_attempt(success=True)
 
             return self.agent.shopkeeper_generic_say(

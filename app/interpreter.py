@@ -13,18 +13,43 @@ from app.models.items import get_all_items, get_all_equipment_categories, get_we
 # --- INTENT KEYWORDS ---
 INTENT_KEYWORDS = {
     PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me", "what do you sell", "what do you buy", "what else"],
+
+    # 🛡️ Main categories
+    PlayerIntent.VIEW_ARMOUR_CATEGORY: ["armor", "armour"],
+    PlayerIntent.VIEW_WEAPON_CATEGORY: ["weapon", "weapons"],
+    PlayerIntent.VIEW_GEAR_CATEGORY: ["gear", "adventuring gear", "supplies", "packs"],
+    PlayerIntent.VIEW_TOOL_CATEGORY: ["tools", "tool", "kits", "artisan's tools"],
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["equipment", "mounts", "vehicles", "travelling gear"],
+
+    # 🛡️ Subcategories
+    PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light", "medium", "heavy", "shield"],
+    PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["simple", "martial", "bow", "crossbow", "dagger", "axe", "sword"],
+    PlayerIntent.VIEW_GEAR_SUBCATEGORY: ["backpack", "rope", "tinderbox", "torch"],
+    PlayerIntent.VIEW_TOOL_SUBCATEGORY: ["artisan", "disguise", "forgery", "thieves", "musical"],
+
+    # 🛒 Trading
     PlayerIntent.BUY_ITEM: ["buy", "purchase", "get", "acquire"],
     PlayerIntent.SELL_ITEM: ["sell", "offload", "trade in"],
+
+    # 💰 Money management
     PlayerIntent.DEPOSIT_GOLD: ["deposit", "store gold", "stash"],
     PlayerIntent.WITHDRAW_GOLD: ["withdraw", "take gold", "collect"],
+
+    # 📖 Utility
     PlayerIntent.CHECK_BALANCE: ["balance", "gold amount", "how much gold", "check funds"],
     PlayerIntent.VIEW_LEDGER: ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE: ["haggle", "negotiate", "bargain", "deal", "cheaper", "discount"],
+
+    # 🎩 Small talk
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
     PlayerIntent.GREETING: ["hello", "hi", "greetings", "hallo", "hey", "what up"],
+
+    # 📖 Navigation
     PlayerIntent.NEXT: ["next", "more", "show more", "continue", "keep going"],
     PlayerIntent.PREVIOUS: ["previous", "back", "go back", "last page"],
 }
+
+
 
 CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "fine"]
 CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
@@ -38,8 +63,14 @@ def normalize_input(text: str) -> str:
     text = re.sub(r'[^a-z0-9\s]', '', text)
     return re.sub(r'\s+', ' ', text)
 
+
+from difflib import get_close_matches
+
+
 def get_category_match(player_input: str):
     lowered = normalize_input(player_input)
+
+    # --- Dynamically load your real categories ---
     categories = {
         "equipment_category": get_all_equipment_categories(),
         "weapon_category": get_weapon_categories(),
@@ -47,16 +78,55 @@ def get_category_match(player_input: str):
         "armour_category": get_armour_categories(),
         "tool_category": get_tool_categories(),
     }
+
+    # --- Try exact match (after normalization) ---
     for category_type, names in categories.items():
         norm_names = [normalize_input(n) for n in names]
         if lowered in norm_names:
             idx = norm_names.index(lowered)
             return category_type, names[idx]
-        match = get_close_matches(lowered, norm_names, n=1, cutoff=0.8)
+
+    # --- Try close match (typo tolerance) ---
+    for category_type, names in categories.items():
+        norm_names = [normalize_input(n) for n in names]
+        match = get_close_matches(lowered, norm_names, n=1, cutoff=0.75)
         if match:
             idx = norm_names.index(match[0])
             return category_type, names[idx]
+
     return None, None
+
+def get_subcategory_match(section: str, player_input: str):
+    lowered = normalize_input(player_input)
+
+    if section == "armor":
+        categories = get_armour_categories()
+    elif section == "weapon":
+        categories = get_weapon_categories()
+    elif section == "gear":
+        categories = get_gear_categories()
+    elif section == "tool":
+        categories = get_tool_categories()
+    else:
+        return None  # Not a valid parent section
+
+    # 🚀 Create a dict, not just a list!
+    normalized_to_original = {normalize_input(c): c for c in categories}
+
+    # Exact match
+    if lowered in normalized_to_original:
+        return normalized_to_original[lowered]
+
+    # Fuzzy match
+    match = get_close_matches(lowered, normalized_to_original.keys(), n=1, cutoff=0.75)
+    if match:
+        return normalized_to_original[match[0]]
+
+    return None
+
+
+
+
 
 def find_item_in_input(player_input: str, convo=None):
     lowered = normalize_input(player_input)
@@ -132,13 +202,60 @@ def interpret_input(player_input: str, convo=None):
     words = lowered.split()
     metadata = {}
 
-    # --- Category match first (View Items flow) ---
+    # 🛡️ --- 1. Check if player is in a section (subcategory matching) ---
+    if convo:
+        current_section = convo.metadata.get("current_section")
+        if current_section:
+            matched_subcategory = get_subcategory_match(current_section, player_input)
+            if matched_subcategory:
+                metadata_key = {
+                    "armor": "armour_category",
+                    "weapon": "weapon_category",
+                    "gear": "gear_category",
+                    "tool": "tool_category",
+                }.get(current_section)
+
+                intent_mapping = {
+                    "armor": PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
+                    "weapon": PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
+                    "gear": PlayerIntent.VIEW_GEAR_SUBCATEGORY,
+                    "tool": PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+                }
+
+                if metadata_key and current_section in intent_mapping:
+                    metadata[metadata_key] = matched_subcategory
+                    metadata["current_section"] = current_section
+                    metadata["current_page"] = 1
+                    return {
+                        "intent": intent_mapping[current_section],
+                        "metadata": metadata
+                    }
+
+    # 🛑 --- 2. FORCE override if buying is detected ---
+    buy_keywords = INTENT_KEYWORDS.get(PlayerIntent.BUY_ITEM, [])
+    if any(keyword in lowered for keyword in buy_keywords):
+        detected_intent, item = detect_buy_intent(player_input, convo)
+        if item:
+            metadata["item"] = item
+        return {"intent": detected_intent, "metadata": metadata}
+
+    # 📦 --- 3. Normal category matching ---
     category_type, category_value = get_category_match(player_input)
     if category_type:
         metadata[category_type] = category_value
+        if category_type == "equipment_category":
+            return {"intent": PlayerIntent.VIEW_EQUIPMENT_CATEGORY, "metadata": metadata}
+        if category_type == "weapon_category":
+            return {"intent": PlayerIntent.VIEW_WEAPON_CATEGORY, "metadata": metadata}
+        if category_type == "gear_category":
+            return {"intent": PlayerIntent.VIEW_GEAR_CATEGORY, "metadata": metadata}
+        if category_type == "armour_category":
+            return {"intent": PlayerIntent.VIEW_ARMOUR_CATEGORY, "metadata": metadata}
+        if category_type == "tool_category":
+            return {"intent": PlayerIntent.VIEW_TOOL_CATEGORY, "metadata": metadata}
         return {"intent": PlayerIntent.VIEW_ITEMS, "metadata": metadata}
 
-    # --- Confirmation / Cancellation handling ---
+    # 🔄 --- 4. Confirmation / Cancellation / Small talk ---
     if any(word in words for word in CONFIRMATION_WORDS):
         if convo and convo.player_intent == PlayerIntent.SELL_ITEM:
             return {"intent": PlayerIntent.SELL_CONFIRM}
@@ -159,7 +276,7 @@ def interpret_input(player_input: str, convo=None):
     if any(word in words for word in SMALL_TALK_KEYWORDS):
         return {"intent": PlayerIntent.SMALL_TALK}
 
-    # --- Keyword intent detection ---
+    # 🔑 --- 5. Keyword-based detection ---
     for intent, keywords in INTENT_KEYWORDS.items():
         if any(keyword in lowered for keyword in keywords):
             if intent == PlayerIntent.BUY_ITEM:
@@ -184,13 +301,15 @@ def interpret_input(player_input: str, convo=None):
                 return {"intent": detected_intent, "metadata": metadata}
             return {"intent": intent}
 
-    # --- Last fallback: try to match item automatically ---
+    # 🛒 --- 6. LAST fallback: try match to an item directly ---
     item_name, _ = find_item_in_input(player_input, convo)
     if item_name:
         metadata["item"] = item_name
         return {"intent": PlayerIntent.BUY_ITEM, "metadata": metadata}
 
+    # ❓ --- 7. Unknown ---
     return {"intent": PlayerIntent.UNKNOWN}
+
 
 # --- OPTIONAL: GPT confirmation fallback ---
 load_dotenv()
@@ -248,3 +367,5 @@ def get_tool_category_from_input(player_input: str):
     if category_type == "tool_category":
         return category_value
     return None
+
+

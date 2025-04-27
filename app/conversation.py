@@ -5,6 +5,15 @@ from app.config import RuntimeFlags
 
 
 class PlayerIntent(Enum):
+    VIEW_TOOL_SUBCATEGORY = auto()
+    VIEW_GEAR_SUBCATEGORY = auto()
+    VIEW_WEAPON_SUBCATEGORY = auto()
+    VIEW_ARMOUR_SUBCATEGORY = auto()
+    VIEW_TOOL_CATEGORY = auto()
+    VIEW_ARMOUR_CATEGORY = auto()
+    VIEW_GEAR_CATEGORY = auto()
+    VIEW_WEAPON_CATEGORY = auto()
+    VIEW_EQUIPMENT_CATEGORY = auto()
     SHOW_GRATITUDE = auto()
     VIEW_ITEMS = auto()
     BUY_ITEM = auto()
@@ -158,12 +167,17 @@ class Conversation:
         self.save_state()
 
     def save_state(self):
+
+        def safe_name(value):
+            return value.name if hasattr(value, 'name') else value
+
         update_convo_state(
             character_id=self.character_id,
-            state=self.state.value,
-            action=self.pending_action,
+            state=safe_name(self.state),
+            action=safe_name(self.pending_action),
             item=self.pending_item
         )
+
         log_convo_state(
             character_id=self.character_id,
             state=self.state.value,
@@ -183,4 +197,9 @@ class Conversation:
         print(f"Item: {self.pending_item or 'None'}")
         print(f"User Input: {self.latest_input if self.latest_input else 'N/A'}")
         print(f"Player Intent: {self.player_intent.name if self.player_intent else 'N/A'}")
+        print(f"Metadata: {self.metadata if self.metadata else '{}'}")
         print("--------------------------------------")
+
+
+    def set_pending_action(self, action):
+        self.pending_action = action

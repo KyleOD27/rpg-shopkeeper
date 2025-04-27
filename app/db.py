@@ -15,17 +15,17 @@ DB_PATH = BASE_DIR / 'rpg-shopkeeper.db'
 
 
 def get_connection():
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row  # 🛠️ <-- ADD THIS
+    return conn
 
 
 def query_db(query, args=(), one=False):
     with closing(get_connection()) as conn:
-        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute(query, args)
         rv = cur.fetchall()
         return (rv[0] if rv else None) if one else rv
-
 
 def execute_db(query, args=()):
     with closing(get_connection()) as conn:

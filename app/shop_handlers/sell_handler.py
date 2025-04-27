@@ -80,3 +80,6 @@ class SellHandler:
         self.convo.set_pending_item(None)
 
         return self.agent.shopkeeper_sell_success_prompt(item, offer_price)
+
+    def handle_sell_confirm(self, player_input):
+        return self.handle_confirm_sale(player_input)

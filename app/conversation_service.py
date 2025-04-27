@@ -1,7 +1,7 @@
-# app/conversation_service.py
+# ✅ FULL NEW conversation_service.py
 
 from app.conversation import ConversationState, PlayerIntent
-from app.interpreter import interpret_input, normalize_input
+from app.interpreter import interpret_input
 from commands.dm_commands import handle_dm_command
 from commands.admin_commands import handle_admin_command
 from app.shop_handlers.buy_handler import BuyHandler
@@ -9,7 +9,16 @@ from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
 from app.shop_handlers.withdraw_handler import WithdrawHandler
 from app.shop_handlers.generic_chat_handler import GenericChatHandler
+from app.shop_handlers.view_handler import ViewHandler
 from typing import Callable, Dict, Tuple, Any
+
+CATEGORY_MAPPING = {
+    PlayerIntent.VIEW_ARMOUR_CATEGORY: ("armour_category", "Armor"),
+    PlayerIntent.VIEW_WEAPON_CATEGORY: ("weapon_category", "Weapon"),
+    PlayerIntent.VIEW_GEAR_CATEGORY: ("gear_category", "Adventuring Gear"),
+    PlayerIntent.VIEW_TOOL_CATEGORY: ("tool_category", "Tools"),
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ("equipment_category", "Mounts and Vehicles"),
+}
 
 class ConversationService:
     def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
@@ -26,24 +35,23 @@ class ConversationService:
         self.sell_handler = SellHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.deposit_handler = DepositHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
-        self.generic_handler = GenericChatHandler(agent, self.party_data, self.convo, party_id)
+        self.generic_handler = GenericChatHandler(agent, self.party_data, convo, party_id)
+        self.view_handler = ViewHandler(convo, agent)
+
         self.intent_router: Dict[Tuple[str, str], Callable[[dict], Any]] = self._build_router()
 
     def handle(self, player_input):
-        # --- Early admin/dm commands ---
+        # --- Admin / DM Early Commands ---
         if player_input.strip().lower().startswith("dm "):
             return handle_dm_command(self.party_id, self.player_id, player_input, party_data=self.party_data)
 
         if player_input.strip().lower().startswith("admin "):
             admin_response = handle_admin_command(player_input)
-
-            # 🧹 Reset conversation memory if reset was triggered
             if "reset" in player_input.lower():
                 self.convo.reset_state()
                 self.convo.set_pending_item(None)
                 self.convo.set_discount(None)
                 self.convo.save_state()
-
             return admin_response
 
         # --- Normal Input ---
@@ -52,207 +60,157 @@ class ConversationService:
         if isinstance(player_input, str):
             raw_text = player_input
             intent_data = interpret_input(player_input, self.convo)
-        elif isinstance(player_input, dict):
-            raw_text = player_input.get("text", "")
-            intent_data = player_input
         else:
             raw_text = str(player_input)
-            intent_data = interpret_input(raw_text, self.convo)
+            intent_data = player_input
 
         intent = intent_data.get("intent")
-        metadata = intent_data.get("metadata", {})
+        metadata = intent_data.get("metadata", {}) or {}
         item = metadata.get("item")
         self.convo.set_intent(intent)
+
+        if intent in CATEGORY_MAPPING:
+            field, value = CATEGORY_MAPPING[intent]
+            metadata[field] = value
+
+        wrapped_input = {
+            "text": raw_text,
+            "intent": intent,
+            "item": item,
+            **metadata,
+        }
 
         if item:
             self.convo.set_pending_item(item)
 
-        # 🛡️ Capture categories
-        equipment_category = metadata.get("equipment_category")
-        weapon_category = metadata.get("weapon_category")
-        gear_category = metadata.get("gear_category")
-        armour_category = metadata.get("armour_category")
-        tool_category = metadata.get("tool_category")
-
-        wrapped_input = {
-            "text": raw_text,
-            "intent": intent,
-            "item": item,
-            **intent_data,
-            **metadata
-        }
-
-        wrapped_input = {
-            "text": raw_text,
-            "intent": intent,
-            "item": item,
-            **intent_data,
-            **metadata
-        }
-
-        # 🛑 Critical intent early handling (starts here)
-        if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
-            ...
-
-        # 🛡️ If they asked for a category, show items by category first
-        if equipment_category:
-            return self.agent.shopkeeper_show_items_by_category({"category": equipment_category})
-        if weapon_category:
-            return self.agent.shopkeeper_show_items_by_weapon_category({"weapon_category": weapon_category})
-        if gear_category:
-            return self.agent.shopkeeper_show_items_by_gear_category({"gear_category": gear_category})
-        if armour_category:
-            return self.agent.shopkeeper_show_items_by_armour_category({"armour_category": armour_category})
-        if tool_category:
-            return self.agent.shopkeeper_show_items_by_tool_category({"tool_category": tool_category})
-
-        # 🛑 Critical intent early handling
-        if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
-            return self.buy_handler.process_buy_item_flow(wrapped_input)
-        if intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
-            return self.sell_handler.process_sell_item_flow(wrapped_input)
-        if intent in {PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
-            return self.deposit_handler.process_deposit_gold_flow(wrapped_input)
-        if intent in {PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
-            return self.withdraw_handler.process_withdraw_gold_flow(wrapped_input)
-
-        # 🛡️ Misaligned confirm/cancel protections
-        if intent in {PlayerIntent.CONFIRM, PlayerIntent.CANCEL, PlayerIntent.BUY_CANCEL,
-                      PlayerIntent.SELL_CANCEL, PlayerIntent.HAGGLE_CANCEL}:
-            if self.convo.player_intent == PlayerIntent.BUY_ITEM and intent in {PlayerIntent.CONFIRM,
-                                                                                PlayerIntent.BUY_CONFIRM}:
-                self.convo.debug("User reconfirmed purchase outside confirmation — rerouting to BUY_CONFIRM.")
-                intent = PlayerIntent.BUY_CONFIRM
-            elif self.convo.player_intent == PlayerIntent.SELL_ITEM and intent in {PlayerIntent.CONFIRM,
-                                                                                   PlayerIntent.SELL_CONFIRM}:
-                self.convo.debug("User reconfirmed sale outside confirmation — rerouting to SELL_CONFIRM.")
-                intent = PlayerIntent.SELL_CONFIRM
-            elif intent in {PlayerIntent.CANCEL, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CANCEL,
-                            PlayerIntent.HAGGLE_CANCEL}:
-                self.convo.debug("User cancelled — clearing pending item and resetting state.")
-                self.convo.set_pending_item(None)
-                self.convo.set_discount(None)
-                self.convo.reset_state()
-                self.convo.set_state(ConversationState.AWAITING_ACTION)
-                self.convo.save_state()
-                return self.generic_handler.handle_cancel(wrapped_input)
-            else:
-                self.convo.debug(f"Ignoring {intent} — not in confirmation state.")
-                self.convo.set_intent(PlayerIntent.UNKNOWN)
-                intent = PlayerIntent.UNKNOWN
-
-        # ⚡ Polished Pending Confirmation Protection
+        # --- Pending Confirmation Protection ---
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
-            if intent not in {PlayerIntent.CONFIRM, PlayerIntent.CANCEL, PlayerIntent.UNKNOWN}:
+            if intent not in {PlayerIntent.CONFIRM, PlayerIntent.CANCEL, PlayerIntent.BUY_CONFIRM,
+                              PlayerIntent.SELL_CONFIRM, PlayerIntent.HAGGLE}:
                 self.convo.debug(
-                    f"User gave new input '{player_input}' while pending confirmation for '{self.convo.pending_item}'."
+                    f"User gave input '{player_input}' while pending confirmation for '{self.convo.pending_item}'"
                 )
-                # 🌟 Gently warn the user
+
+                # Explicitly set the new player intent
+                # --- Upgrade the STATE properly ---
+                if self.convo.pending_action == PlayerIntent.BUY_ITEM:
+                    self.convo.set_state(ConversationState.AWAITING_PURCHASE_CONFIRMATION)
+                    self.convo.set_intent(PlayerIntent.BUY_CONFIRM)
+
+                elif self.convo.pending_action == PlayerIntent.SELL_ITEM:
+                    self.convo.set_state(ConversationState.AWAITING_SALE_CONFIRMATION)
+                    self.convo.set_intent(PlayerIntent.SELL_CONFIRM)
+
+                elif self.convo.pending_action == PlayerIntent.HAGGLE:
+                    self.convo.set_state(ConversationState.AWAITING_HAGGLE_CONFIRMATION)
+                    self.convo.set_intent(PlayerIntent.HAGGLE_CONFIRM)
+
+                # 🚨 IMPORTANT: Do NOT continue routing, return early!
                 return self.agent.shopkeeper_pending_item_reminder(self.convo.pending_item)
 
-        # 🧭 Normal routing
+        # --- Normal Routing ---
         handler = self.intent_router.get((self.convo.state, intent))
         if handler:
             return handler(wrapped_input)
 
-        # Handle introduction
+        # --- Fallbacks ---
         if self.convo.state == ConversationState.INTRODUCTION:
             return self.handle_introduction(player_input)
 
         return self.generic_handler.handle_fallback(player_input)
 
+    def _handle_confirmation_flow(self, wrapped_input):
+        intent = wrapped_input.get("intent")
+
+        if self.convo.pending_action in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM}:
+            self.convo.debug("User confirmed BUY_ITEM — completing purchase.")
+            return self.buy_handler.handle_confirm_purchase(wrapped_input)
+
+        if self.convo.pending_action in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_CONFIRM}:
+            self.convo.debug("User confirmed SELL_ITEM — completing sale.")
+            return self.sell_handler.handle_sell_confirm(wrapped_input)
+
+        self.convo.debug("Confirmation flow reached but no matching pending action found.")
+        return self.generic_handler.handle_fallback(wrapped_input)
+
+    def _handle_cancellation_flow(self, wrapped_input):
+        self.convo.debug("User cancelled — resetting conversation state.")
+        self.convo.set_pending_item(None)
+        self.convo.set_pending_action(None)
+        self.convo.set_discount(None)
+        self.convo.reset_state()
+        self.convo.set_state(ConversationState.AWAITING_ACTION)
+        self.convo.save_state()
+        return self.generic_handler.handle_cancel(wrapped_input)
+
     def _build_router(self):
-        return {
-            # Greetings
-            (ConversationState.INTRODUCTION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
-            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.GREETING): self.generic_handler.handle_reply_to_greeting,
+        router = {}
 
-            # Viewing Items
-            (ConversationState.INTRODUCTION, PlayerIntent.VIEW_ITEMS): self.view_items_handler,
-            (ConversationState.AWAITING_ACTION, PlayerIntent.VIEW_ITEMS): self.view_items_handler,
-            (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.VIEW_ITEMS): self.view_items_handler,
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.VIEW_ITEMS): self.view_items_handler,
+        # --- Greetings ---
+        for state in [ConversationState.INTRODUCTION, ConversationState.AWAITING_ACTION,
+                      ConversationState.AWAITING_ITEM_SELECTION, ConversationState.AWAITING_CONFIRMATION]:
+            router[(state, PlayerIntent.GREETING)] = self.generic_handler.handle_reply_to_greeting
 
-            # Moving through pages
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.NEXT): self.generic_handler.handle_next_page,
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.PREVIOUS): self.generic_handler.handle_previous_page,
+        # --- Viewing Items ---
+        for state in [ConversationState.INTRODUCTION, ConversationState.AWAITING_ACTION,
+                      ConversationState.AWAITING_ITEM_SELECTION, ConversationState.VIEWING_CATEGORIES]:
+            router[(state, PlayerIntent.VIEW_ITEMS)] = self.view_handler.process_view_items_flow
+            router[(state, PlayerIntent.VIEW_EQUIPMENT_CATEGORY)] = self.view_handler.process_view_items_flow
+            router[(state, PlayerIntent.VIEW_WEAPON_CATEGORY)] = self.view_handler.process_view_items_flow
+            router[(state, PlayerIntent.VIEW_GEAR_CATEGORY)] = self.view_handler.process_view_items_flow
+            router[(state, PlayerIntent.VIEW_ARMOUR_CATEGORY)] = self.view_handler.process_view_items_flow
+            router[(state, PlayerIntent.VIEW_TOOL_CATEGORY)] = self.view_handler.process_view_items_flow
 
-            # Buy/Sell inside categories
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_ITEM): self.buy_handler.process_buy_item_flow,
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_NEEDS_ITEM): self.buy_handler.process_buy_item_flow,
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.SELL_ITEM): self.sell_handler.process_sell_item_flow,
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.SELL_NEEDS_ITEM): self.sell_handler.process_sell_item_flow,
+        # --- Subcategories ---
+        router[(ConversationState.VIEWING_CATEGORIES,
+                PlayerIntent.VIEW_ARMOUR_SUBCATEGORY)] = self.view_handler.process_view_armour_subcategory
+        router[(ConversationState.VIEWING_CATEGORIES,
+                PlayerIntent.VIEW_WEAPON_SUBCATEGORY)] = self.view_handler.process_view_weapon_subcategory
+        router[(ConversationState.VIEWING_CATEGORIES,
+                PlayerIntent.VIEW_GEAR_SUBCATEGORY)] = self.view_handler.process_view_gear_subcategory
+        router[(ConversationState.VIEWING_CATEGORIES,
+                PlayerIntent.VIEW_TOOL_SUBCATEGORY)] = self.view_handler.process_view_tool_subcategory
 
-            # Confirm/Cancel
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CONFIRM): self.generic_handler.handle_confirm,
-            (ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CANCEL): self.generic_handler.handle_cancel,
+        # --- Pagination ---
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.NEXT)] = self.generic_handler.handle_next_page
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.PREVIOUS)] = self.generic_handler.handle_previous_page
 
-            # Fallback
-            (ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN): self.generic_handler.handle_fallback,
-            (ConversationState.VIEWING_CATEGORIES, PlayerIntent.UNKNOWN): self.generic_handler.handle_fallback,
-        }
+        # --- Buy / Sell Routing ---
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_ITEM)] = self.buy_handler.process_buy_item_flow
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.BUY_NEEDS_ITEM)] = self.buy_handler.process_buy_item_flow
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.SELL_ITEM)] = self.sell_handler.process_sell_item_flow
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.SELL_NEEDS_ITEM)] = self.sell_handler.process_sell_item_flow
+        router[(ConversationState.AWAITING_ACTION, PlayerIntent.BUY_ITEM)] = self.buy_handler.process_buy_item_flow
+        router[(ConversationState.AWAITING_ACTION, PlayerIntent.BUY_NEEDS_ITEM)] = self.buy_handler.process_buy_item_flow
+        router[(ConversationState.AWAITING_ACTION, PlayerIntent.SELL_ITEM)] = self.sell_handler.process_sell_item_flow
+        router[(ConversationState.AWAITING_ACTION, PlayerIntent.SELL_NEEDS_ITEM)] = self.sell_handler.process_sell_item_flow
 
-    def view_items_handler(self, player_input):
-        metadata = player_input if isinstance(player_input, dict) else {}
+        # --- Confirm / Cancel ---
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CONFIRM)] = self.buy_handler.handle_confirm_purchase
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CONFIRM)] = self.sell_handler.handle_sell_confirm
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CONFIRM)] = self.generic_handler.handle_confirm
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CANCEL)] = self._handle_cancellation_flow
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CANCEL)] = self._handle_cancellation_flow
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CANCEL)] = self._handle_cancellation_flow
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE_CANCEL)] = self._handle_cancellation_flow
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE_CANCEL)] = self._handle_cancellation_flow
 
-        if metadata.get("weapon_category"):
-            self.convo.metadata["current_weapon_category"] = metadata["weapon_category"]
-            self.convo.metadata["current_page"] = 1
-            self.convo.state = ConversationState.VIEWING_CATEGORIES
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_weapon_category({
-                "weapon_category": metadata["weapon_category"],
-                "page": 1
-            })
+        # --- Haggle During Confirmation ---
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE)] = self.buy_handler.handle_haggle
 
-        if metadata.get("armour_category"):
-            self.convo.metadata["current_armour_category"] = metadata["armour_category"]
-            self.convo.metadata["current_page"] = 1
-            self.convo.state = ConversationState.VIEWING_CATEGORIES
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_armour_category({
-                "armour_category": metadata["armour_category"],
-                "page": 1
-            })
+        # --- Fallbacks ---
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.UNKNOWN)] = self.generic_handler.handle_fallback
+        router[(ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN)] = self.generic_handler.handle_fallback
+        router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.UNKNOWN)] = self.view_handler.process_view_items_flow
 
-        if metadata.get("gear_category"):
-            self.convo.metadata["current_gear_category"] = metadata["gear_category"]
-            self.convo.metadata["current_page"] = 1
-            self.convo.state = ConversationState.VIEWING_CATEGORIES
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_gear_category({
-                "gear_category": metadata["gear_category"],
-                "page": 1
-            })
-
-        if metadata.get("tool_category"):
-            self.convo.metadata["current_tool_category"] = metadata["tool_category"]
-            self.convo.metadata["current_page"] = 1
-            self.convo.state = ConversationState.VIEWING_CATEGORIES
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_tool_category({
-                "tool_category": metadata["tool_category"],
-                "page": 1
-            })
-
-        if metadata.get("equipment_category"):
-            self.convo.metadata["current_category"] = metadata["equipment_category"]
-            self.convo.metadata["current_page"] = 1
-            self.convo.state = ConversationState.VIEWING_CATEGORIES
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_category({
-                "category": metadata["equipment_category"],
-                "page": 1
-            })
-
-        return self.agent.shopkeeper_view_items_prompt()
+        return router
 
     def handle_introduction(self, player_input):
         intent = self.convo.player_intent
         if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
-            return self.buy_handler.process_buy_item_flow(self.convo.input_text)
-        elif intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
-            return self.sell_handler.process_sell_item_flow(self.convo.input_text)
+            return self.buy_handler.process_buy_item_flow(player_input)
+        if intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
+            return self.sell_handler.process_sell_item_flow(player_input)
         return self.generic_handler.handle_fallback(player_input)
+
+

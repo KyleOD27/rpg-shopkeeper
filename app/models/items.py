@@ -121,4 +121,15 @@ def get_tool_categories():
     rows = query_db(sql)
     return [row["tool_category"] for row in rows if row["tool_category"]]
 
+def get_items_by_armour_category(armour_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(armour_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f"%{armour_category}%", page_size, offset))
+
 

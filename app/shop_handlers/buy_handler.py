@@ -7,7 +7,6 @@ from app.models.ledger import record_transaction
 from app.conversation import ConversationState, PlayerIntent
 from app.shop_handlers.haggle_handler import HaggleHandler
 
-
 class BuyHandler:
     def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
         self.convo = convo
@@ -31,7 +30,7 @@ class BuyHandler:
 
         if category and not item_name:
             self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
-            return self.agent.shopkeeper_show_items_by_category(category, page=1)
+            return self.agent.shopkeeper_show_items_by_category({"equipment_category": category})
 
         if not item_name:
             if self.convo.state == ConversationState.AWAITING_ACTION:
@@ -39,9 +38,12 @@ class BuyHandler:
                 return self.agent.shopkeeper_buy_enquire_item()
             return self.agent.shopkeeper_clarify_item_prompt()
 
-        # Proceed with item confirmation
+        # ✅ Set pending item, pending action, and state
         self.convo.set_pending_item(item_name)
+        self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+        self.convo.save_state()
+
         item = self.get_dict_item(item_name)
         return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
 
@@ -67,7 +69,7 @@ class BuyHandler:
 
         response = self.finalise_purchase()
 
-        # ✅ Fix: Reset after finalizing
+        # ✅ Reset conversation after purchase
         self.convo.set_state(ConversationState.AWAITING_ACTION)
         self.convo.save_state()
 
@@ -81,7 +83,7 @@ class BuyHandler:
         self.convo.set_pending_item(None)
         self.convo.set_discount(None)
 
-        self.convo.set_state(ConversationState.AWAITING_ACTION)  # ✅ Fix: Reset after cancelling
+        self.convo.set_state(ConversationState.AWAITING_ACTION)
         self.convo.save_state()
 
         return self.agent.shopkeeper_buy_cancel_prompt(item)
@@ -121,7 +123,7 @@ class BuyHandler:
             details=f"Purchased item{discount_note}"
         )
 
-        # ✅ Reset conversation state properly
+        # ✅ Reset conversation state after transaction
         self.convo.reset_state()
         self.convo.set_pending_item(None)
         self.convo.set_discount(None)
@@ -130,3 +132,5 @@ class BuyHandler:
 
         return self.agent.shopkeeper_buy_success_prompt(item, cost)
 
+    def handle_buy_confirm(self, player_input):
+        return self.handle_confirm_purchase(player_input)
