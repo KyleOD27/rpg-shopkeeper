@@ -58,11 +58,15 @@ SMALL_TALK_KEYWORDS = ["goodbye", "farewell"]
 
 # --- UTILITY FUNCTIONS ---
 
-def normalize_input(text: str) -> str:
+def normalize_input(text: str, convo=None) -> str:
     text = text.lower().strip()
     text = re.sub(r'[^a-z0-9\s]', '', text)
-    return re.sub(r'\s+', ' ', text)
+    normalized = re.sub(r'\s+', ' ', text)
 
+    if convo is not None:
+        convo.normalized_input = normalized
+
+    return normalized
 
 from difflib import get_close_matches
 
@@ -244,6 +248,11 @@ def interpret_input(player_input: str, convo=None):
     category_type, category_value = get_category_match(player_input)
     if category_type:
         metadata[category_type] = category_value
+
+        # 🛠 SPECIAL PATCH: Weapon inside equipment_category should route to VIEW_WEAPON_CATEGORY
+        if category_type == "equipment_category" and category_value.lower() == "weapon":
+            return {"intent": PlayerIntent.VIEW_WEAPON_CATEGORY, "metadata": metadata}
+
         if category_type == "equipment_category":
             return {"intent": PlayerIntent.VIEW_EQUIPMENT_CATEGORY, "metadata": metadata}
         if category_type == "weapon_category":

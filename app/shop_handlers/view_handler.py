@@ -119,32 +119,22 @@ class ViewHandler:
             "page": page
         })
 
-    def process_view_weapon_subcategory(self, player_input):
-        from app.models.items import get_weapon_categories
 
-        weapon_category = player_input.get("weapon_category")
-        page = player_input.get("page", 1)
+    def process_view_weapon_subcategory(self, payload):
+        weapon_category = payload.get("weapon_category")  # direct
+        page = payload.get("page", 1)  # direct
 
         if not weapon_category:
             return "⚠️ I didn't quite catch which weapon type you meant. Try saying it again?"
 
-        valid_categories = get_weapon_categories()
-        normalized_valid = [c.lower() for c in valid_categories]
-        selected = weapon_category.lower()
-
-        if selected not in normalized_valid:
-            return "⚠️ I didn't quite catch which weapon type you meant. Try saying it again?"
-
-        idx = normalized_valid.index(selected)
-        proper_category = valid_categories[idx]
-
-        self.convo.metadata["current_weapon_category"] = proper_category
+        self.convo.metadata["current_weapon_category"] = weapon_category
         self.convo.metadata["current_page"] = page
+        self.convo.metadata["current_section"] = "weapon"
         self.convo.state = ConversationState.VIEWING_CATEGORIES
         self.convo.save_state()
 
         return self.agent.shopkeeper_show_items_by_weapon_category({
-            "weapon_category": proper_category,
+            "weapon_category": weapon_category,
             "page": page
         })
 

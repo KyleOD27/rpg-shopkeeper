@@ -68,7 +68,7 @@ class Conversation:
         self.player_intent = None
         self.match_confirmed = False
         self.metadata = {}
-
+        self.normalized_input = None
         saved = get_convo_state(self.character_id)
         if saved:
             self.state = ConversationState(saved["current_state"])
@@ -196,10 +196,10 @@ class Conversation:
         print(f"Action: {self.pending_action}")
         print(f"Item: {self.pending_item or 'None'}")
         print(f"User Input: {self.latest_input if self.latest_input else 'N/A'}")
+        print(f"Normalized Input: {self.normalized_input if self.normalized_input else 'N/A'}")  # 👈 Add this line!
         print(f"Player Intent: {self.player_intent.name if self.player_intent else 'N/A'}")
         print(f"Metadata: {self.metadata if self.metadata else '{}'}")
         print("--------------------------------------")
-
 
     def set_pending_action(self, action):
         self.pending_action = action

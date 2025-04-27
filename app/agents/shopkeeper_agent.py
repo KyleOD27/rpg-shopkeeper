@@ -6,7 +6,7 @@ from app.models.items import (
     get_armour_categories,
     get_gear_categories,
     get_tool_categories,
-    get_items_by_armour_category
+    get_items_by_armour_category, get_items_by_weapon_category
 )
 from app.interpreter import normalize_input
 from datetime import datetime
@@ -102,7 +102,29 @@ class BaseShopkeeper:
         return self._show_items(player_input, field="equipment_category", emoji="📦", label="Items")
 
     def shopkeeper_show_items_by_weapon_category(self, player_input):
-        return self._show_items(player_input, field="weapon_category", emoji="⚔️", label="Weapons")
+        weapon_category = player_input.get("weapon_category")
+        page = player_input.get("page", 1)
+
+        if not weapon_category:
+            return "⚠️ I didn't quite catch which weapon type you meant. Try saying it again?"
+
+        items = get_items_by_weapon_category(weapon_category, page, page_size=5)
+
+        if not items:
+            return f"Hmm... looks like we don't have any **{weapon_category}** armour in stock right now."
+
+        lines = [f"⚔️ **{weapon_category.title()} Armour (Page {page})**\n"]
+        for item in items:
+            name = item["item_name"]
+            price = item["base_price"]
+            lines.append(f" • {name} — {price} gold")
+
+        if len(items) == 5:
+            lines.append("\nSay **next** to see more.")
+        if page > 1:
+            lines.append("Say **previous** to go back.")
+
+        return "\n".join(lines)
 
     def shopkeeper_show_items_by_armour_category(self, player_input):
         armour_category = player_input.get("armour_category")

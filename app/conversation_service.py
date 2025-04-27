@@ -1,7 +1,7 @@
 # ✅ FULL NEW conversation_service.py
 
 from app.conversation import ConversationState, PlayerIntent
-from app.interpreter import interpret_input
+from app.interpreter import interpret_input, normalize_input
 from commands.dm_commands import handle_dm_command
 from commands.admin_commands import handle_admin_command
 from app.shop_handlers.buy_handler import BuyHandler
@@ -58,6 +58,12 @@ class ConversationService:
         self.convo.set_input(player_input)
 
         if isinstance(player_input, str):
+            normalized = normalize_input(player_input)
+            self.convo.normalized_input = normalized  # ✅ Store it for debugging
+        else:
+            self.convo.normalized_input = "N/A"
+
+        if isinstance(player_input, str):
             raw_text = player_input
             intent_data = interpret_input(player_input, self.convo)
         else:
@@ -94,15 +100,15 @@ class ConversationService:
                 # Explicitly set the new player intent
                 # --- Upgrade the STATE properly ---
                 if self.convo.pending_action == PlayerIntent.BUY_ITEM:
-                    self.convo.set_state(ConversationState.AWAITING_PURCHASE_CONFIRMATION)
+                    self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                     self.convo.set_intent(PlayerIntent.BUY_CONFIRM)
 
                 elif self.convo.pending_action == PlayerIntent.SELL_ITEM:
-                    self.convo.set_state(ConversationState.AWAITING_SALE_CONFIRMATION)
+                    self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                     self.convo.set_intent(PlayerIntent.SELL_CONFIRM)
 
                 elif self.convo.pending_action == PlayerIntent.HAGGLE:
-                    self.convo.set_state(ConversationState.AWAITING_HAGGLE_CONFIRMATION)
+                    self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                     self.convo.set_intent(PlayerIntent.HAGGLE_CONFIRM)
 
                 # 🚨 IMPORTANT: Do NOT continue routing, return early!

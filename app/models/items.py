@@ -76,16 +76,7 @@ def get_armour_categories():
     rows = query_db(sql)
     return [row["armour_category"] for row in rows if row["armour_category"]]
 
-def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
-    offset = (page - 1) * page_size
-    query = """
-        SELECT item_name, base_price
-        FROM items
-        WHERE LOWER(weapon_category) LIKE LOWER(?)
-        ORDER BY item_name
-        LIMIT ? OFFSET ?
-    """
-    return query_db(query, (f"%{weapon_category}%", page_size, offset))
+
 
 def get_weapon_categories_from_db():
     sql = """
@@ -131,5 +122,16 @@ def get_items_by_armour_category(armour_category, page=1, page_size=10):
         LIMIT ? OFFSET ?
     """
     return query_db(query, (f"%{armour_category}%", page_size, offset))
+
+def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(weapon_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f"%{weapon_category}%", page_size, offset))
 
 
