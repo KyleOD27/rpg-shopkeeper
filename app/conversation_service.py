@@ -17,7 +17,7 @@ CATEGORY_MAPPING = {
     PlayerIntent.VIEW_WEAPON_CATEGORY: ("weapon_category", "Weapon"),
     PlayerIntent.VIEW_GEAR_CATEGORY: ("gear_category", "Adventuring Gear"),
     PlayerIntent.VIEW_TOOL_CATEGORY: ("tool_category", "Tools"),
-    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ("equipment_category", "Mounts and Vehicles"),
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ("current_section", "equipment"),
 }
 
 class ConversationService:
@@ -166,6 +166,7 @@ class ConversationService:
             router[(state, PlayerIntent.VIEW_GEAR_CATEGORY)] = self.view_handler.process_view_items_flow
             router[(state, PlayerIntent.VIEW_ARMOUR_CATEGORY)] = self.view_handler.process_view_items_flow
             router[(state, PlayerIntent.VIEW_TOOL_CATEGORY)] = self.view_handler.process_view_items_flow
+            router[(state, PlayerIntent.VIEW_MOUNT_CATEGORY)] = self.view_handler.process_view_items_flow
 
         # --- Subcategories ---
         router[(ConversationState.VIEWING_CATEGORIES,
@@ -176,6 +177,7 @@ class ConversationService:
                 PlayerIntent.VIEW_GEAR_SUBCATEGORY)] = self.view_handler.process_view_gear_subcategory
         router[(ConversationState.VIEWING_CATEGORIES,
                 PlayerIntent.VIEW_TOOL_SUBCATEGORY)] = self.view_handler.process_view_tool_subcategory
+
 
         # --- Pagination ---
         router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.NEXT)] = self.generic_handler.handle_next_page

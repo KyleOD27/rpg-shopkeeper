@@ -6,7 +6,8 @@ from app.models.items import (
     get_armour_categories,
     get_gear_categories,
     get_tool_categories,
-    get_items_by_armour_category, get_items_by_weapon_category
+    get_items_by_armour_category, get_items_by_weapon_category, get_items_by_gear_category, get_items_by_tool_category,
+    get_items_by_mount_category
 )
 from app.interpreter import normalize_input
 from datetime import datetime
@@ -19,6 +20,10 @@ def safe_normalized_field(item, field_name):
     if value and isinstance(value, str):
         return normalize_input(value)
     return ""
+
+
+
+
 
 class BaseShopkeeper:
     # --- Shop Greeting ---
@@ -46,8 +51,13 @@ class BaseShopkeeper:
         return self.show_armor_category_menu(categories)
 
     def shopkeeper_list_gear_categories(self, categories):
-        lines = "\n • " + "\n • ".join(categories)
-        return f"🎒 Gear types we carry:\n{lines}\n\nTell me which one to show!"
+        return self.show_gear_category_menu(categories)
+
+    def shopkeeper_list_tool_categories(self, categories):
+        return self.show_tool_category_menu(categories)
+
+    def shopkeeper_list_mount_items(self, categories):
+        return self.show_mount_items(categories)
 
     def show_weapon_category_menu(self, categories):
         lines = "\n • " + "\n • ".join(categories)
@@ -56,6 +66,14 @@ class BaseShopkeeper:
     def show_armor_category_menu(self, categories):
         lines = "\n • " + "\n • ".join(categories)
         return f"🛡️ Protective gear available:\n{lines}\n\nPick one to browse."
+
+    def show_gear_category_menu(self, categories):
+        lines = "\n • " + "\n • ".join(categories)
+        return f"🎒 Gear types available:\n{lines}\n\nPick one to browse."
+
+    def show_tool_category_menu(self, categories):
+        lines = "\n • " + "\n • ".join(categories)
+        return f"🛠️ Tool types available:\n{lines}\n\nPick one to browse."
 
     # --- Inventory Filtering ---
     def _filter_items_by_category(self, field, category_value):
@@ -108,18 +126,22 @@ class BaseShopkeeper:
         if not weapon_category:
             return "⚠️ I didn't quite catch which weapon type you meant. Try saying it again?"
 
+        # ➡️ Normal paginated results
         items = get_items_by_weapon_category(weapon_category, page, page_size=5)
 
         if not items:
-            return f"Hmm... looks like we don't have any **{weapon_category}** armour in stock right now."
+            return f"Hmm... looks like we don't have any **{weapon_category}** weapons in stock right now."
 
-        lines = [f"⚔️ **{weapon_category.title()} Armour (Page {page})**\n"]
+        all_items = get_items_by_weapon_category(weapon_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_items) + 4) // 5)
+
+        lines = [f"⚔️ **{weapon_category.title()} Weapons (Page {page} of {total_pages})**\n"]
         for item in items:
             name = item["item_name"]
             price = item["base_price"]
             lines.append(f" • {name} — {price} gold")
 
-        if len(items) == 5:
+        if page < total_pages:
             lines.append("\nSay **next** to see more.")
         if page > 1:
             lines.append("Say **previous** to go back.")
@@ -133,18 +155,23 @@ class BaseShopkeeper:
         if not armour_category:
             return "⚠️ I didn't quite catch which armour type you meant. Try saying it again?"
 
+        # ➡️ Paginated page
         items = get_items_by_armour_category(armour_category, page, page_size=5)
 
         if not items:
             return f"Hmm... looks like we don't have any **{armour_category}** armour in stock right now."
 
-        lines = [f"🛡️ **{armour_category.title()} Armour (Page {page})**\n"]
+        # 🔥 Fetch all items to calculate total pages
+        all_items = get_items_by_armour_category(armour_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_items) + 4) // 5)
+
+        lines = [f"🛡️ **{armour_category.title()} Armour (Page {page} of {total_pages})**\n"]
         for item in items:
             name = item["item_name"]
             price = item["base_price"]
             lines.append(f" • {name} — {price} gold")
 
-        if len(items) == 5:
+        if page < total_pages:
             lines.append("\nSay **next** to see more.")
         if page > 1:
             lines.append("Say **previous** to go back.")
@@ -152,10 +179,57 @@ class BaseShopkeeper:
         return "\n".join(lines)
 
     def shopkeeper_show_items_by_gear_category(self, player_input):
-        return self._show_items(player_input, field="gear_category", emoji="🎒", label="Gear")
+        gear_category = player_input.get("gear_category")
+        page = player_input.get("page", 1)
 
-    def shopkeeper_show_items_by_tool_category(self, player_input):
-        return self._show_items(player_input, field="tool_category", emoji="🛠️", label="Tools")
+        if not gear_category:
+            return "⚠️ I didn't quite catch which gear type you meant. Try saying it again?"
+
+        items = get_items_by_gear_category(gear_category, page, page_size=5)
+
+        if not items:
+            return f"Hmm... looks like we don't have any **{gear_category}** gear in stock right now."
+
+        all_items = get_items_by_gear_category(gear_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_items) + 4) // 5)
+
+        lines = [f"🎒 **{gear_category.title()} Gear (Page {page} of {total_pages})**\n"]
+        for item in items:
+            name = item["item_name"]
+            price = item["base_price"]
+            lines.append(f" • {name} — {price} gold")
+
+        if page < total_pages:
+            lines.append("\nSay **next** to see more.")
+        if page > 1:
+            lines.append("Say **previous** to go back.")
+
+        return "\n".join(lines)
+
+    def shopkeeper_show_items_by_mount_category(self, player_input):
+        page = player_input.get("page", 1)
+
+        items = get_items_by_mount_category("Mounts and Vehicles", page=page, page_size=5)
+
+        if not items:
+            return "Hmm... looks like we don't have any mounts or vehicles in stock right now."
+
+        all_items = get_items_by_mount_category("Mounts and Vehicles", page=1, page_size=9999)
+        total_pages = max(1, (len(all_items) + 4) // 5)
+
+        lines = [f"🏇 **Mounts & Vehicles (Page {page} of {total_pages})**\n"]
+        for item in items:
+            item = dict(item)  # <-- FIX RIGHT HERE
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
+            lines.append(f" • {name} — {price} gold")
+
+        if page < total_pages:
+            lines.append("\nSay **next** to see more.")
+        if page > 1:
+            lines.append("Say **previous** to go back.")
+
+        return "\n".join(lines)
 
     # --- Thanks ---
     def shopkeeper_accept_thanks(self) -> str:
@@ -195,6 +269,9 @@ class BaseShopkeeper:
         )
 
     # --- NEW: Category Access Wrappers ---
+    def get_equipment_categories(self):
+        return get_all_equipment_categories()
+
     def get_weapon_categories(self):
         return get_weapon_categories()
 
@@ -244,3 +321,5 @@ class BaseShopkeeper:
 
     def shopkeeper_withdraw_success_prompt(self, amount, new_total):
         return f"🏦 You withdrew **{amount}** gold! Your new party balance is **{new_total}** gold."
+
+

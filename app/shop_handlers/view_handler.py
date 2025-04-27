@@ -35,12 +35,14 @@ class ViewHandler:
             tool_categories = self.agent.get_tool_categories()
             return self.agent.shopkeeper_list_tool_categories(tool_categories)
 
+        if intent == PlayerIntent.VIEW_MOUNT_CATEGORY:
+            self._set_section("mount")
+            return self.agent. shopkeeper_show_items_by_mount_category(player_input)
+
         if intent == PlayerIntent.VIEW_EQUIPMENT_CATEGORY:
             self._set_section("equipment")
-            return self.agent.shopkeeper_show_items_by_category({
-                "category": "Mounts and Vehicles",
-                "page": 1
-            })
+            return self.agent.shopkeeper_view_items_prompt()
+
 
         # Subcategory selection (user says "heavy", "light", etc)
         if intent == PlayerIntent.UNKNOWN:

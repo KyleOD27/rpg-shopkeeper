@@ -5,6 +5,7 @@ from app.config import RuntimeFlags
 
 
 class PlayerIntent(Enum):
+    VIEW_MOUNT_CATEGORY = auto()
     VIEW_TOOL_SUBCATEGORY = auto()
     VIEW_GEAR_SUBCATEGORY = auto()
     VIEW_WEAPON_SUBCATEGORY = auto()

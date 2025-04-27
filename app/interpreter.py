@@ -128,11 +128,6 @@ def get_subcategory_match(section: str, player_input: str):
 
     return None
 
-
-
-
-
-
 def find_item_in_input(player_input: str, convo=None):
     lowered = normalize_input(player_input)
 
@@ -253,8 +248,22 @@ def interpret_input(player_input: str, convo=None):
         if category_type == "equipment_category" and category_value.lower() == "weapon":
             return {"intent": PlayerIntent.VIEW_WEAPON_CATEGORY, "metadata": metadata}
 
-        if category_type == "equipment_category":
-            return {"intent": PlayerIntent.VIEW_EQUIPMENT_CATEGORY, "metadata": metadata}
+        # 🛡 SPECIAL PATCH: Armor inside equipment_category should route to VIEW_ARMOUR_CATEGORY
+        if category_type == "equipment_category" and category_value.lower() == "armor":
+            return {"intent": PlayerIntent.VIEW_ARMOUR_CATEGORY, "metadata": metadata}
+
+        # 🎒 SPECIAL PATCH: Adventuring Gear inside equipment_category should route to VIEW_GEAR_CATEGORY
+        if category_type == "equipment_category" and category_value.lower() == "adventuring gear":
+            return {"intent": PlayerIntent.VIEW_GEAR_CATEGORY, "metadata": metadata}
+
+        # 🛠 SPECIAL PATCH: Tools inside equipment_category should route to VIEW_TOOL_CATEGORY
+        if category_type == "equipment_category" and category_value.lower() == "tools":
+            return {"intent": PlayerIntent.VIEW_TOOL_CATEGORY, "metadata": metadata}
+
+        # 🐎 SPECIAL PATCH: Mounts and Vehicles inside equipment_category
+        if category_type == "equipment_category" and category_value.lower() == "mounts and vehicles":
+            return {"intent": PlayerIntent.VIEW_MOUNT_CATEGORY, "metadata": metadata}  # Still equipment
+
         if category_type == "weapon_category":
             return {"intent": PlayerIntent.VIEW_WEAPON_CATEGORY, "metadata": metadata}
         if category_type == "gear_category":

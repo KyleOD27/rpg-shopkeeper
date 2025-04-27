@@ -134,4 +134,38 @@ def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
     """
     return query_db(query, (f"%{weapon_category}%", page_size, offset))
 
+def get_items_by_gear_category(gear_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(gear_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f"%{gear_category}%", page_size, offset))
+
+def get_items_by_tool_category(gear_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(tool_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f"%{gear_category}%", page_size, offset))
+
+def get_items_by_mount_category(equipment_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(equipment_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f"%{equipment_category}%", page_size, offset))
+
+
 
