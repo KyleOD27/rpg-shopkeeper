@@ -2524,3 +2524,42 @@ CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' |
 CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
 CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
 CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ARMOUR_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_NEEDS_ITEM | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_ITEM | Item=Ring Mail | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_ITEM | Item=Ring Mail | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_CONFIRMATION | Action=PlayerIntent.BUY_ITEM | Item=Ring Mail | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_CONFIRMATION | Action=PlayerIntent.BUY_ITEM | Item=Ring Mail | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_CONFIRMATION | Action=BUY_CONFIRM | Item=Ring Mail | Input='None' | Intent=None
+CharacterID=1 | State=INTRODUCTION | Action=None | Item=Ring Mail | Input='None' | Intent=None
+CharacterID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_WEAPON_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_WEAPON_CATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_WEAPON_SUBCATEGORY | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_WEAPON_SUBCATEGORY | Item=None | Input='None' | Intent=None

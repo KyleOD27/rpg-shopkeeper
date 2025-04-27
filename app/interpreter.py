@@ -110,19 +110,20 @@ def get_subcategory_match(section: str, player_input: str):
     else:
         return None  # Not a valid parent section
 
-    # 🚀 Create a dict, not just a list!
     normalized_to_original = {normalize_input(c): c for c in categories}
 
-    # Exact match
-    if lowered in normalized_to_original:
-        return normalized_to_original[lowered]
+    # New logic: find if any known subcategory is contained inside the input
+    for norm_word, original_word in normalized_to_original.items():
+        if norm_word in lowered:
+            return original_word
 
-    # Fuzzy match
+    # Fallback to fuzzy match
     match = get_close_matches(lowered, normalized_to_original.keys(), n=1, cutoff=0.75)
     if match:
         return normalized_to_original[match[0]]
 
     return None
+
 
 
 
