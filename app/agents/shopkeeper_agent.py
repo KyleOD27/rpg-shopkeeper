@@ -217,3 +217,8 @@ class BaseShopkeeper:
     def shopkeeper_buy_enquire_item(self):
         return "🛒 Sure, what exactly would you like to buy? Name the item and I'll fetch it!"
 
+    def shopkeeper_deposit_success_prompt(self, amount, new_total):
+        return f"💰 You deposited **{amount}** gold! Your new party balance is **{new_total}** gold."
+
+    def shopkeeper_withdraw_success_prompt(self, amount, new_total):
+        return f"🏦 You withdrew **{amount}** gold! Your new party balance is **{new_total}** gold."

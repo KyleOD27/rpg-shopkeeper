@@ -53,7 +53,8 @@ class HaggleHandler:
                 f"That brings the price down to {discounted_price} gold. Deal?"
             )
 
-        else:
+
+
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
             self.convo.record_haggle_attempt(success=False)
 

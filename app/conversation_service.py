@@ -203,6 +203,26 @@ class ConversationService:
         router[(ConversationState.INTRODUCTION, PlayerIntent.UNKNOWN)] = self.generic_handler.handle_fallback
         router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.UNKNOWN)] = self.view_handler.process_view_items_flow
 
+        # --- Deposit Gold ---
+        for state in [ConversationState.INTRODUCTION, ConversationState.AWAITING_ACTION,
+                      ConversationState.AWAITING_ITEM_SELECTION, ConversationState.VIEWING_CATEGORIES]:
+            router[(state, PlayerIntent.DEPOSIT_GOLD)] = self.deposit_handler.process_deposit_gold_flow
+
+        # --- Withdraw Gold ---
+        for state in [ConversationState.INTRODUCTION, ConversationState.AWAITING_ACTION,
+                      ConversationState.AWAITING_ITEM_SELECTION, ConversationState.VIEWING_CATEGORIES]:
+            router[(state, PlayerIntent.WITHDRAW_GOLD)] = self.withdraw_handler.process_withdraw_gold_flow
+
+        # --- See Balance ---
+        for state in [ConversationState.INTRODUCTION, ConversationState.AWAITING_ACTION,
+                      ConversationState.AWAITING_ITEM_SELECTION, ConversationState.VIEWING_CATEGORIES]:
+            router[(state, PlayerIntent.CHECK_BALANCE)] = self.generic_handler.handle_check_balance
+
+        # --- See Ledger ---
+        for state in [ConversationState.INTRODUCTION, ConversationState.AWAITING_ACTION,
+                      ConversationState.AWAITING_ITEM_SELECTION, ConversationState.VIEWING_CATEGORIES]:
+            router[(state, PlayerIntent.VIEW_LEDGER)] = self.generic_handler.handle_view_ledger
+
         return router
 
     def handle_introduction(self, player_input):
