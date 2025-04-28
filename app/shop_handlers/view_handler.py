@@ -12,7 +12,6 @@ class ViewHandler:
         self.agent = agent
         self.buy_handler = buy_handler
 
-
     def process_view_items_flow(self, player_input):
         intent = self.convo.player_intent
         raw_text = player_input.get("text", "")
@@ -20,12 +19,23 @@ class ViewHandler:
         self.convo.metadata["current_page"] = 1
 
         main_categories = {
-            PlayerIntent.VIEW_ARMOUR_CATEGORY: ("armor", self.agent.get_armour_categories, self.agent.shopkeeper_list_armour_categories),
-            PlayerIntent.VIEW_WEAPON_CATEGORY: ("weapon", self.agent.get_weapon_categories, self.agent.shopkeeper_list_weapon_categories),
-            PlayerIntent.VIEW_GEAR_CATEGORY: ("gear", self.agent.get_gear_categories, self.agent.shopkeeper_list_gear_categories),
-            PlayerIntent.VIEW_TOOL_CATEGORY: ("tool", self.agent.get_tool_categories, self.agent.shopkeeper_list_tool_categories),
+            PlayerIntent.VIEW_ARMOUR_CATEGORY: ("armor", self.agent.get_armour_categories,
+                                                self.agent.shopkeeper_list_armour_categories),
+            PlayerIntent.VIEW_WEAPON_CATEGORY: ("weapon", self.agent.get_weapon_categories,
+                                                self.agent.shopkeeper_list_weapon_categories),
+            PlayerIntent.VIEW_GEAR_CATEGORY: ("gear", self.agent.get_gear_categories,
+                                              self.agent.shopkeeper_list_gear_categories),
+            PlayerIntent.VIEW_TOOL_CATEGORY: ("tool", self.agent.get_tool_categories,
+                                              self.agent.shopkeeper_list_tool_categories),
             PlayerIntent.VIEW_MOUNT_CATEGORY: ("mount", None, self.agent.shopkeeper_show_items_by_mount_category),
-            PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ("equipment", None, self.agent.shopkeeper_view_items_prompt)
+            PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ("equipment", None, self.agent.shopkeeper_view_items_prompt),
+        }
+
+        subcategory_intents = {
+            PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
+            PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
+            PlayerIntent.VIEW_GEAR_SUBCATEGORY,
+            PlayerIntent.VIEW_TOOL_SUBCATEGORY,
         }
 
         if intent in main_categories:
@@ -38,7 +48,7 @@ class ViewHandler:
             else:
                 return view_func(player_input)
 
-        if intent == PlayerIntent.UNKNOWN:
+        if intent in subcategory_intents or intent == PlayerIntent.UNKNOWN:
             current_section = self.convo.metadata.get("current_section")
             if current_section:
                 return self._handle_subcategory_selection(current_section, raw_text)
@@ -104,10 +114,19 @@ class ViewHandler:
                 })
 
         matching_items = self.agent.search_items_by_name(text)
+
+        # 🛠️ ADD THIS small wrapper:
+        if isinstance(matching_items, dict):
+            matching_items = [matching_items]
+
+        # now matching_items is ALWAYS a list
+
         if matching_items:
             if len(matching_items) == 1:
-                return self.agent.shopkeeper_buy_confirm_prompt(matching_items[0], self.agent.party_data.get("party_gold", 0))
+                return self.agent.shopkeeper_buy_confirm_prompt(matching_items[0],
+                                                                self.agent.party_data.get("party_gold", 0))
             else:
+                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 return self.agent.shopkeeper_list_matching_items(matching_items)
 
         categories = section_info["get_func"]()

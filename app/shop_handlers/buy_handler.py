@@ -1,6 +1,6 @@
 # app/shop_handlers/buy_handler.py
 
-from app.interpreter import find_item_in_input
+from app.interpreter import find_item_in_input, normalize_input
 from app.models.items import get_item_by_name, get_all_items
 from app.models.parties import update_party_gold
 from app.models.ledger import record_transaction
@@ -10,6 +10,7 @@ from app.shop_handlers.haggle_handler import HaggleHandler
 class BuyHandler:
     def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
         self.convo = convo
+
         self.agent = agent
         self.party_id = party_id
         self.player_id = player_id
@@ -25,45 +26,40 @@ class BuyHandler:
         item_name = player_input.get("item") if isinstance(player_input, dict) else None
         category = player_input.get("category") if isinstance(player_input, dict) else None
 
+        # 🧹 Always clear previous pending actions at the start
+        self.convo.clear_pending()
+
         if not item_name and not category:
-            item_matches, category = find_item_in_input(raw_input, self.convo)
+            # 🧠 IMPORTANT: Always search globally for item matches, ignoring current screen
+            item_matches, detected_category = find_item_in_input(raw_input, self.convo)
 
             if item_matches:
-                if isinstance(item_matches, list):
-                    if len(item_matches) == 1:
-                        # ✅ Single match found
-                        item = dict(item_matches[0])  # convert sqlite Row to dict!
-                        item_name = item["item_name"]
-                    else:
-                        # 🚨 Multiple matches found — ask player to choose
-                        self.convo.reset_state()
-                        self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-                        self.convo.save_state()
-                        return self.agent.shopkeeper_list_matching_items(
-                            [dict(i) for i in item_matches]  # ensure all items are dicts
-                        )
+                if len(item_matches) == 1:
+                    item = item_matches[0]
+                    item_name = item["item_name"]
                 else:
-                    # ✅ Exact match (string)
-                    item_name = item_matches
-
-        if category and not item_name:
-            self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
-            return self.agent.shopkeeper_show_items_by_category({"equipment_category": category})
-
-        if not item_name:
-            if self.convo.state == ConversationState.AWAITING_ACTION:
+                    # 🧠 Multiple matches, user must pick one
+                    self.convo.set_pending_item(item_matches)
+                    self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                    self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_list_matching_items(item_matches)
+            elif detected_category:
+                # fallback to category browsing if no direct item match but a category was mentioned
+                self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
+                return self.agent.shopkeeper_show_items_by_category({"equipment_category": detected_category})
+            else:
+                # No matches at all - offer category list
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-                self.convo.save_state()
                 return self.agent.get_equipment_categories()
-            return self.agent.get_equipment_categories()
 
-        # ✅ Normal single item buy flow
-        self.convo.set_pending_item(item_name)
+        # ✅ Single item matched by name
+        item = self.get_dict_item(item_name)
+        self.convo.set_pending_item(item)
         self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.save_state()
 
-        item = self.get_dict_item(item_name)
         return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
 
     def handle_haggle(self, player_input):
@@ -151,3 +147,45 @@ class BuyHandler:
 
     def handle_buy_confirm(self, player_input):
         return self.handle_confirm_purchase(player_input)
+
+    def process_item_selection(self, player_input):
+        selection = player_input.get("text", "").strip()
+        pending_items = self.convo.get_pending_item()  # 🛠 pull from convo, not metadata
+
+        if not pending_items:
+            return self.agent.shopkeeper_say("There are no items currently available to select.")
+
+        if not isinstance(pending_items, list):
+            pending_items = [pending_items]  # 🔥 Safety: make sure it's a list
+
+        # Normalize input for matching
+        selection_normalized = normalize_input(selection)
+
+        # Try exact match first (case-insensitive)
+        selected_item = next(
+            (item for item in pending_items if normalize_input(item["item_name"]) == selection_normalized),
+            None
+        )
+
+        # Try partial match if no exact match
+        if not selected_item:
+            selected_item = next(
+                (item for item in pending_items if selection_normalized in normalize_input(item["item_name"])),
+                None
+            )
+
+        # No match at all
+        if not selected_item:
+            return self.agent.shopkeeper_say(
+                "I couldn't find that item in the options. Please say the full item name or ID.")
+
+        # ✅ Found the selected item
+        self.convo.set_pending_item(selected_item)  # Save the full dict
+        self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+        self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+        self.convo.save_state()
+
+        return self.agent.shopkeeper_buy_confirm_prompt(selected_item, self.party_data.get("party_gold", 0))
+
+
+

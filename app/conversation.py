@@ -2,6 +2,7 @@ from enum import Enum, auto
 from datetime import datetime, timedelta
 from app.db import get_convo_state, update_convo_state, log_convo_state
 from app.config import RuntimeFlags
+import json
 
 
 class PlayerIntent(Enum):
@@ -92,10 +93,12 @@ class Conversation:
             self.pending_item = item
         elif isinstance(item, dict):
             self.pending_item = item.get("item_name")
+        elif isinstance(item, list):
+            self.pending_item = item  # 🧠 store the list AS-IS
         elif item is None:
             self.pending_item = None
         else:
-            self.pending_item = str(item)
+            raise ValueError(f"Unsupported pending_item type: {type(item)}")
         self.save_state()
 
     def set_input(self, input_str: str):
@@ -167,23 +170,30 @@ class Conversation:
         self.metadata["haggle_history"] = history
         self.save_state()
 
+    import json
+
     def save_state(self):
 
         def safe_name(value):
             return value.name if hasattr(value, 'name') else value
 
+        # 🛠 Prepare item for saving
+        item_to_save = self.pending_item
+        if isinstance(item_to_save, list):
+            item_to_save = json.dumps(item_to_save)  # serialize list to JSON
+
         update_convo_state(
             character_id=self.character_id,
             state=safe_name(self.state),
             action=safe_name(self.pending_action),
-            item=self.pending_item
+            item=item_to_save
         )
 
         log_convo_state(
             character_id=self.character_id,
             state=self.state.value,
             action=self.pending_action,
-            item=self.pending_item
+            item=item_to_save
         )
 
     def debug(self, note=None):
@@ -204,3 +214,14 @@ class Conversation:
 
     def set_pending_action(self, action):
         self.pending_action = action
+
+    def get_pending_item(self):
+        return self.pending_item
+
+    # In Conversation class
+    def clear_pending(self):
+        self.metadata["pending_item"] = None
+        self.metadata["pending_action"] = None
+        self.metadata["matching_items"] = []
+        self.save_state()
+

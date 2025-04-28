@@ -340,7 +340,11 @@ class BaseShopkeeper:
         return [dict(row) for row in rows] if rows else []
 
     def shopkeeper_list_matching_items(self, matching_items):
-        lines = ["🔎 Here's what I found:\n"]
+        if isinstance(matching_items, dict):
+            matching_items = [matching_items]
+
+        lines = ["🔎 Here's what I found:"]
+
         for item in matching_items:
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
@@ -348,5 +352,11 @@ class BaseShopkeeper:
 
         lines.append("\nPlease say the full name of the item you want to buy!")
         return "\n".join(lines)
+
+    def shopkeeper_say(self, text):
+        return text
+
+
+
 
 
