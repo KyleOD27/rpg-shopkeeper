@@ -71,6 +71,7 @@ class Conversation:
         self.match_confirmed = False
         self.metadata = {}
         self.normalized_input = None
+        self.item = None
         saved = get_convo_state(self.character_id)
         if saved:
             self.state = ConversationState(saved["current_state"])
@@ -229,12 +230,20 @@ class Conversation:
         self.pending_action = action
 
     def get_pending_item(self):
-        pending_item = self.metadata.get("pending_item")  # NOT self.state.get
+        pending_item = self.metadata.get("pending_item")
 
-        # 🛡️ If pending_item is a string, repair it into list/dict
+        # 🛡️ If pending_item is a string, repair it into object
         if isinstance(pending_item, str):
             import json
             pending_item = json.loads(pending_item)
+
+        # 🛡️ If it's a list with exactly one item, unpack it
+        if isinstance(pending_item, list):
+            if len(pending_item) == 1:
+                pending_item = pending_item[0]
+            else:
+                # You might optionally raise error or handle multi-selection fallback here
+                pass
 
         return pending_item
 

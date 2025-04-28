@@ -295,14 +295,27 @@ class ConversationService:
         self.convo.debug(f"Detected category: {detected_category}")
 
         if item_matches:
-            # 🛡 Always treat 1 or more matches the same
-            self.convo.set_pending_item(item_matches)
-            self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-            self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-            self.convo.save_state()
+            if len(item_matches) == 1:
+                # ✅ 1 Match: Go straight to confirmation
+                selected_item = item_matches[0]
 
-            # ✨ Always list matches even if there is only one
-            return self.agent.shopkeeper_list_matching_items(item_matches)
+                import copy
+                self.convo.item = copy.deepcopy(selected_item)  # Save for confirmation
+                self.convo.set_pending_item(copy.deepcopy(selected_item))
+                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+                self.convo.save_state()
+
+                return self.agent.shopkeeper_buy_confirm_prompt(selected_item, self.party_data.get("party_gold", 0))
+
+            else:
+                # 🔥 Multiple matches: ask user to pick
+                self.convo.set_pending_item(item_matches)
+                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.save_state()
+
+                return self.agent.shopkeeper_list_matching_items(item_matches)
 
         if detected_category:
             self.convo.set_state(ConversationState.VIEWING_CATEGORIES)

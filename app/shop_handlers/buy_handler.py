@@ -92,26 +92,22 @@ class BuyHandler:
         haggle = HaggleHandler(self.agent, self.convo, self.party_data)
         return haggle.attempt_haggle(item)
 
-    def handle_confirm_purchase(self, player_input):
-        # Ensure that pending_item contains the correct information
-        item = self.convo.get_pending_item()  # This should return a dictionary with item details
+    # app/shop_handlers/buy_handler.py
 
-        if not item:
+    def handle_confirm_purchase(self, player_input):
+        # ✅ Instead of trying to re-fetch, directly access stored item
+        item = self.convo.item  # (or however you are holding the selected item)
+
+        # Safety checks
+        if not item or not isinstance(item, dict) or not item.get("item_name"):
+            self.convo.debug(f"Purchase failed: Item state: {item}")
             return self.agent.shopkeeper_say("Something went wrong — I can't find that item in stock. (handle_confirm)")
 
-        # Log the full item to debug if needed
-        self.convo.debug(f"Item details: {item}")
-
-        # If item is a dictionary, you can access item_name or item_id for the purchase process
-        item_name = item.get("item_name")  # or item.get("item_id") if needed
-        if not item_name:
-            return self.agent.shopkeeper_say("Item name not found in pending item. (handle_confirm)")
+        # Log for debug
+        self.convo.debug(f"Proceeding to finalize purchase: {item}")
 
         # Finalize purchase
-        response = self.finalise_purchase()
-
-        self.convo.set_state(ConversationState.AWAITING_ACTION)
-        self.convo.save_state()
+        response = self.finalise_purchase(item)
 
         return response
 
@@ -128,11 +124,9 @@ class BuyHandler:
 
         return self.agent.shopkeeper_buy_cancel_prompt(item)
 
-    def finalise_purchase(self):
-        item = self.convo.get_pending_item()  # This should now be a full item dictionary
-
-        if not item:
-            return self.agent.say("Something went wrong — I can't find that item in stock.")
+    def finalise_purchase(self, item):
+        if not item or not isinstance(item, dict):
+            return self.agent.say("Something went wrong — invalid item during purchase.")
 
         discount_price = self.convo.discount
         base_price = item.get("base_price", 0)
@@ -162,6 +156,7 @@ class BuyHandler:
             details=f"Purchased item{discount_note}"
         )
 
+        # ✅ Now reset conversation properly after success
         self.convo.reset_state()
         self.convo.set_pending_item(None)
         self.convo.set_discount(None)
@@ -182,22 +177,30 @@ class BuyHandler:
             self.convo.set_pending_item(None)
             return self.agent.shopkeeper_fallback_prompt()
 
-        if isinstance(pending_items, list):  # Ensure it's a list of items
+        normalized_selection = normalize_input(selection)
+
+        selected_item = None
+        if isinstance(pending_items, list):
             selected_item = next(
                 (item for item in pending_items if
-                 str(item.get("item_id")) == selection or normalize_input(item["item_name"]) == selection),
+                 str(item.get("item_id")) == normalized_selection or
+                 normalize_input(item.get("item_name", "")) == normalized_selection),
                 None
             )
         else:
-            selected_item = pending_items  # Directly use the single item if not a list
+            # Already a single item
+            selected_item = pending_items
 
         if not selected_item:
             return self.agent.shopkeeper_say(
                 "I couldn't find that item in the options. Please say the full item name or ID."
             )
 
-        # ✅ Found the selected item clearly!
-        self.convo.set_pending_item(selected_item)  # Make sure it's the correct full item object
+            # 🛠 RIGHT HERE after a valid selection
+        import copy
+        self.convo.item = copy.deepcopy(selected_item)  # <- ADD THIS
+
+        self.convo.set_pending_item(copy.deepcopy(selected_item))  # (Optional: can still track pending item separately)
         self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.save_state()
@@ -205,6 +208,7 @@ class BuyHandler:
         return self.agent.shopkeeper_buy_confirm_prompt(
             selected_item, self.party_data.get("party_gold", 0)
         )
+
 
 
 
