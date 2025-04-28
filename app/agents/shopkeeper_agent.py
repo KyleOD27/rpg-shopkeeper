@@ -95,7 +95,7 @@ class BaseShopkeeper:
     def _show_items(self, player_input, field, emoji, label):
         category_value = player_input.get(field.replace("_category", ""))
         if not category_value:
-            return "⚠️ I didn't quite catch which category you meant. Try saying Weapons, Armor, Gear or Tools"
+            return self.shopkeeper_view_items_prompt()
 
         page = player_input.get("page", 1)
         filtered_items = self._filter_items_by_category(field, category_value)
@@ -310,11 +310,18 @@ class BaseShopkeeper:
             "ITEMS – See what we have in stock\n"
         )
 
-    def shopkeeper_buy_confirm_prompt(self, item_name, player_gold):
+    def shopkeeper_buy_confirm_prompt(self, item, player_gold):
+        item_name = item.get("item_name", "Unknown Item")
+        price = item.get("base_price", "?")
+        weight = item.get("weight", "?")
+        category = item.get("equipment_category", "Item")
+        rarity = item.get("rarity", "Common")
+
         return (
-            f"You're looking to buy **{item_name}**.\n"
-            f"You currently have {player_gold} gold.\n"
-            "Would you like to proceed? (Say 'yes' or 'no')"
+            f"🛒 You're about to buy a {item_name} ({category}, {rarity}).\n"
+            f"💰 Price: {price} gold | ⚖️ Weight: {weight} lbs\n"
+            f"🎒 Your gold: {player_gold}\n\n"
+            "✅ Would you like to proceed? (Say yes or no)"
         )
 
     def shopkeeper_generic_say(self, message):
@@ -346,11 +353,12 @@ class BaseShopkeeper:
         lines = ["🔎 Here's what I found:"]
 
         for item in matching_items:
+            item_id = item.get("item_id", "?")
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
-            lines.append(f" • {name} — {price} gold")
+            lines.append(f" • [{item_id}] {name} — {price} gold")
 
-        lines.append("\nPlease say the full name of the item you want to buy!")
+        lines.append("\nPlease say the **ID number** or the **full name** of the item you'd like to buy!")
         return "\n".join(lines)
 
     def shopkeeper_say(self, text):

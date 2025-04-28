@@ -148,7 +148,24 @@ def find_item_in_input(player_input: str, convo=None):
 
     words = lowered.split()
 
-    # 1️⃣ CATEGORY match
+    # 1️⃣ Check for numeric ID first
+    item_id = next((word for word in words if word.isdigit()), None)
+    items_raw = get_all_items()
+    items = []
+    for item in items_raw:
+        if isinstance(item, str):
+            try:
+                item = json.loads(item)
+            except json.JSONDecodeError:
+                continue
+        items.append(dict(item))
+
+    if item_id:
+        matches_by_id = [item for item in items if str(item.get("item_id")) == item_id]
+        if matches_by_id:
+            return matches_by_id, None
+
+    # 2️⃣ CATEGORY match
     categories = (
         get_all_equipment_categories() +
         get_weapon_categories() +
@@ -163,43 +180,28 @@ def find_item_in_input(player_input: str, convo=None):
             if word in cat or cat in word:
                 return None, cat
 
-    # 2️⃣ ITEM matches
-    items_raw = get_all_items()
-    items = []
-    for item in items_raw:
-        if isinstance(item, str):
-            # 🛠 FIX: if item is a JSON string, parse it
-            try:
-                parsed = json.loads(item)
-                items.append(parsed)
-            except json.JSONDecodeError:
-                # fallback if somehow string but not JSON
-                continue
-        else:
-            items.append(dict(item))  # normal case if already a dict
-
-    matches = []
+    # 3️⃣ ITEM matches by name
+    matches_by_name = []
     for word in words:
         for item in items:
             name = normalize_input(item["item_name"])
             if word in name or name in word:
-                matches.append(item)
+                matches_by_name.append(item)
 
-    if matches:
-        return matches, None
+    if matches_by_name:
+        return matches_by_name, None
 
-    # 3️⃣ Fallback
+    # 4️⃣ Fallback to pending items in conversation
     if convo and convo.pending_item:
-        # ✅ FIX: If pending item is already a list, trust it
         if isinstance(convo.pending_item, list):
             return convo.pending_item, None
-        # ✅ Else if single string item
         elif isinstance(convo.pending_item, dict):
             return [convo.pending_item], None
         elif isinstance(convo.pending_item, str):
             return [{"item_name": convo.pending_item}], None
 
     return None, None
+
 
 
 

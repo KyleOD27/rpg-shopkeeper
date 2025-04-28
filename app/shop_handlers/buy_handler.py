@@ -162,42 +162,58 @@ class BuyHandler:
 
     def process_item_selection(self, player_input):
         selection = player_input.get("text", "").strip()
-        pending_items = self.convo.get_pending_item()  # 🛠 pull from convo, not metadata
+        pending_items = self.convo.get_pending_item()
 
         if not pending_items:
-            return self.agent.shopkeeper_say("There are no items currently available to select.")
+            self.convo.reset_state()
+            self.convo.set_pending_item(None)
+            return self.agent.shopkeeper_fallback_prompt()
 
         if not isinstance(pending_items, list):
-            pending_items = [pending_items]  # 🔥 Safety: make sure it's a list
+            pending_items = [pending_items]
 
-        # Normalize input for matching
+        # Normalize input
         selection_normalized = normalize_input(selection)
 
-        # Try exact match first (case-insensitive)
-        selected_item = next(
-            (item for item in pending_items if normalize_input(item["item_name"]) == selection_normalized),
-            None
-        )
+        selected_item = None
 
-        # Try partial match if no exact match
+        # 1️⃣ Check if selection is numeric ID first
+        if selection.isdigit():
+            selected_item = next(
+                (item for item in pending_items if str(item.get("item_id")) == selection),
+                None
+            )
+
+        # 2️⃣ If no numeric match, check exact name match
+        if not selected_item:
+            selected_item = next(
+                (item for item in pending_items if normalize_input(item["item_name"]) == selection_normalized),
+                None
+            )
+
+        # 3️⃣ Try partial name match if still no match
         if not selected_item:
             selected_item = next(
                 (item for item in pending_items if selection_normalized in normalize_input(item["item_name"])),
                 None
             )
 
-        # No match at all
+        # 4️⃣ No match at all, gracefully ask again
         if not selected_item:
             return self.agent.shopkeeper_say(
-                "I couldn't find that item in the options. Please say the full item name or ID.")
+                "I couldn't find that item in the options. Please say the full item name or ID."
+            )
 
-        # ✅ Found the selected item
-        self.convo.set_pending_item(selected_item)  # Save the full dict
+        # ✅ Found the selected item clearly!
+        self.convo.set_pending_item(selected_item)
         self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.save_state()
 
-        return self.agent.shopkeeper_buy_confirm_prompt(selected_item, self.party_data.get("party_gold", 0))
+        return self.agent.shopkeeper_buy_confirm_prompt(
+            selected_item, self.party_data.get("party_gold", 0)
+        )
+
 
 
 

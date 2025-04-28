@@ -64,6 +64,18 @@ class ConversationService:
         else:
             self.convo.normalized_input = "N/A"
 
+        # --- Numeric Item ID Selection ---
+        if player_input.strip().isdigit() and self.convo.state == ConversationState.AWAITING_ITEM_SELECTION:
+            item_matches, _ = find_item_in_input(player_input, self.convo)
+            if item_matches:
+                self.convo.set_pending_item(item_matches[0])  # set item dict explicitly
+                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+                self.convo.save_state()
+                return self.agent.shopkeeper_buy_confirm_prompt(
+                    item_matches[0], self.party_data.get("party_gold", 0)
+                )
+
         if isinstance(player_input, str):
             raw_text = player_input
             intent_data = interpret_input(player_input, self.convo)
@@ -297,7 +309,7 @@ class ConversationService:
             self.convo.save_state()
             return self.agent.shopkeeper_show_items_by_category({"equipment_category": detected_category})
 
-        return self.agent.shopkeeper_show_categories_prompt()
+        return self.agent.shopkeeper_view_items_prompt()
 
     def handle_introduction(self, player_input):
         intent = self.convo.player_intent
