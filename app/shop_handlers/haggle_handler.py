@@ -1,6 +1,7 @@
+# app/shop_handlers/haggle_handler.py
+
 import random
 from app.conversation import ConversationState, PlayerIntent
-
 
 class HaggleHandler:
     def __init__(self, agent, convo, party_data):
@@ -8,9 +9,8 @@ class HaggleHandler:
         self.convo = convo
         self.party_data = party_data
 
-    def attempt_haggle(self, player_input):
-        item = player_input
-        if not item:
+    def attempt_haggle(self, item):
+        if not item or item.get("base_price") is None:
             return self.agent.shopkeeper_generic_say("There's nothing to haggle over just yet.")
 
         can_haggle, reason = self.convo.can_attempt_haggle()
@@ -18,47 +18,30 @@ class HaggleHandler:
             return self.agent.shopkeeper_generic_say(reason)
 
         roll = random.randint(1, 20)
-
-        # Discount curve: 10–20 maps to 1–20%
         curve = {
-            10: 1,
-            11: 2,
-            12: 3,
-            13: 4,
-            14: 5,
-            15: 7,
-            16: 9,
-            17: 12,
-            18: 15,
-            19: 18,
-            20: 20
+            10: 1, 11: 2, 12: 3, 13: 4, 14: 5,
+            15: 7, 16: 9, 17: 12, 18: 15, 19: 18, 20: 20
         }
 
         if roll >= 10:
-            discount_percent = curve.get(roll, 0)
-            discount_amount = int(item["base_price"] * (discount_percent / 100))
-            discounted_price = item["base_price"] - discount_amount
+            # Success!
+            discount_pct   = curve.get(roll, 0)
+            discount_amt   = int(item["base_price"] * discount_pct / 100)
+            discounted_cost = item["base_price"] - discount_amt
 
-            self.convo.set_discount(discounted_price)
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            self.convo.record_haggle_attempt(success=True)
-
+            # Store discount and switch to confirm state
+            self.convo.set_discount(discounted_cost)
             self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
-
             self.convo.record_haggle_attempt(success=True)
-
-            return self.agent.shopkeeper_generic_say(
-                f"You rolled a {roll} — success! "
-                f"I'll knock off {discount_percent}%.\n"
-                f"That brings the price down to {discounted_price} gold. Deal?"
-            )
-
-
-
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            self.convo.record_haggle_attempt(success=False)
+            self.convo.save_state()
 
+            # Now use the same buy_confirm prompt so "deal"/"yes" goes into handle_confirm_purchase
+            return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
+
+        else:
+            # Failed haggle: no discount
+            self.convo.record_haggle_attempt(success=False)
             return self.agent.shopkeeper_generic_say(
-                f"You rolled a {roll} — no luck! "
-                f"The price stays at {item['base_price']} gold."
+                f"You rolled a {roll} — no luck!  The price stays at {item['base_price']} gold."
             )

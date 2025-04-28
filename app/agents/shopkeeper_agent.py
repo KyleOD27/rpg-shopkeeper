@@ -39,10 +39,10 @@ class BaseShopkeeper:
     # --- Category Menus ---
     def shopkeeper_view_items_prompt(self) -> str:
         categories = get_all_equipment_categories()
-        lines = ["Here’s what I can offer by category:\n"]
+        lines = ["What  can I interest you in today adventurer?\n"]
         for cat in categories:
             lines.append(f" • {cat}")
-        lines.append("\nJust say the category name to see what’s inside.")
+        lines.append("\n Ask me about any of the above.")
         return "\n".join(lines)
 
     def shopkeeper_list_weapon_categories(self, categories):
@@ -353,19 +353,25 @@ class BaseShopkeeper:
             "ITEMS – See what we have in stock\n"
         )
 
-    def shopkeeper_buy_confirm_prompt(self, item, player_gold):
-        item_name = item.get("item_name", "Unknown Item")
-        price = item.get("base_price", "?")
-        weight = item.get("weight", "?")
-        category = item.get("equipment_category", "Item")
-        rarity = item.get("rarity", "Common")
+    def shopkeeper_buy_confirm_prompt(self, item, party_gold, discount=None):
+        # pick the right cost
+        base = item.get("base_price", 0)
+        cost = discount if discount is not None else base
+        saved = base - cost if discount is not None else 0
 
-        return (
-            f"🛒 You're about to buy a {item_name} ({category}, {rarity}).\n"
-            f"💰 Price: {price} gold | ⚖️ Weight: {weight} lbs\n"
-            f"🎒 Your gold: {player_gold}\n\n"
+        discount_note = f" ( you saved {saved}g!)" if saved > 0 else ""
+        name = item.get("item_name", "Unknown Item")
+        cat = item.get("equipment_category", "")
+        rar = item.get("rarity", "")
+
+        lines = [
+            f"🛒 You're about to buy a {name} ({cat}, {rar}).",
+            f"💰 Price: {cost} gold{discount_note} | ⚖️ Weight: {item.get('weight', 0)} lbs",
+            f"🎒 Your gold: {party_gold}",
+            "",
             "✅ Would you like to proceed? (Say yes or no)"
-        )
+        ]
+        return "\n".join(lines)
 
     def shopkeeper_generic_say(self, message):
         return message
