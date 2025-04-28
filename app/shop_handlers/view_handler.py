@@ -2,11 +2,16 @@
 
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import normalize_input
+from app.interpreter import INTENT_KEYWORDS
+from app.agents.shopkeeper_agent import BaseShopkeeper
+
 
 class ViewHandler:
-    def __init__(self, convo, agent):
+    def __init__(self, convo, agent, buy_handler):
         self.convo = convo
         self.agent = agent
+        self.buy_handler = buy_handler
+
 
     def process_view_items_flow(self, player_input):
         intent = self.convo.player_intent
@@ -14,43 +19,30 @@ class ViewHandler:
 
         self.convo.metadata["current_page"] = 1
 
-        # Main categories
-        if intent == PlayerIntent.VIEW_ARMOUR_CATEGORY:
-            self._set_section("armor")
-            armour_categories = self.agent.get_armour_categories()
-            return self.agent.shopkeeper_list_armour_categories(armour_categories)
+        main_categories = {
+            PlayerIntent.VIEW_ARMOUR_CATEGORY: ("armor", self.agent.get_armour_categories, self.agent.shopkeeper_list_armour_categories),
+            PlayerIntent.VIEW_WEAPON_CATEGORY: ("weapon", self.agent.get_weapon_categories, self.agent.shopkeeper_list_weapon_categories),
+            PlayerIntent.VIEW_GEAR_CATEGORY: ("gear", self.agent.get_gear_categories, self.agent.shopkeeper_list_gear_categories),
+            PlayerIntent.VIEW_TOOL_CATEGORY: ("tool", self.agent.get_tool_categories, self.agent.shopkeeper_list_tool_categories),
+            PlayerIntent.VIEW_MOUNT_CATEGORY: ("mount", None, self.agent.shopkeeper_show_items_by_mount_category),
+            PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ("equipment", None, self.agent.shopkeeper_view_items_prompt)
+        }
 
-        if intent == PlayerIntent.VIEW_WEAPON_CATEGORY:
-            self._set_section("weapon")
-            weapon_categories = self.agent.get_weapon_categories()
-            return self.agent.shopkeeper_list_weapon_categories(weapon_categories)
+        if intent in main_categories:
+            section, get_func, view_func = main_categories[intent]
+            self._set_section(section)
 
-        if intent == PlayerIntent.VIEW_GEAR_CATEGORY:
-            self._set_section("gear")
-            gear_categories = self.agent.get_gear_categories()
-            return self.agent.shopkeeper_list_gear_categories(gear_categories)
+            if get_func:
+                categories = get_func()
+                return view_func(categories)
+            else:
+                return view_func(player_input)
 
-        if intent == PlayerIntent.VIEW_TOOL_CATEGORY:
-            self._set_section("tool")
-            tool_categories = self.agent.get_tool_categories()
-            return self.agent.shopkeeper_list_tool_categories(tool_categories)
-
-        if intent == PlayerIntent.VIEW_MOUNT_CATEGORY:
-            self._set_section("mount")
-            return self.agent. shopkeeper_show_items_by_mount_category(player_input)
-
-        if intent == PlayerIntent.VIEW_EQUIPMENT_CATEGORY:
-            self._set_section("equipment")
-            return self.agent.shopkeeper_view_items_prompt()
-
-
-        # Subcategory selection (user says "heavy", "light", etc)
         if intent == PlayerIntent.UNKNOWN:
             current_section = self.convo.metadata.get("current_section")
             if current_section:
                 return self._handle_subcategory_selection(current_section, raw_text)
 
-        # Default
         self.convo.state = ConversationState.VIEWING_CATEGORIES
         self.convo.save_state()
         return self.agent.shopkeeper_view_items_prompt()
@@ -63,138 +55,97 @@ class ViewHandler:
     def _handle_subcategory_selection(self, section, raw_text):
         text = normalize_input(raw_text)
 
+        category_mapping = {
+            "armor": {
+                "get_func": self.agent.get_armour_categories,
+                "process_func": self.process_view_armour_subcategory,
+                "subcategory_intent": PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
+                "payload_key": "armour_category"
+            },
+            "weapon": {
+                "get_func": self.agent.get_weapon_categories,
+                "process_func": self.process_view_weapon_subcategory,
+                "subcategory_intent": PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
+                "payload_key": "weapon_category"
+            },
+            "gear": {
+                "get_func": self.agent.get_gear_categories,
+                "process_func": self.process_view_gear_subcategory,
+                "subcategory_intent": PlayerIntent.VIEW_GEAR_SUBCATEGORY,
+                "payload_key": "gear_category"
+            },
+            "tool": {
+                "get_func": self.agent.get_tool_categories,
+                "process_func": self.process_view_tool_subcategory,
+                "subcategory_intent": PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+                "payload_key": "tool_category"
+            }
+        }
+
+        section_info = category_mapping.get(section)
+        if not section_info:
+            return self.agent.shopkeeper_view_items_prompt()
+
+        valid_categories = [normalize_input(c) for c in section_info["get_func"]()]
+
+        for category in valid_categories:
+            if category in text:
+                return section_info["process_func"]({
+                    section_info["payload_key"]: category.title(),
+                    "page": 1
+                })
+
+        intent_keywords = INTENT_KEYWORDS.get(section_info["subcategory_intent"], [])
+        for keyword in intent_keywords:
+            if normalize_input(keyword) in text:
+                return section_info["process_func"]({
+                    section_info["payload_key"]: keyword.title(),
+                    "page": 1
+                })
+
+        matching_items = self.agent.search_items_by_name(text)
+        if matching_items:
+            if len(matching_items) == 1:
+                return self.agent.shopkeeper_buy_confirm_prompt(matching_items[0], self.agent.party_data.get("party_gold", 0))
+            else:
+                return self.agent.shopkeeper_list_matching_items(matching_items)
+
+        categories = section_info["get_func"]()
         if section == "armor":
-            valid_categories = [normalize_input(c) for c in self.agent.get_armour_categories()]
-            for category in valid_categories:
-                if category in text:
-                    return self.process_view_armour_subcategory({
-                        "armour_category": category.title(),
-                        "page": 1
-                    })
-
-        if section == "weapon":
-            valid_categories = [normalize_input(c) for c in self.agent.get_weapon_categories()]
-            for category in valid_categories:
-                if category in text:
-                    return self.process_view_weapon_subcategory({
-                        "weapon_category": category.title(),
-                        "page": 1
-                    })
-
-        if section == "gear":
-            valid_categories = [normalize_input(c) for c in self.agent.get_gear_categories()]
-            for category in valid_categories:
-                if category in text:
-                    return self.process_view_gear_subcategory({
-                        "gear_category": category.title(),
-                        "page": 1
-                    })
-
-        if section == "tool":
-            valid_categories = [normalize_input(c) for c in self.agent.get_tool_categories()]
-            for category in valid_categories:
-                if category in text:
-                    return self.process_view_tool_subcategory({
-                        "tool_category": category.title(),
-                        "page": 1
-                    })
-
-        return "⚠️ I didn't quite catch which type you meant. Try saying it again?"
-
-    # ----- Subcategory handlers -----
+            return self.agent.shopkeeper_list_armour_categories(categories)
+        elif section == "weapon":
+            return self.agent.shopkeeper_list_weapon_categories(categories)
+        elif section == "gear":
+            return self.agent.shopkeeper_list_gear_categories(categories)
+        elif section == "tool":
+            return self.agent.shopkeeper_list_tool_categories(categories)
+        else:
+            return self.agent.shopkeeper_view_items_prompt()
 
     def process_view_armour_subcategory(self, payload):
-        armour_category = payload.get("armour_category")  # direct
-        page = payload.get("page", 1)  # direct
-
-        if not armour_category:
-            return "⚠️ I didn't quite catch which armour type you meant. Try saying it again?"
-
-        self.convo.metadata["current_armour_category"] = armour_category
-        self.convo.metadata["current_page"] = page
-        self.convo.metadata["current_section"] = "armor"
-        self.convo.state = ConversationState.VIEWING_CATEGORIES
-        self.convo.save_state()
-
-        return self.agent.shopkeeper_show_items_by_armour_category({
-            "armour_category": armour_category,
-            "page": page
-        })
-
+        return self._handle_view_subcategory(payload, "armor", "armour_category", self.agent.shopkeeper_show_items_by_armour_category, self.agent.get_armour_categories, self.agent.shopkeeper_list_armour_categories)
 
     def process_view_weapon_subcategory(self, payload):
-        weapon_category = payload.get("weapon_category")  # direct
-        page = payload.get("page", 1)  # direct
+        return self._handle_view_subcategory(payload, "weapon", "weapon_category", self.agent.shopkeeper_show_items_by_weapon_category, self.agent.get_weapon_categories, self.agent.shopkeeper_list_weapon_categories)
 
-        if not weapon_category:
-            return "⚠️ I didn't quite catch which weapon type you meant. Try saying it again?"
+    def process_view_gear_subcategory(self, payload):
+        return self._handle_view_subcategory(payload, "gear", "gear_category", self.agent.shopkeeper_show_items_by_gear_category, self.agent.get_gear_categories, self.agent.shopkeeper_list_gear_categories)
 
-        self.convo.metadata["current_weapon_category"] = weapon_category
+    def process_view_tool_subcategory(self, payload):
+        return self._handle_view_subcategory(payload, "tool", "tool_category", self.agent.shopkeeper_show_items_by_tool_category, self.agent.get_tool_categories, self.agent.shopkeeper_list_tool_categories)
+
+    def _handle_view_subcategory(self, payload, section, key, show_func, get_func, list_func):
+        category = payload.get(key)
+        page = payload.get("page", 1)
+
+        if not category:
+            categories = get_func()
+            return list_func(categories)
+
+        self.convo.metadata[f"current_{key}"] = category
         self.convo.metadata["current_page"] = page
-        self.convo.metadata["current_section"] = "weapon"
+        self.convo.metadata["current_section"] = section
         self.convo.state = ConversationState.VIEWING_CATEGORIES
         self.convo.save_state()
 
-        return self.agent.shopkeeper_show_items_by_weapon_category({
-            "weapon_category": weapon_category,
-            "page": page
-        })
-
-    def process_view_gear_subcategory(self, player_input):
-        from app.models.items import get_gear_categories
-
-        gear_category = player_input.get("gear_category")
-        page = player_input.get("page", 1)
-
-        if not gear_category:
-            return "⚠️ I didn't quite catch which gear type you meant. Try saying it again?"
-
-        valid_categories = get_gear_categories()
-        normalized_valid = [c.lower() for c in valid_categories]
-        selected = gear_category.lower()
-
-        if selected not in normalized_valid:
-            return "⚠️ I didn't quite catch which gear type you meant. Try saying it again?"
-
-        idx = normalized_valid.index(selected)
-        proper_category = valid_categories[idx]
-
-        self.convo.metadata["current_gear_category"] = proper_category
-        self.convo.metadata["current_page"] = page
-        self.convo.state = ConversationState.VIEWING_CATEGORIES
-        self.convo.save_state()
-
-        return self.agent.shopkeeper_show_items_by_gear_category({
-            "gear_category": proper_category,
-            "page": page
-        })
-
-    def process_view_tool_subcategory(self, player_input):
-        from app.models.items import get_tool_categories
-
-        tool_category = player_input.get("tool_category")
-        page = player_input.get("page", 1)
-
-        if not tool_category:
-            return "⚠️ I didn't quite catch which tool type you meant. Try saying it again?"
-
-        valid_categories = get_tool_categories()
-        normalized_valid = [c.lower() for c in valid_categories]
-        selected = tool_category.lower()
-
-        if selected not in normalized_valid:
-            return "⚠️ I didn't quite catch which tool type you meant. Try saying it again?"
-
-        idx = normalized_valid.index(selected)
-        proper_category = valid_categories[idx]
-
-        self.convo.metadata["current_tool_category"] = proper_category
-        self.convo.metadata["current_page"] = page
-        self.convo.state = ConversationState.VIEWING_CATEGORIES
-        self.convo.save_state()
-
-        return self.agent.shopkeeper_show_items_by_tool_category({
-            "tool_category": proper_category,
-            "page": page
-        })
-
+        return show_func({key: category, "page": page})

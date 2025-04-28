@@ -7,7 +7,8 @@ from app.models.items import (
     get_gear_categories,
     get_tool_categories,
     get_items_by_armour_category, get_items_by_weapon_category, get_items_by_gear_category, get_items_by_tool_category,
-    get_items_by_mount_category
+    get_items_by_mount_category,
+    search_items_by_name_fuzzy
 )
 from app.interpreter import normalize_input
 from datetime import datetime
@@ -100,11 +101,24 @@ class BaseShopkeeper:
         filtered_items = self._filter_items_by_category(field, category_value)
         page_items, page, total_pages = self._paginate(filtered_items, page)
 
+        # 🛠 If no category items found, try fuzzy search instead
         if not page_items:
-            return f"Hmm... looks like we don't have any **{category_value}** {label.lower()} in stock right now."
+            matching_items = self.search_items_by_name(category_value)
+            if matching_items:
+                lines = [f"🔎 **Search Results for '{category_value.title()}'**\n"]
+                for item in matching_items:
+                    name = item.get("item_name", "Unknown Item")
+                    price = item.get("base_price", "?")
+                    lines.append(f" • {name} — {price} gold")
+                return "\n".join(lines)
 
+            return f"Hmm... looks like we don't have anything matching **{category_value}** right now."
+
+        # ✅ Normal item list
         lines = [f"{emoji} **{category_value.title()} {label} (Page {page} of {total_pages})**\n"]
         for item in page_items:
+
+
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
             lines.append(f" • {name} — {price} gold")
@@ -313,13 +327,26 @@ class BaseShopkeeper:
     def shopkeeper_clarify_item_prompt(self):
         return "⚠️ What would you like to buy? Please tell me the item name."
 
-    def shopkeeper_buy_enquire_item(self):
-        return "🛒 Sure, what exactly would you like to buy? Name the item and I'll fetch it!"
 
     def shopkeeper_deposit_success_prompt(self, amount, new_total):
         return f"💰 You deposited **{amount}** gold! Your new party balance is **{new_total}** gold."
 
     def shopkeeper_withdraw_success_prompt(self, amount, new_total):
         return f"🏦 You withdrew **{amount}** gold! Your new party balance is **{new_total}** gold."
+
+    def search_items_by_name(self, query, page=1):
+        query = normalize_input(query)
+        rows = search_items_by_name_fuzzy(query, page=page)
+        return [dict(row) for row in rows] if rows else []
+
+    def shopkeeper_list_matching_items(self, matching_items):
+        lines = ["🔎 Here's what I found:\n"]
+        for item in matching_items:
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
+            lines.append(f" • {name} — {price} gold")
+
+        lines.append("\nPlease say the full name of the item you want to buy!")
+        return "\n".join(lines)
 
 

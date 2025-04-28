@@ -1,7 +1,7 @@
 # app/shop_handlers/buy_handler.py
 
 from app.interpreter import find_item_in_input
-from app.models.items import get_item_by_name
+from app.models.items import get_item_by_name, get_all_items
 from app.models.parties import update_party_gold
 from app.models.ledger import record_transaction
 from app.conversation import ConversationState, PlayerIntent
@@ -26,7 +26,25 @@ class BuyHandler:
         category = player_input.get("category") if isinstance(player_input, dict) else None
 
         if not item_name and not category:
-            item_name, category = find_item_in_input(raw_input, self.convo)
+            item_matches, category = find_item_in_input(raw_input, self.convo)
+
+            if item_matches:
+                if isinstance(item_matches, list):
+                    if len(item_matches) == 1:
+                        # ✅ Single match found
+                        item = dict(item_matches[0])  # convert sqlite Row to dict!
+                        item_name = item["item_name"]
+                    else:
+                        # 🚨 Multiple matches found — ask player to choose
+                        self.convo.reset_state()
+                        self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                        self.convo.save_state()
+                        return self.agent.shopkeeper_list_matching_items(
+                            [dict(i) for i in item_matches]  # ensure all items are dicts
+                        )
+                else:
+                    # ✅ Exact match (string)
+                    item_name = item_matches
 
         if category and not item_name:
             self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
@@ -35,10 +53,11 @@ class BuyHandler:
         if not item_name:
             if self.convo.state == ConversationState.AWAITING_ACTION:
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-                return self.agent.shopkeeper_buy_enquire_item()
-            return self.agent.shopkeeper_clarify_item_prompt()
+                self.convo.save_state()
+                return self.agent.get_equipment_categories()
+            return self.agent.get_equipment_categories()
 
-        # ✅ Set pending item, pending action, and state
+        # ✅ Normal single item buy flow
         self.convo.set_pending_item(item_name)
         self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
@@ -69,7 +88,6 @@ class BuyHandler:
 
         response = self.finalise_purchase()
 
-        # ✅ Reset conversation after purchase
         self.convo.set_state(ConversationState.AWAITING_ACTION)
         self.convo.save_state()
 
@@ -98,7 +116,7 @@ class BuyHandler:
         discount_price = self.convo.discount
         base_price = item.get("base_price", 0)
         cost = discount_price if discount_price is not None else base_price
-        name = item.get("name") or item.get("title") or item_name
+        name = item.get("item_name") or item.get("title") or item_name
 
         if self.party_data["party_gold"] < cost:
             return self.agent.shopkeeper_buy_failure_prompt(item, "Not enough gold.", self.party_data["party_gold"])
@@ -123,7 +141,6 @@ class BuyHandler:
             details=f"Purchased item{discount_note}"
         )
 
-        # ✅ Reset conversation state after transaction
         self.convo.reset_state()
         self.convo.set_pending_item(None)
         self.convo.set_discount(None)

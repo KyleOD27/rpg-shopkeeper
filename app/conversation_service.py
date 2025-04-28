@@ -1,15 +1,15 @@
-# ✅ FULL NEW conversation_service.py
+# app/conversation_service.py
 
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input, normalize_input
-from commands.dm_commands import handle_dm_command
-from commands.admin_commands import handle_admin_command
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
 from app.shop_handlers.withdraw_handler import WithdrawHandler
 from app.shop_handlers.generic_chat_handler import GenericChatHandler
 from app.shop_handlers.view_handler import ViewHandler
+from commands.dm_commands import handle_dm_command
+from commands.admin_commands import handle_admin_command
 from typing import Callable, Dict, Tuple, Any
 
 CATEGORY_MAPPING = {
@@ -31,14 +31,16 @@ class ConversationService:
         self.party_data["player_name"] = player_name
         self.party_data["visit_count"] = self.party_data.get("visit_count", 1)
 
+        # Instantiate handlers
         self.buy_handler = BuyHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.sell_handler = SellHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.deposit_handler = DepositHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.generic_handler = GenericChatHandler(agent, self.party_data, convo, party_id)
-        self.view_handler = ViewHandler(convo, agent)
+        self.view_handler = ViewHandler(convo, agent, self.buy_handler)
 
         self.intent_router: Dict[Tuple[str, str], Callable[[dict], Any]] = self._build_router()
+
 
     def handle(self, player_input):
         # --- Admin / DM Early Commands ---
@@ -178,6 +180,15 @@ class ConversationService:
         router[(ConversationState.VIEWING_CATEGORIES,
                 PlayerIntent.VIEW_TOOL_SUBCATEGORY)] = self.view_handler.process_view_tool_subcategory
 
+        # Allow subcategories from AWAITING_ACTION too
+        router[(ConversationState.AWAITING_ACTION,
+                PlayerIntent.VIEW_ARMOUR_SUBCATEGORY)] = self.view_handler.process_view_items_flow
+        router[(ConversationState.AWAITING_ACTION,
+                PlayerIntent.VIEW_WEAPON_SUBCATEGORY)] = self.view_handler.process_view_items_flow
+        router[(ConversationState.AWAITING_ACTION,
+                PlayerIntent.VIEW_GEAR_SUBCATEGORY)] = self.view_handler.process_view_items_flow
+        router[(ConversationState.AWAITING_ACTION,
+                PlayerIntent.VIEW_TOOL_SUBCATEGORY)] = self.view_handler.process_view_items_flow
 
         # --- Pagination ---
         router[(ConversationState.VIEWING_CATEGORIES, PlayerIntent.NEXT)] = self.generic_handler.handle_next_page

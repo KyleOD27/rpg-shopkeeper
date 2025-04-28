@@ -129,17 +129,26 @@ def get_subcategory_match(section: str, player_input: str):
     return None
 
 def find_item_in_input(player_input: str, convo=None):
-    lowered = normalize_input(player_input)
-
-    # 1️⃣ Check if player input matches a known CATEGORY first
     from app.models.items import (
         get_all_equipment_categories,
         get_weapon_categories,
         get_gear_categories,
         get_armour_categories,
-        get_tool_categories
+        get_tool_categories,
+        get_all_items
     )
 
+    lowered = normalize_input(player_input)
+
+    # Remove buy-related keywords from start
+    buy_keywords = ["buy", "purchase", "get", "grab", "obtain", "want", "acquire"]
+    for keyword in buy_keywords:
+        if lowered.startswith(keyword):
+            lowered = lowered[len(keyword):].strip()
+
+    words = lowered.split()
+
+    # 1️⃣ CATEGORY match
     categories = (
         get_all_equipment_categories() +
         get_weapon_categories() +
@@ -147,36 +156,31 @@ def find_item_in_input(player_input: str, convo=None):
         get_armour_categories() +
         get_tool_categories()
     )
-
     category_names = [normalize_input(c) for c in categories]
 
-    for cat in category_names:
-        if cat in lowered or lowered in cat:
-            # 🛡️ It's a category request! Not an item!
-            return None, cat  # No item, but category detected
+    for word in words:
+        for cat in category_names:
+            if word in cat or cat in word:
+                return None, cat
 
-    # 2️⃣ If no category matched, check item names normally
-    items = get_all_items()
-    item_names = [item["item_name"] for item in items]
+    # 2️⃣ ITEM matches (NEW: collect all matches)
+    items = [dict(item) for item in get_all_items()]  # <-- ✅ FIX: convert each row to dict!
+    matches = []
+    for word in words:
+        for item in items:
+            name = normalize_input(item["item_name"])
+            if word in name or name in word:
+                matches.append(item)
 
-    # Exact match inside input
-    for name in item_names:
-        if normalize_input(name) in lowered:
-            return name, None
-
-    # Fuzzy match
-    matches = get_close_matches(lowered, [normalize_input(i) for i in item_names], n=1, cutoff=0.7)
     if matches:
-        matched = matches[0]
-        for item in item_names:
-            if normalize_input(item) == matched:
-                return item, None
+        return matches, None
 
-    # Fallback to pending item if it exists
+    # 3️⃣ Fallback
     if convo and convo.pending_item:
-        return convo.pending_item, None
+        return [{"item_name": convo.pending_item}], None
 
     return None, None
+
 
 
 def detect_buy_intent(player_input: str, convo=None):

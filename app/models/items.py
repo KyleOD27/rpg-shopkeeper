@@ -167,5 +167,17 @@ def get_items_by_mount_category(equipment_category, page=1, page_size=10):
     """
     return query_db(query, (f"%{equipment_category}%", page_size, offset))
 
+def search_items_by_name_fuzzy(item_name, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    sql = """
+        SELECT item_name, base_price
+        FROM items
+        WHERE LOWER(item_name) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(sql, (f"%{item_name}%", page_size, offset))
+
+
 
 
