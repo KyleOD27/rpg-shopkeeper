@@ -22,8 +22,8 @@ INTENT_KEYWORDS = {
     PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["equipment", "mounts", "vehicles", "travelling gear"],
 
     # 🛡️ Subcategories
-    PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light", "medium", "heavy", "shield"],
-    PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["simple", "martial", "bow", "crossbow", "dagger", "axe", "sword"],
+    PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light", "medium", "heavy"],
+    PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["simple", "martial"],
     PlayerIntent.VIEW_GEAR_SUBCATEGORY: ["backpack", "rope", "tinderbox", "torch"],
     PlayerIntent.VIEW_TOOL_SUBCATEGORY: ["artisan", "disguise", "forgery", "thieves", "musical"],
 
