@@ -282,25 +282,23 @@ class ConversationService:
         return self.generic_handler.handle_fallback
 
     def smart_buy_router(self, player_input):
-        """Decides whether to search items directly or show categories first."""
         raw_input = player_input.get("text", "") if isinstance(player_input, dict) else player_input
-
-        # Search for matching items and categories
         item_matches, detected_category = find_item_in_input(raw_input, self.convo)
 
+        self.convo.debug(f"Item matches: {item_matches}")
+        self.convo.debug(f"Detected category: {detected_category}")
+
         if item_matches:
-            # 🧠 ALWAYS handle item matches FIRST!
             if len(item_matches) > 1:
                 self.convo.set_pending_item(item_matches)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)  # 🔥 FORCE correct state
+                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 self.convo.save_state()
-                return self.agent.shopkeeper_list_matching_items(item_matches)
-
+                return self.agent.shopkeeper_list_matching_items(item_matches) + "  (found at smart_buy_router item matching)"
             elif len(item_matches) == 1:
-                self.convo.set_pending_item(item_matches[0]["item_name"])
+                self.convo.set_pending_item(item_matches[0])
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-                self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)  # 🔥 FORCE correct state
+                self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_buy_confirm_prompt(item_matches[0], self.party_data.get("party_gold", 0))
 

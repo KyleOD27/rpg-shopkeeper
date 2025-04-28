@@ -128,6 +128,7 @@ def get_subcategory_match(section: str, player_input: str):
 
     return None
 
+
 def find_item_in_input(player_input: str, convo=None):
     from app.models.items import (
         get_all_equipment_categories,
@@ -137,8 +138,10 @@ def find_item_in_input(player_input: str, convo=None):
         get_tool_categories,
         get_all_items
     )
+    import json
 
     lowered = normalize_input(player_input)
+    original_input = lowered  # Keep original normalized input for full phrase matching
 
     # Remove buy-related keywords from start
     buy_keywords = ["buy", "purchase", "get", "grab", "obtain", "want", "acquire"]
@@ -147,11 +150,10 @@ def find_item_in_input(player_input: str, convo=None):
             lowered = lowered[len(keyword):].strip()
 
     words = lowered.split()
-
-    # 1️⃣ Check for numeric ID first
-    item_id = next((word for word in words if word.isdigit()), None)
     items_raw = get_all_items()
     items = []
+
+    # Ensure that items are loaded correctly
     for item in items_raw:
         if isinstance(item, str):
             try:
@@ -160,33 +162,58 @@ def find_item_in_input(player_input: str, convo=None):
                 continue
         items.append(dict(item))
 
+    # 1️⃣ Check for numeric ID first
+    item_id = next((word for word in words if word.isdigit()), None)
     if item_id:
         matches_by_id = [item for item in items if str(item.get("item_id")) == item_id]
         if matches_by_id:
             return matches_by_id, None
 
-    # 2️⃣ CATEGORY match
+    # 2️⃣ CATEGORY match - more flexible matching
     categories = (
-        get_all_equipment_categories() +
-        get_weapon_categories() +
-        get_gear_categories() +
-        get_armour_categories() +
-        get_tool_categories()
+            get_all_equipment_categories() +
+            get_weapon_categories() +
+            get_gear_categories() +
+            get_armour_categories() +
+            get_tool_categories()
     )
-    category_names = [normalize_input(c) for c in categories]
 
+    # Create a mapping of normalized names to original category names
+    category_map = {normalize_input(c): c for c in categories}
+
+    # Check for full phrase matches first (e.g., "adventuring gear")
+    for norm_cat, original_cat in category_map.items():
+        if norm_cat in original_input:  # Check against full normalized input
+            print(f"Full category match found: {original_cat}")
+            return None, original_cat
+
+    # Then check word by word matches
     for word in words:
-        for cat in category_names:
-            if word in cat or cat in word:
-                return None, cat
+        # Find closest category match using fuzzy matching
+        closest_matches = get_close_matches(word, category_map.keys(), n=1, cutoff=0.6)
+        if closest_matches:
+            matched_cat = closest_matches[0]
+            print(f"Fuzzy category match found: {category_map[matched_cat]}")
+            return None, category_map[matched_cat]
 
-    # 3️⃣ ITEM matches by name
+    # 3️⃣ ITEM matches - more flexible matching
+    item_name_map = {normalize_input(item["item_name"]): item for item in items}
+
+    # Check for full item name matches first
+    for norm_name, item in item_name_map.items():
+        if norm_name in original_input:
+            print(f"Full item name match found: {item['item_name']}")
+            return [item], None
+
+    # Then check word by word with fuzzy matching
     matches_by_name = []
     for word in words:
-        for item in items:
-            name = normalize_input(item["item_name"])
-            if word in name or name in word:
-                matches_by_name.append(item)
+        # Find closest item name matches
+        closest_items = get_close_matches(word, item_name_map.keys(), n=3, cutoff=0.6)
+        for matched_name in closest_items:
+            if item_name_map[matched_name] not in matches_by_name:
+                matches_by_name.append(item_name_map[matched_name])
+                print(f"Fuzzy item match found: {item_name_map[matched_name]['item_name']}")
 
     if matches_by_name:
         return matches_by_name, None
@@ -200,9 +227,9 @@ def find_item_in_input(player_input: str, convo=None):
         elif isinstance(convo.pending_item, str):
             return [{"item_name": convo.pending_item}], None
 
-    return None, None
-
-
+    # If no matches were found, return available categories to help user
+    print("No matches found in categories or items.")
+    return None, categories  # Return all categories as fallback
 
 
 def detect_buy_intent(player_input: str, convo=None):

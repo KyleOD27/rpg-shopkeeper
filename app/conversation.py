@@ -179,6 +179,8 @@ class Conversation:
 
     import json
 
+    import json
+
     def save_state(self):
 
         def safe_name(value):
@@ -186,9 +188,12 @@ class Conversation:
 
         # 🛠 Prepare item for saving
         item_to_save = self.pending_item
-        if isinstance(item_to_save, list):
-            item_to_save = json.dumps(item_to_save)  # serialize list to JSON
 
+        # Check if item_to_save is a dictionary or list and serialize accordingly
+        if isinstance(item_to_save, (dict, list)):
+            item_to_save = json.dumps(item_to_save)  # serialize to JSON string
+
+        # Save the serialized item to the database
         update_convo_state(
             character_id=self.character_id,
             state=safe_name(self.state),
@@ -196,6 +201,7 @@ class Conversation:
             item=item_to_save
         )
 
+        # Log the conversation state, including the serialized item
         log_convo_state(
             character_id=self.character_id,
             state=self.state.value,

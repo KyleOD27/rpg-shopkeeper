@@ -18,6 +18,11 @@ class BuyHandler:
         self.party_data = party_data
 
     def get_dict_item(self, item_reference):
+        # If the reference is already an item (dictionary), return it directly
+        if isinstance(item_reference, dict):
+            return item_reference
+
+        # Otherwise, if it's just a name (string), get the item from the DB or item list
         name = str(item_reference)
         return dict(get_item_by_name(name) or {})
 
@@ -88,12 +93,21 @@ class BuyHandler:
         return haggle.attempt_haggle(item)
 
     def handle_confirm_purchase(self, player_input):
-        item_name = self.convo.pending_item
-        item = self.get_dict_item(item_name)
+        # Ensure that pending_item contains the correct information
+        item = self.convo.get_pending_item()  # This should return a dictionary with item details
 
         if not item:
-            return self.agent.say("Something went wrong — I can't find that item in stock.")
+            return self.agent.shopkeeper_say("Something went wrong — I can't find that item in stock. (handle_confirm)")
 
+        # Log the full item to debug if needed
+        self.convo.debug(f"Item details: {item}")
+
+        # If item is a dictionary, you can access item_name or item_id for the purchase process
+        item_name = item.get("item_name")  # or item.get("item_id") if needed
+        if not item_name:
+            return self.agent.shopkeeper_say("Item name not found in pending item. (handle_confirm)")
+
+        # Finalize purchase
         response = self.finalise_purchase()
 
         self.convo.set_state(ConversationState.AWAITING_ACTION)
@@ -115,8 +129,7 @@ class BuyHandler:
         return self.agent.shopkeeper_buy_cancel_prompt(item)
 
     def finalise_purchase(self):
-        item_name = self.convo.pending_item
-        item = self.get_dict_item(item_name)
+        item = self.convo.get_pending_item()  # This should now be a full item dictionary
 
         if not item:
             return self.agent.say("Something went wrong — I can't find that item in stock.")
@@ -124,7 +137,7 @@ class BuyHandler:
         discount_price = self.convo.discount
         base_price = item.get("base_price", 0)
         cost = discount_price if discount_price is not None else base_price
-        name = item.get("item_name") or item.get("title") or item_name
+        name = item.get("item_name") or item.get("title") or "Unknown Item"
 
         if self.party_data["party_gold"] < cost:
             return self.agent.shopkeeper_buy_failure_prompt(item, "Not enough gold.", self.party_data["party_gold"])
@@ -169,43 +182,22 @@ class BuyHandler:
             self.convo.set_pending_item(None)
             return self.agent.shopkeeper_fallback_prompt()
 
-        if not isinstance(pending_items, list):
-            pending_items = [pending_items]
-
-        # Normalize input
-        selection_normalized = normalize_input(selection)
-
-        selected_item = None
-
-        # 1️⃣ Check if selection is numeric ID first
-        if selection.isdigit():
+        if isinstance(pending_items, list):  # Ensure it's a list of items
             selected_item = next(
-                (item for item in pending_items if str(item.get("item_id")) == selection),
+                (item for item in pending_items if
+                 str(item.get("item_id")) == selection or normalize_input(item["item_name"]) == selection),
                 None
             )
+        else:
+            selected_item = pending_items  # Directly use the single item if not a list
 
-        # 2️⃣ If no numeric match, check exact name match
-        if not selected_item:
-            selected_item = next(
-                (item for item in pending_items if normalize_input(item["item_name"]) == selection_normalized),
-                None
-            )
-
-        # 3️⃣ Try partial name match if still no match
-        if not selected_item:
-            selected_item = next(
-                (item for item in pending_items if selection_normalized in normalize_input(item["item_name"])),
-                None
-            )
-
-        # 4️⃣ No match at all, gracefully ask again
         if not selected_item:
             return self.agent.shopkeeper_say(
                 "I couldn't find that item in the options. Please say the full item name or ID."
             )
 
         # ✅ Found the selected item clearly!
-        self.convo.set_pending_item(selected_item)
+        self.convo.set_pending_item(selected_item)  # Make sure it's the correct full item object
         self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.save_state()
@@ -213,6 +205,10 @@ class BuyHandler:
         return self.agent.shopkeeper_buy_confirm_prompt(
             selected_item, self.party_data.get("party_gold", 0)
         )
+
+
+
+
 
 
 
