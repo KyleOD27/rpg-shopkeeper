@@ -163,8 +163,21 @@ def find_item_in_input(player_input: str, convo=None):
             if word in cat or cat in word:
                 return None, cat
 
-    # 2️⃣ ITEM matches (NEW: collect all matches)
-    items = [dict(item) for item in get_all_items()]  # <-- ✅ FIX: convert each row to dict!
+    # 2️⃣ ITEM matches
+    items_raw = get_all_items()
+    items = []
+    for item in items_raw:
+        if isinstance(item, str):
+            # 🛠 FIX: if item is a JSON string, parse it
+            try:
+                parsed = json.loads(item)
+                items.append(parsed)
+            except json.JSONDecodeError:
+                # fallback if somehow string but not JSON
+                continue
+        else:
+            items.append(dict(item))  # normal case if already a dict
+
     matches = []
     for word in words:
         for item in items:
@@ -177,7 +190,14 @@ def find_item_in_input(player_input: str, convo=None):
 
     # 3️⃣ Fallback
     if convo and convo.pending_item:
-        return [{"item_name": convo.pending_item}], None
+        # ✅ FIX: If pending item is already a list, trust it
+        if isinstance(convo.pending_item, list):
+            return convo.pending_item, None
+        # ✅ Else if single string item
+        elif isinstance(convo.pending_item, dict):
+            return [convo.pending_item], None
+        elif isinstance(convo.pending_item, str):
+            return [{"item_name": convo.pending_item}], None
 
     return None, None
 

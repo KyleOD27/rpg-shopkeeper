@@ -89,16 +89,23 @@ class Conversation:
         self.save_state()
 
     def set_pending_item(self, item):
+        import json
+
         if isinstance(item, str):
-            self.pending_item = item
+            try:
+                parsed = json.loads(item)
+                self.pending_item = parsed
+            except json.JSONDecodeError:
+                self.pending_item = item  # fallback, assume simple string
         elif isinstance(item, dict):
-            self.pending_item = item.get("item_name")
+            self.pending_item = item  # ✅ store the dict AS-IS, not just item_name
         elif isinstance(item, list):
-            self.pending_item = item  # 🧠 store the list AS-IS
+            self.pending_item = item  # ✅ store the list AS-IS
         elif item is None:
             self.pending_item = None
         else:
             raise ValueError(f"Unsupported pending_item type: {type(item)}")
+
         self.save_state()
 
     def set_input(self, input_str: str):
@@ -216,7 +223,14 @@ class Conversation:
         self.pending_action = action
 
     def get_pending_item(self):
-        return self.pending_item
+        pending_item = self.metadata.get("pending_item")  # NOT self.state.get
+
+        # 🛡️ If pending_item is a string, repair it into list/dict
+        if isinstance(pending_item, str):
+            import json
+            pending_item = json.loads(pending_item)
+
+        return pending_item
 
     # In Conversation class
     def clear_pending(self):

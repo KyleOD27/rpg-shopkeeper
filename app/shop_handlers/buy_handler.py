@@ -26,41 +26,53 @@ class BuyHandler:
         item_name = player_input.get("item") if isinstance(player_input, dict) else None
         category = player_input.get("category") if isinstance(player_input, dict) else None
 
-        # 🧹 Always clear previous pending actions at the start
+        # 🧹 Always clear pending actions
         self.convo.clear_pending()
 
+        # 📚 No direct item or category given — Search from text input
         if not item_name and not category:
-            # 🧠 IMPORTANT: Always search globally for item matches, ignoring current screen
             item_matches, detected_category = find_item_in_input(raw_input, self.convo)
 
             if item_matches:
+                # ✅ 1 Match = go straight to confirmation
                 if len(item_matches) == 1:
                     item = item_matches[0]
-                    item_name = item["item_name"]
-                else:
-                    # 🧠 Multiple matches, user must pick one
-                    self.convo.set_pending_item(item_matches)
+                    self.convo.set_pending_item(item)
                     self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-                    self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                    self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                     self.convo.save_state()
-                    return self.agent.shopkeeper_list_matching_items(item_matches)
+                    return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
+
+                # 🔥 Multiple matches = ask user to pick
+                self.convo.set_pending_item(item_matches)
+                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.save_state()
+                return self.agent.shopkeeper_list_matching_items(item_matches)
+
             elif detected_category:
-                # fallback to category browsing if no direct item match but a category was mentioned
+                # 📂 No item, but detected a category
                 self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
                 return self.agent.shopkeeper_show_items_by_category({"equipment_category": detected_category})
+
             else:
-                # No matches at all - offer category list
+                # 🤷 No matches at all — show main categories
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 return self.agent.get_equipment_categories()
 
-        # ✅ Single item matched by name
-        item = self.get_dict_item(item_name)
-        self.convo.set_pending_item(item)
-        self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-        self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-        self.convo.save_state()
+        # 📦 Direct item lookup (e.g. from structured input)
+        if item_name:
+            item = self.get_dict_item(item_name)
+            if item:
+                self.convo.set_pending_item(item)
+                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+                self.convo.save_state()
+                return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
 
-        return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
+        # 🛑 Should never get here, fallback if missing
+        self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+        return self.agent.get_equipment_categories()
 
     def handle_haggle(self, player_input):
         item_name = self.convo.pending_item

@@ -95,7 +95,7 @@ class BaseShopkeeper:
     def _show_items(self, player_input, field, emoji, label):
         category_value = player_input.get(field.replace("_category", ""))
         if not category_value:
-            return "⚠️ I didn't quite catch which category you meant. Try saying it again?"
+            return "⚠️ I didn't quite catch which category you meant. Try saying Weapons, Armor, Gear or Tools"
 
         page = player_input.get("page", 1)
         filtered_items = self._filter_items_by_category(field, category_value)

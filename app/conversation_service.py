@@ -88,6 +88,9 @@ class ConversationService:
         }
 
         if item:
+            if isinstance(item, str):
+                import json
+                item = json.loads(item)  # 🛠 Convert from string to list/dict
             self.convo.set_pending_item(item)
 
         # --- Pending Confirmation Protection ---
