@@ -141,19 +141,22 @@ class BaseShopkeeper:
             return "⚠️ I didn't quite catch which weapon type you meant. Try saying it again?"
 
         # ➡️ Normal paginated results
-        items = get_items_by_weapon_category(weapon_category, page, page_size=5)
+        rows = get_items_by_weapon_category(weapon_category, page, page_size=5)
 
-        if not items:
+        if not rows:
             return f"Hmm... looks like we don't have any **{weapon_category}** weapons in stock right now."
 
-        all_items = get_items_by_weapon_category(weapon_category, page=1, page_size=9999)
-        total_pages = max(1, (len(all_items) + 4) // 5)
+        all_rows = get_items_by_weapon_category(weapon_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_rows) + 4) // 5)
 
         lines = [f"⚔️ **{weapon_category.title()} Weapons (Page {page} of {total_pages})**\n"]
-        for item in items:
-            name = item["item_name"]
-            price = item["base_price"]
-            lines.append(f" • {name} — {price} gold")
+        for row in rows:
+
+            item = dict(row)
+            item_id = item.get("item_id", "?")
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
+            lines.append(f" • [{item_id}] {name} — {price} gold")
 
         if page < total_pages:
             lines.append("\nSay **next** to see more.")
@@ -170,20 +173,22 @@ class BaseShopkeeper:
             return "⚠️ I didn't quite catch which armour type you meant. Try saying it again?"
 
         # ➡️ Paginated page
-        items = get_items_by_armour_category(armour_category, page, page_size=5)
+        rows = get_items_by_armour_category(armour_category, page, page_size=5)
 
-        if not items:
+        if not rows:
             return f"Hmm... looks like we don't have any **{armour_category}** armour in stock right now."
 
         # 🔥 Fetch all items to calculate total pages
-        all_items = get_items_by_armour_category(armour_category, page=1, page_size=9999)
-        total_pages = max(1, (len(all_items) + 4) // 5)
+        all_rows = get_items_by_armour_category(armour_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_rows) + 4) // 5)
 
         lines = [f"🛡️ **{armour_category.title()} Armour (Page {page} of {total_pages})**\n"]
-        for item in items:
-            name = item["item_name"]
-            price = item["base_price"]
-            lines.append(f" • {name} — {price} gold")
+        for row in rows:
+            item = dict(row)  # convert Row → dict
+            item_id = item.get("item_id", "?")
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
+            lines.append(f" • [{item_id}] {name} — {price} gold")
 
         if page < total_pages:
             lines.append("\nSay **next** to see more.")
@@ -199,19 +204,55 @@ class BaseShopkeeper:
         if not gear_category:
             return "⚠️ I didn't quite catch which gear type you meant. Try saying it again?"
 
-        items = get_items_by_gear_category(gear_category, page, page_size=5)
+        # ➡️ Paginated fetch
+        rows = get_items_by_gear_category(gear_category, page, page_size=5)
 
-        if not items:
+        if not rows:
             return f"Hmm... looks like we don't have any **{gear_category}** gear in stock right now."
 
-        all_items = get_items_by_gear_category(gear_category, page=1, page_size=9999)
-        total_pages = max(1, (len(all_items) + 4) // 5)
+        # 🔥 Fetch all to compute pages
+        all_rows = get_items_by_gear_category(gear_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_rows) + 4) // 5)
 
         lines = [f"🎒 **{gear_category.title()} Gear (Page {page} of {total_pages})**\n"]
-        for item in items:
-            name = item["item_name"]
-            price = item["base_price"]
-            lines.append(f" • {name} — {price} gold")
+        for row in rows:
+            item = dict(row)  # sqlite3.Row → dict
+            item_id = item.get("item_id", "?")
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
+            lines.append(f" • [{item_id}] {name} — {price} gold")
+
+        if page < total_pages:
+            lines.append("\nSay **next** to see more.")
+        if page > 1:
+            lines.append("Say **previous** to go back.")
+
+        return "\n".join(lines)
+
+    def shopkeeper_show_items_by_tool_category(self, player_input):
+        tool_category = player_input.get("tool_category")
+        page = player_input.get("page", 1)
+
+        if not tool_category:
+            return "⚠️ I didn't catch which tool type you meant. Try that again?"
+
+        # ➡️ Paginated fetch
+        rows = get_items_by_tool_category(tool_category, page, page_size=5)
+
+        if not rows:
+            return f"Hmm... looks like we don't have any **{tool_category}** tools in stock right now."
+
+        # 🔥 Fetch all to compute total pages
+        all_rows = get_items_by_tool_category(tool_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_rows) + 4) // 5)
+
+        lines = [f"🧰 **{tool_category.title()} Tools (Page {page} of {total_pages})**\n"]
+        for row in rows:
+            item = dict(row)  # sqlite3.Row → dict
+            item_id = item.get("item_id", "?")
+            name = item.get("item_name", "Unknown Item")
+            price = item.get("base_price", "?")
+            lines.append(f" • [{item_id}] {name} — {price} gold")
 
         if page < total_pages:
             lines.append("\nSay **next** to see more.")
@@ -223,20 +264,22 @@ class BaseShopkeeper:
     def shopkeeper_show_items_by_mount_category(self, player_input):
         page = player_input.get("page", 1)
 
-        items = get_items_by_mount_category("Mounts and Vehicles", page=page, page_size=5)
-
-        if not items:
+        # fetch paginated rows
+        rows = get_items_by_mount_category("Mounts and Vehicles", page=page, page_size=5)
+        if not rows:
             return "Hmm... looks like we don't have any mounts or vehicles in stock right now."
 
-        all_items = get_items_by_mount_category("Mounts and Vehicles", page=1, page_size=9999)
-        total_pages = max(1, (len(all_items) + 4) // 5)
+        # fetch all to calculate total pages
+        all_rows = get_items_by_mount_category("Mounts and Vehicles", page=1, page_size=9999)
+        total_pages = max(1, (len(all_rows) + 4) // 5)
 
         lines = [f"🏇 **Mounts & Vehicles (Page {page} of {total_pages})**\n"]
-        for item in items:
-            item = dict(item)  # <-- FIX RIGHT HERE
+        for row in rows:
+            item = dict(row)  # sqlite3.Row → dict
+            item_id = item.get("item_id", "?")
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
-            lines.append(f" • {name} — {price} gold")
+            lines.append(f" • [{item_id}] {name} — {price} gold")
 
         if page < total_pages:
             lines.append("\nSay **next** to see more.")

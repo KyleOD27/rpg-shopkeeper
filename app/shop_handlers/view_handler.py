@@ -43,9 +43,14 @@ class ViewHandler:
             self._set_section(section)
 
             if get_func:
+                # armor/weapon/gear/tool all take a list of categories
                 categories = get_func()
                 return view_func(categories)
             else:
+                # only VIEW_EQUIPMENT_CATEGORY (the “see items” prompt) takes zero args
+                if intent == PlayerIntent.VIEW_EQUIPMENT_CATEGORY:
+                    return view_func()
+                # everything else (mounts in particular) wants the raw player_input
                 return view_func(player_input)
 
         if intent in subcategory_intents or intent == PlayerIntent.UNKNOWN:

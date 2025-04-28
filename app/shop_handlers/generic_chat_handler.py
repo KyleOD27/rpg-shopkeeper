@@ -32,107 +32,107 @@ class GenericChatHandler:
         return self.agent.shopkeeper_check_balance_prompt(current_gold)
 
     def handle_next_page(self, _input):
-        category = (
-                self.convo.metadata.get("current_category") or
-                self.convo.metadata.get("current_weapon_category") or
-                self.convo.metadata.get("current_armour_category") or
-                self.convo.metadata.get("current_gear_category") or
-                self.convo.metadata.get("current_tool_category") or
-                self.convo.metadata.get("current_mount_category")
-        )
-
-        if not category:
-            return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
-
+        section = self.convo.metadata.get("current_section", "equipment")
         current_page = self.convo.metadata.get("current_page", 1)
         next_page = current_page + 1
-
         self.convo.metadata["current_page"] = next_page
         self.convo.save_state()
 
-        # Detect which type of item we're paging through
-        section = self.convo.metadata.get("current_section", "equipment")
-
-        if section == "weapon":
-            return self.agent.shopkeeper_show_items_by_weapon_category({
-                "weapon_category": category,
-                "page": next_page
-            })
-        elif section == "armor":
-            return self.agent.shopkeeper_show_items_by_armour_category({
-                "armour_category": category,
-                "page": next_page
-            })
-        elif section == "gear":
-            return self.agent.shopkeeper_show_items_by_gear_category({
-                "gear_category": category,
-                "page": next_page
-            })
-        elif section == "tool":
-            return self.agent.shopkeeper_show_items_by_tool_category({
-                "tool_category": category,
-                "page": next_page
-            })
-        elif section == "mount":
+        # 1) Mounts don’t need a category key, so handle them immediately:
+        if section == "mount":
             return self.agent.shopkeeper_show_items_by_mount_category({
                 "page": next_page
             })
-        else:
-            return self.agent.shopkeeper_show_items_by_category({
-                "category": category,
-                "page": next_page
-            })
 
-    def handle_previous_page(self, _input):
+        # 2) Everything else still uses a category metadata slot:
         category = (
                 self.convo.metadata.get("current_category") or
                 self.convo.metadata.get("current_weapon_category") or
                 self.convo.metadata.get("current_armour_category") or
                 self.convo.metadata.get("current_gear_category") or
-                self.convo.metadata.get("current_tool_category") or
-                self.convo.metadata.get("current_mount_category")
+                self.convo.metadata.get("current_tool_category")
         )
-
         if not category:
-            return self.agent.shopkeeper_generic_say("Previous what? I’m not sure what you’re looking at!")
+            return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
 
-        current_page = self.convo.metadata.get("current_page", 1)
-        new_page = max(current_page - 1, 1)
-
-        self.convo.metadata["current_page"] = new_page
-        self.convo.save_state()
-
-        section = self.convo.metadata.get("current_section", "equipment")
-
+        # 3) Dispatch back to the right paginator:
         if section == "weapon":
             return self.agent.shopkeeper_show_items_by_weapon_category({
                 "weapon_category": category,
-                "page": new_page
+                "page": next_page
             })
         elif section == "armor":
             return self.agent.shopkeeper_show_items_by_armour_category({
                 "armour_category": category,
-                "page": new_page
+                "page": next_page
             })
         elif section == "gear":
             return self.agent.shopkeeper_show_items_by_gear_category({
                 "gear_category": category,
-                "page": new_page
+                "page": next_page
             })
         elif section == "tool":
             return self.agent.shopkeeper_show_items_by_tool_category({
                 "tool_category": category,
-                "page": new_page
+                "page": next_page
             })
-        elif section == "mount":
+
+        # 4) Fallback
+        return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
+
+    def handle_previous_page(self, _input):
+        section = self.convo.metadata.get("current_section", "equipment")
+        current_page = self.convo.metadata.get("current_page", 1)
+        prev_page = max(current_page - 1, 1)
+
+        self.convo.metadata["current_page"] = prev_page
+        self.convo.save_state()
+
+        # 1) Mounts & Vehicles don’t need a category key
+        if section == "mount":
             return self.agent.shopkeeper_show_items_by_mount_category({
-                "page": new_page
+                "page": prev_page
             })
-        else:
-            return self.agent.shopkeeper_show_items_by_category({
-                "category": category,
-                "page": new_page
+
+        # 2) Everything else needs a category
+        category = (
+                self.convo.metadata.get("current_category") or
+                self.convo.metadata.get("current_weapon_category") or
+                self.convo.metadata.get("current_armour_category") or
+                self.convo.metadata.get("current_gear_category") or
+                self.convo.metadata.get("current_tool_category")
+        )
+        if not category:
+            return self.agent.shopkeeper_generic_say(
+                "Previous what? I’m not sure what you’re looking at!"
+            )
+
+        # 3) Dispatch to the right paginator
+        if section == "weapon":
+            return self.agent.shopkeeper_show_items_by_weapon_category({
+                "weapon_category": category,
+                "page": prev_page
             })
+        elif section == "armor":
+            return self.agent.shopkeeper_show_items_by_armour_category({
+                "armour_category": category,
+                "page": prev_page
+            })
+        elif section == "gear":
+            return self.agent.shopkeeper_show_items_by_gear_category({
+                "gear_category": category,
+                "page": prev_page
+            })
+        elif section == "tool":
+            return self.agent.shopkeeper_show_items_by_tool_category({
+                "tool_category": category,
+                "page": prev_page
+            })
+
+        # 4) Fallback if somehow we land here
+        return self.agent.shopkeeper_generic_say(
+            "Previous what? I’m not sure what you’re looking at!"
+        )
 
     def handle_confirm(self, player_input):
         # Generic fallback if no special confirmation handler was active
