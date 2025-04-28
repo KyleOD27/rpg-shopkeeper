@@ -233,12 +233,9 @@ class ConversationService:
     def _route_intent(self, intent, state=None):
         """Helper to route intents consistently based on intent and current state."""
 
-        # Special case for BUY_ITEM / BUY_NEEDS_ITEM
+        # ✅ Force all BUY_ITEM and BUY_NEEDS_ITEM to use smart_buy_router no matter the state
         if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
-            if state in {ConversationState.AWAITING_ACTION, ConversationState.VIEWING_CATEGORIES}:
-                return self.smart_buy_router  # Special handling for smart buy items
-            else:
-                return self.buy_handler.process_buy_item_flow
+            return self.smart_buy_router
 
         if intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
             return self.sell_handler.process_sell_item_flow
@@ -283,30 +280,36 @@ class ConversationService:
 
     def smart_buy_router(self, player_input):
         raw_input = player_input.get("text", "") if isinstance(player_input, dict) else player_input
+        normalized = normalize_input(raw_input)
+
+        # 🛡 EARLY GUARD: If input is vague, go straight to browsing items
+        if normalized in {"buy", "buy item", "purchase", "purchase item"}:
+            self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
+            self.convo.save_state()
+            return self.agent.shopkeeper_view_items_prompt()
+
+        # Try matching
         item_matches, detected_category = find_item_in_input(raw_input, self.convo)
 
         self.convo.debug(f"Item matches: {item_matches}")
         self.convo.debug(f"Detected category: {detected_category}")
 
         if item_matches:
-            if len(item_matches) > 1:
-                self.convo.set_pending_item(item_matches)
-                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
-                self.convo.save_state()
-                return self.agent.shopkeeper_list_matching_items(item_matches) + "  (found at smart_buy_router item matching)"
-            elif len(item_matches) == 1:
-                self.convo.set_pending_item(item_matches[0])
-                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
-                self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-                self.convo.save_state()
-                return self.agent.shopkeeper_buy_confirm_prompt(item_matches[0], self.party_data.get("party_gold", 0))
+            # 🛡 Always treat 1 or more matches the same
+            self.convo.set_pending_item(item_matches)
+            self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+            self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+            self.convo.save_state()
 
-        elif detected_category:
+            # ✨ Always list matches even if there is only one
+            return self.agent.shopkeeper_list_matching_items(item_matches)
+
+        if detected_category:
             self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
             self.convo.save_state()
             return self.agent.shopkeeper_show_items_by_category({"equipment_category": detected_category})
 
+        # Fallback: no matches
         return self.agent.shopkeeper_view_items_prompt()
 
     def handle_introduction(self, player_input):
