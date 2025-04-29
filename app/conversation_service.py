@@ -1,6 +1,4 @@
 # app/conversation_service.py
-
-from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import interpret_input, normalize_input, find_item_in_input
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
@@ -10,6 +8,7 @@ from app.shop_handlers.generic_chat_handler import GenericChatHandler
 from app.shop_handlers.view_handler import ViewHandler
 from commands.dm_commands import handle_dm_command
 from commands.admin_commands import handle_admin_command
+from app.conversation import ConversationState, PlayerIntent
 from typing import Callable, Dict, Tuple, Any
 
 CATEGORY_MAPPING = {
@@ -38,8 +37,8 @@ class ConversationService:
         self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.generic_handler = GenericChatHandler(agent, self.party_data, convo, party_id)
         self.view_handler = ViewHandler(convo, agent, self.buy_handler)
+        self.intent_router: Dict[Tuple[ConversationState, PlayerIntent], Callable[[dict], Any]] = self._build_router()
 
-        self.intent_router: Dict[Tuple[str, str], Callable[[dict], Any]] = self._build_router()
 
     def handle(self, player_input):
         # --- Admin / DM Early Commands ---
@@ -107,12 +106,13 @@ class ConversationService:
 
         # --- Pending Confirmation Protection ---
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
-            if intent not in {PlayerIntent.CONFIRM, PlayerIntent.CANCEL, PlayerIntent.BUY_CONFIRM,
-                              PlayerIntent.SELL_CONFIRM, PlayerIntent.HAGGLE}:
-                self.convo.debug(
-                    f"User gave input '{player_input}' while pending confirmation for '{self.convo.pending_item}'"
-                )
-                return self.agent.shopkeeper_pending_item_reminder(self.convo.pending_item)
+            if intent == PlayerIntent.CONFIRM:
+                if self.convo.pending_action in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM}:
+                    intent = PlayerIntent.BUY_CONFIRM
+                elif self.convo.pending_action in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_CONFIRM}:
+                    intent = PlayerIntent.SELL_CONFIRM
+                wrapped_input["intent"] = intent
+                self.convo.set_intent(intent)
 
         # --- Try routing normally ---
         handler = self.intent_router.get((self.convo.state, intent))

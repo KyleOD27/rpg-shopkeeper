@@ -123,16 +123,47 @@ class BuyHandler:
             return self.agent.shopkeeper_generic_say(
                 "Let’s decide what you’re buying first, then we can haggle!"
             )
+
         haggle = HaggleHandler(self.agent, self.convo, self.party_data)
         result = haggle.attempt_haggle(item)
-        # if haggle succeeded, re-prompt with the new discount showing
+
         if self.convo.discount is not None:
-            return self.agent.shopkeeper_buy_confirm_prompt(
-                item,
-                self.party_data["party_gold"],
-                self.convo.discount
+            # ✅ Haggle success
+            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+            self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+            self.convo.set_pending_item(item)
+            self.convo.set_intent(PlayerIntent.BUY_ITEM)
+            self.convo.save_state()
+
+            discounted_price = self.convo.discount or item.get("base_price", 0)
+            item_name = item["item_name"]
+            gold = self.party_data["party_gold"]
+
+            return (
+                f"🤝 Alright, alright, you twisted my arm.\n"
+                f"How about {discounted_price}🪙 gold for the {item_name}?\n"
+                f"🎒 Your balance: {gold}\n\n"
+                f"Would you like to proceed? (Say yes ✅  or no ❌)"
             )
-        return result
+
+        # ❌ Haggle failed — re-offer at full price
+        self.convo.set_discount(None)
+        self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+        self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+        self.convo.set_pending_item(item)
+        self.convo.set_intent(PlayerIntent.BUY_ITEM)
+        self.convo.save_state()
+
+        full_price = item.get("base_price", 0)
+        item_name = item["item_name"]
+        gold = self.party_data["party_gold"]
+
+        return (
+            f"😅 Nice try, but that price is already a bargain.\n"
+            f"The {item_name} still costs {full_price}🪙 gold.\n"
+            f"🎒 Your balance: {gold}\n\n"
+            f"Still want it? (Say yes ✅  or no ❌)"
+        )
 
     def handle_confirm_purchase(self, player_input):
         # pull out the one dict we stashed

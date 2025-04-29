@@ -57,9 +57,6 @@ class BaseShopkeeper:
     def shopkeeper_list_tool_categories(self, categories):
         return self.show_tool_category_menu(categories)
 
-    def shopkeeper_list_mount_items(self, categories):
-        return self.show_mount_items(categories)
-
     def show_weapon_category_menu(self, categories):
         lines = "\n • " + "\n • ".join(categories)
         return f"⚔️ Looking for something specific? Weapon types:\n{lines}\n\nJust say one to browse."
@@ -319,12 +316,6 @@ class BaseShopkeeper:
 
         return "\n".join(lines)
 
-    def shopkeeper_pending_item_reminder(self, pending_item):
-        return (
-            f"⚠️ Hold on! You were about to buy **{pending_item}**. "
-            "Let's finish that first! (Say 'yes' to confirm or 'no' to cancel.)"
-        )
-
     # --- NEW: Category Access Wrappers ---
     def get_equipment_categories(self):
         return get_all_equipment_categories()
@@ -369,7 +360,7 @@ class BaseShopkeeper:
             f"💰 Price: {cost} gold{discount_note} | ⚖️ Weight: {item.get('weight', 0)} lbs",
             f"🎒 Your gold: {party_gold}",
             "",
-            "✅ Would you like to proceed? (Say yes or no)"
+            "Would you like to proceed? (Say yes ✅  or no ❌)"
         ]
         return "\n".join(lines)
 
@@ -378,7 +369,8 @@ class BaseShopkeeper:
 
     def shopkeeper_buy_success_prompt(self, item, cost):
         item_name = item.get("item_name", "the item")
-        return f"✅ You successfully bought **{item_name}** for **{cost}** gold! Enjoy!"
+        return (f"✅ You successfully "
+                f"bought a {item_name} for {cost}🪙 gold! Enjoy!")
 
     def shopkeeper_clarify_item_prompt(self):
         return "⚠️ What would you like to buy? Please tell me the item name."
@@ -407,12 +399,11 @@ class BaseShopkeeper:
             price = item.get("base_price", "?")
             lines.append(f" • [{item_id}] {name} — {price} gold")
 
-        lines.append("\nPlease say the **ID number** or the **full name** of the item you'd like to buy!")
+        lines.append("\n I like to be sure, just say the item number of the item you'd like to buy!")
         return "\n".join(lines)
 
     def shopkeeper_say(self, text):
         return text
-
 
 
 
