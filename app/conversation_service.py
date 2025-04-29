@@ -228,6 +228,10 @@ class ConversationService:
         router[
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.UNKNOWN)] = self.buy_handler.process_item_selection
 
+        # === Gratitude Handling ===
+        router[(ConversationState.INTRODUCTION, PlayerIntent.SHOW_GRATITUDE)] = self.generic_handler.handle_accept_thanks
+        router[(ConversationState.AWAITING_ACTION, PlayerIntent.SHOW_GRATITUDE)] = self.generic_handler.handle_accept_thanks
+
         return router
 
     def _route_intent(self, intent, state=None):
