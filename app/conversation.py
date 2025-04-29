@@ -49,7 +49,7 @@ class PlayerIntent(Enum):
     HAGGLE_CANCEL = auto()
     NEXT = auto()
     PREVIOUS = auto()
-
+    GOODBYE = auto()
 
 class ConversationState(Enum):
     INTRODUCTION = "INTRODUCTION"

@@ -12,7 +12,7 @@ from app.models.items import get_all_items, get_all_equipment_categories, get_we
 
 # --- INTENT KEYWORDS ---
 INTENT_KEYWORDS = {
-    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me", "what do you sell", "what do you buy", "what else"],
+    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me", "what do you sell", "what do you buy", "what else", "browse"],
 
     # 🛡️ Main categories
     PlayerIntent.VIEW_ARMOUR_CATEGORY: ["armor", "armour"],
@@ -54,7 +54,9 @@ INTENT_KEYWORDS = {
 CONFIRMATION_WORDS = ["yes", "yeah", "yep", "aye", "sure", "of course", "deal", "done", "absolutely", "ok", "okay", "fine"]
 CANCELLATION_WORDS = ["no", "nah", "never", "cancel", "forget it", "stop", "not now", "no deal"]
 GRATITUDE_KEYWORDS = ["thanks", "thank", "thank you", "merci", "danke", "ta", "ty", "cheers"]
-SMALL_TALK_KEYWORDS = ["goodbye", "farewell"]
+GOODBYE_KEYWORDS = ["goodbye", "farewell", "see you", "later", "bye"]
+
+
 
 # --- UTILITY FUNCTIONS ---
 
@@ -345,8 +347,8 @@ def interpret_input(player_input: str, convo=None):
     if any(word in words for word in GRATITUDE_KEYWORDS):
         return {"intent": PlayerIntent.SHOW_GRATITUDE}
 
-    if any(word in words for word in SMALL_TALK_KEYWORDS):
-        return {"intent": PlayerIntent.SMALL_TALK}
+    if any(word in words for word in GOODBYE_KEYWORDS):
+        return {"intent": PlayerIntent.GOODBYE}
 
     # 🔑 --- 5. Keyword-based detection ---
     for intent, keywords in INTENT_KEYWORDS.items():

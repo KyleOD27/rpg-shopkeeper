@@ -228,9 +228,16 @@ class ConversationService:
         router[
             (ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.UNKNOWN)] = self.buy_handler.process_item_selection
 
-        # === Gratitude Handling ===
-        router[(ConversationState.INTRODUCTION, PlayerIntent.SHOW_GRATITUDE)] = self.generic_handler.handle_accept_thanks
-        router[(ConversationState.AWAITING_ACTION, PlayerIntent.SHOW_GRATITUDE)] = self.generic_handler.handle_accept_thanks
+        # === Gratitude and Goodbye Handling (available in all states) ===
+        for state in [
+            ConversationState.INTRODUCTION,
+            ConversationState.AWAITING_ACTION,
+            ConversationState.AWAITING_ITEM_SELECTION,
+            ConversationState.AWAITING_CONFIRMATION,
+            ConversationState.VIEWING_CATEGORIES,
+        ]:
+            router[(state, PlayerIntent.SHOW_GRATITUDE)] = self.generic_handler.handle_accept_thanks
+            router[(state, PlayerIntent.GOODBYE)] = self.generic_handler.handle_farewell
 
         return router
 

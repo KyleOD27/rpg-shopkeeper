@@ -140,3 +140,7 @@ class GenericChatHandler:
 
     def handle_cancel(self, player_input):
         return self.agent.shopkeeper_generic_say("Alright, I’ve cancelled that action.")
+
+    def handle_farewell(self, player_input):
+        return self.agent.shopkeeper_farewell()
+
