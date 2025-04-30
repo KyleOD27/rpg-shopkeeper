@@ -130,9 +130,7 @@ class BuyHandler:
         if self.convo.discount is not None:
             # ✅ Haggle success
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
             self.convo.set_pending_item(item)
-            self.convo.set_intent(PlayerIntent.BUY_ITEM)
             self.convo.save_state()
 
             discounted_price = self.convo.discount or item.get("base_price", 0)
@@ -149,9 +147,7 @@ class BuyHandler:
         # ❌ Haggle failed — re-offer at full price
         self.convo.set_discount(None)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-        self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_pending_item(item)
-        self.convo.set_intent(PlayerIntent.BUY_ITEM)
         self.convo.save_state()
 
         full_price = item.get("base_price", 0)

@@ -478,6 +478,20 @@ class BaseShopkeeper:
     def shopkeeper_farewell(self):
         return "Safe travels, adventurer! Come back soon. 🌟"
 
+    # After (matching the call)
+    def shopkeeper_buy_failure_prompt(self, item, message, party_gold):
+        """
+        item: the item dict the player tried to buy
+        message: a short error message or reason
+        party_gold: the player's current gold total
+        """
+        item_name = item.get("item_name", "that item")
+        return (
+            f"{message} You have {party_gold} gp but the {item_name} costs "
+            f"{item.get('base_price', 0)} gp."
+        )
+
+
 
 
 

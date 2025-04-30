@@ -50,19 +50,26 @@ CREATE TABLE characters (
 -- ITEMS TABLE (COMPATIBLE WITH SRD)
 CREATE TABLE items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    srd_index TEXT UNIQUE,                     -- SRD index (e.g., "longsword")
-    item_name TEXT NOT NULL,                   -- SRD name
-    equipment_category TEXT,              -- From equipment_category.name
-    gear_category TEXT,                   -- From gear_category.name (if present)
-    tool_category TEXT,                   -- From tool_category (if present)
-    weapon_category TEXT,                 -- From weapon_category (if present)
-    armour_category TEXT,                 -- From armor_category (if present)
-    base_price INTEGER DEFAULT 0,      -- SRD cost.quantity (converted to GP for logic)
-    price_unit TEXT DEFAULT 'gp',          -- SRD cost.unit (cp/sp/gp/ep)
-    weight REAL,                          -- SRD weight
-    desc TEXT,                            -- SRD desc[] joined
+    srd_index TEXT UNIQUE,
+    item_name TEXT NOT NULL,
+    equipment_category TEXT,
+    gear_category TEXT,
+    tool_category TEXT,
+    weapon_category TEXT,
+    armour_category TEXT,
+    weapon_range TEXT,                  -- NEW: e.g., "melee"
+    category_range TEXT,                -- NEW: e.g., "martial melee"
+    damage_dice TEXT,                   -- NEW: e.g., "1d8"
+    damage_type TEXT,                   -- NEW: e.g., "Slashing"
+    range_normal INTEGER,              -- NEW: e.g., 5
+    range_long INTEGER,                -- NEW: e.g., null
+    base_price INTEGER DEFAULT 0,
+    price_unit TEXT DEFAULT 'gp',
+    weight REAL,
+    desc TEXT,
     rarity TEXT CHECK(rarity IN ('Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary')) DEFAULT 'Common'
 );
+
 
 -- TRANSACTION LEDGER
 CREATE TABLE transaction_ledger (

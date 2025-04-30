@@ -1,5 +1,7 @@
+from app.conversation import PlayerIntent, ConversationState
 from app.models.ledger import get_last_transactions
 from app.interpreter import get_equipment_category_from_input
+from app.db import get_item_details, get_connection
 
 
 class GenericChatHandler:
@@ -143,4 +145,3 @@ class GenericChatHandler:
 
     def handle_farewell(self, player_input):
         return self.agent.shopkeeper_farewell()
-

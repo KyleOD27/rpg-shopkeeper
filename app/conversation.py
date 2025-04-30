@@ -50,6 +50,7 @@ class PlayerIntent(Enum):
     NEXT = auto()
     PREVIOUS = auto()
     GOODBYE = auto()
+    INSPECT_ITEM = auto()
 
 class ConversationState(Enum):
     INTRODUCTION = "INTRODUCTION"

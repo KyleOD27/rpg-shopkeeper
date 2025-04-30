@@ -119,6 +119,18 @@ def upsert_character_session(character_id, state, pending_action=None, pending_i
         ''', (character_id, state, pending_action, pending_item))
         conn.commit()
 
+def get_item_details(conn, item_name: str):
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT item_name, equipment_category, gear_category, weapon_category,
+                   weapon_range, category_range, damage_dice, damage_type,
+                   range_normal, range_long, base_price, price_unit, weight, desc
+            FROM items
+            WHERE LOWER(item_name) = LOWER(?)
+            LIMIT 1
+        """, (item_name,))
+        return cursor.fetchone()
+
 
 if __name__ == "__main__":
     create_tables()
