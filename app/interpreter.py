@@ -283,10 +283,39 @@ def detect_withdraw_intent(player_input: str, convo=None):
 
 # ─── 7. MAIN INTERPRETER ─────────────────────────────────────────────────
 
+from app.conversation import PlayerIntent, ConversationState
+
+import re
+
 def interpret_input(player_input: str, convo=None):
     logger.debug(f"[INTERPRETER] raw input: {player_input!r}")
+    lowered = normalize_input(player_input)
 
-    # — 1) local ranker —
+    # ─── 0a) NUMERIC INSPECT OVERRIDE during confirmation ────────────────────
+    from app.conversation import ConversationState
+    if convo and convo.state == ConversationState.AWAITING_CONFIRMATION:
+        # if they mention an ID, treat it as an inspect request
+        m = re.search(r'\b(\d+)\b', lowered)
+        if m:
+            items, _ = find_item_in_input(player_input, convo)
+            if items:
+                meta = {}
+                meta["item"] = items if len(items) > 1 else items[0]["item_name"]
+                logger.debug(f"[INTERPRETER] confirm-flow numeric-inspect override → INSPECT_ITEM, items={items!r}")
+                return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    # ─── 0b) INFO/DETAILS on PENDING item ────────────────────────────────────
+    if convo and convo.state == ConversationState.AWAITING_CONFIRMATION:
+        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+            # falls back to convo.get_pending_item() inside find_item_in_input
+            items, _ = find_item_in_input(player_input, convo)
+            if items:
+                meta = {}
+                meta["item"] = items if len(items) > 1 else items[0]["item_name"]
+                logger.debug(f"[INTERPRETER] confirm-flow keyword-inspect override → INSPECT_ITEM, items={items!r}")
+                return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    # ─── 1) local ranker ─────────────────────────────────────────────────────
     intent_r, conf = rank_intent_kw(player_input)
     logger.debug(f"[INTERPRETER] ranker -> {intent_r} (conf={conf:.2f})")
     if conf >= INTENT_CONF_THRESHOLD:
@@ -314,41 +343,30 @@ def interpret_input(player_input: str, convo=None):
         if intent_r == PlayerIntent.INSPECT_ITEM:
             items, _ = find_item_in_input(player_input, convo)
             if items:
-                meta["item"] = items if len(items) > 1 else items[0]["item_name"]
+                # always send the dict(s), never a plain name
+                meta["item"] = items if len(items) > 1 else items[0]
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
         # CONFIRM/CANCEL/etc
         return {"intent": intent_r, "metadata": {}}
 
-    # 2a) **FALLBACK BUY OVERRIDE** (this is the bit you need)
-    lowered = normalize_input(player_input)
-    buy_kws = INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]
-    if any(kw in lowered for kw in buy_kws):
-            intent, items = detect_buy_intent(player_input, convo)
-            meta = {}
-            if items:
-                meta["item"] = items
-            logger.debug(f"[INTERPRETER] fallback BUY override → {intent}, items={items!r}")
-            return {"intent": intent, "metadata": meta}
-
-    # — 2) fallback rule-based —
-    lowered = normalize_input(player_input)
-
-    # 2a) BUY override
+    # ─── 2a) FALLBACK BUY OVERRIDE ────────────────────────────────────────────
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
         intent, items = detect_buy_intent(player_input, convo)
         meta = {}
         if items:
             meta["item"] = items
+        logger.debug(f"[INTERPRETER] fallback BUY override → {intent}, items={items!r}")
         return {"intent": intent, "metadata": meta}
 
-    # 2b) CATEGORY
+    # ─── 2b) CATEGORY ───────────────────────────────────────────────────────
     field, val = get_category_match(player_input)
     if field:
         intent_name = f"VIEW_{field.upper()}"
         intent = getattr(PlayerIntent, intent_name, PlayerIntent.VIEW_ITEMS)
         return {"intent": intent, "metadata": {field: val}}
 
-    # 2c) CONFIRM/CANCEL/THANKS/GOODBYE
+    # ─── 2c) CONFIRM/CANCEL/THANKS/GOODBYE ─────────────────────────────────
     words = lowered.split()
     if any(w in words for w in CONFIRMATION_WORDS):
         return {"intent": PlayerIntent.CONFIRM, "metadata": {}}
@@ -359,22 +377,59 @@ def interpret_input(player_input: str, convo=None):
     if any(w in words for w in GOODBYE_KEYWORDS):
         return {"intent": PlayerIntent.GOODBYE, "metadata": {}}
 
-    # 2d) INSPECT override
+    # ─── 2d) INSPECT OVERRIDE (general) ────────────────────────────────────
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
         items, _ = find_item_in_input(player_input, convo)
         meta = {}
         if items:
-            meta["item"] = items if len(items)>1 else items[0]["item_name"]
+            meta["item"] = items if len(items) > 1 else items[0]["item_name"]
         return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
 
-    # 2e) final fallback to BUY
+    # ─── 2e) FINAL FALLBACK TO BUY ──────────────────────────────────────────
     items, _ = find_item_in_input(player_input, convo)
     if items:
         return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
 
-    # — 3) GIVE UP —
+    # ─── 3) GIVE UP ─────────────────────────────────────────────────────────
     logger.debug("[INTERPRETER] → UNKNOWN")
     return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
+
+    # 4) BUY override if any buy-keyword anywhere
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
+        intent, items = detect_buy_intent(player_input, convo)
+        meta = {"item": items} if items else {}
+        logger.debug(f"[INTERPRETER] fallback BUY override → {intent}, items={items!r}")
+        return {"intent": intent, "metadata": meta}
+
+    # 5) Category browsing fallback
+    field, val = get_category_match(player_input)
+    if field:
+        intent = getattr(PlayerIntent, f"VIEW_{field.upper()}", PlayerIntent.VIEW_ITEMS)
+        return {"intent": intent, "metadata": {field: val}}
+
+    # 6) Gratitude/goodbye
+    if any(w in lowered.split() for w in GRATITUDE_KEYWORDS):
+        return {"intent": PlayerIntent.SHOW_GRATITUDE, "metadata": {}}
+    if any(w in lowered.split() for w in GOODBYE_KEYWORDS):
+        return {"intent": PlayerIntent.GOODBYE, "metadata": {}}
+
+    # 7) Inspect-keyword fallback
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+        items, _ = find_item_in_input(player_input, convo)
+        if items:
+            meta = {"item": items if len(items) > 1 else items[0]["item_name"]}
+            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    # 8) Final fallback → BUY if it looks like an item mention
+    items, _ = find_item_in_input(player_input, convo)
+    if items:
+        return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
+
+    # 9) Give up
+    logger.debug("[INTERPRETER] → UNKNOWN")
+    return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
 
 
 # ─── 8. GPT CONFIRM FALLBACK (unchanged) ────────────────────────────────
