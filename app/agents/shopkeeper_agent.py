@@ -474,6 +474,7 @@ class BaseShopkeeper:
             "🪙 BALANCE – See your party balance\n"
             "📚 LEDGER – See our trade history\n"
             "📋 BROWSE – See what we have in stock\n"
+            "🔎 INSPECT – See specific item details\n"
         )
 
     def shopkeeper_buy_confirm_prompt(self, item, party_gold, discount=None):
