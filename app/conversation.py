@@ -255,3 +255,9 @@ class Conversation:
         self.metadata["matching_items"] = []
         self.save_state()
 
+    def set_pending_confirm_item(self, item_name: str):
+        self.pending_confirm_item = item_name
+
+    def get_pending_confirm_item(self) -> str | None:
+        return getattr(self, "pending_confirm_item", None)
+

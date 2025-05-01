@@ -443,7 +443,7 @@ class BaseShopkeeper:
                 what = f"{item} for {amount} gp" if item else f"{amount} gp"
 
             lines.append(
-                f"{idx}. {ts_human}: {player} {verb} {what}. Balance: {balance} gp."
+                f"{ts_human}: {player} {verb} a {what}."
             )
 
         return "\n".join(lines)
@@ -466,7 +466,7 @@ class BaseShopkeeper:
 
     def shopkeeper_fallback_prompt(self) -> str:
         return (
-            "📜 Here's what I can help you with:\n\n"
+            "Here's what I can help you with:\n\n"
             "🛒 BUY – I have items available to purchase\n"
             "📦 SELL – Sell me unwanted goods\n"
             "💰 DEPOSIT – Top up your party balance\n"

@@ -131,6 +131,7 @@ class BuyHandler:
             # ✅ Haggle success
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
             self.convo.set_pending_item(item)
+            self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
             self.convo.save_state()
 
             discounted_price = self.convo.discount or item.get("base_price", 0)
@@ -141,13 +142,14 @@ class BuyHandler:
                 f"🤝 Alright, alright, you twisted my arm.\n"
                 f"How about {discounted_price}🪙 gold for the {item_name}?\n"
                 f"🎒 Your balance: {gold}\n\n"
-                f"Would you like to proceed? (Say yes ✅  or no ❌)"
+                f"Would you like to proceed? (Say yes  or no)"
             )
 
         # ❌ Haggle failed — re-offer at full price
         self.convo.set_discount(None)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.set_pending_item(item)
+        self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
         self.convo.save_state()
 
         full_price = item.get("base_price", 0)
@@ -158,7 +160,7 @@ class BuyHandler:
             f"😅 Nice try, but that price is already a bargain.\n"
             f"The {item_name} still costs {full_price}🪙 gold.\n"
             f"🎒 Your balance: {gold}\n\n"
-            f"Still want it? (Say yes ✅  or no ❌)"
+            f"Still want it? (Say yes or no)"
         )
 
     def handle_confirm_purchase(self, player_input):

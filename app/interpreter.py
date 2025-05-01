@@ -34,13 +34,14 @@ INTENT_KEYWORDS = {
     PlayerIntent.VIEW_ARMOUR_CATEGORY: ["armor","armour"],
     PlayerIntent.VIEW_WEAPON_CATEGORY: ["weapon","weapons"],
     PlayerIntent.VIEW_GEAR_CATEGORY: ["gear","adventuring gear","supplies","packs"],
-    PlayerIntent.VIEW_TOOL_CATEGORY: ["tool","tools","artisan's tools","kits"],
-    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["equipment","mounts","vehicles","travelling gear"],
+    PlayerIntent.VIEW_TOOL_CATEGORY: ["tool","tools"],
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["items" "inventory"],
 
     PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light","medium","heavy"],
     PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["simple","martial"],
-    PlayerIntent.VIEW_GEAR_SUBCATEGORY: ["backpack","rope","tinderbox","torch"],
-    PlayerIntent.VIEW_TOOL_SUBCATEGORY: ["artisan","disguise","forgery","thieves","musical"],
+    PlayerIntent.VIEW_GEAR_SUBCATEGORY: ["ammunition", "arcane foci","druidic foci", "equipment packs", "holy symbols", "kits", "standard gear"],
+    PlayerIntent.VIEW_TOOL_SUBCATEGORY: ["artisan's tools", "artisans tools", "gaming sets","musical instrument", "other tools"],
+
 
     PlayerIntent.BUY_ITEM: ["buy","purchase","get","acquire","grab","want"],
     PlayerIntent.SELL_ITEM: ["sell","offload","trade in"],
@@ -117,18 +118,35 @@ def preprocess(player_input: str) -> str:
 def rank_intent_kw(user_input: str):
     """
     Score each intent by counting how many of its keywords appear in the normalized input.
+    In a tie, prefer any VIEW_*_SUBCATEGORY intent over its parent category.
     """
     raw = normalize_input(user_input)
     logger.debug(f"[RANKER] raw normalized: {raw!r}")
-    scores = {}
-    for intent, kws in INTENT_KEYWORDS.items():
-        scores[intent] = sum(1 for kw in kws if kw in raw)
-    best = max(scores, key=scores.get)
-    best_score = scores[best]
+
+    # 1) build a map of intent → raw match count
+    scores = {
+        intent: sum(1 for kw in kws if kw in raw)
+        for intent, kws in INTENT_KEYWORDS.items()
+    }
+
+    # 2) sort by (score, is_subcategory) descending
+    #    so that in a tie, any VIEW_*_SUBCATEGORY wins over VIEW_*_CATEGORY
+    sorted_intents = sorted(
+        scores.items(),
+        key=lambda kv: (
+            kv[1],                         # primary: highest score
+            kv[0].name.endswith("_SUBCATEGORY")  # tiebreak: subcategories first
+        ),
+        reverse=True
+    )
+
+    best, best_score = sorted_intents[0]
     total = max(len(INTENT_KEYWORDS[best]), 1)
     conf = best_score / total
+
     logger.debug(f"[RANKER] scores={scores}, best={best}, conf={conf:.2f}")
     return best, conf
+
 
 
 # ─── 4. CATEGORY MATCHERS ────────────────────────────────────────────────
@@ -365,6 +383,8 @@ def interpret_input(player_input: str, convo=None):
         intent_name = f"VIEW_{field.upper()}"
         intent = getattr(PlayerIntent, intent_name, PlayerIntent.VIEW_ITEMS)
         return {"intent": intent, "metadata": {field: val}}
+
+
 
     # ─── 2c) CONFIRM/CANCEL/THANKS/GOODBYE ─────────────────────────────────
     words = lowered.split()

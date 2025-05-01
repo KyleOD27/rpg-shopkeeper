@@ -44,6 +44,20 @@ class ConversationService:
 
     # ─── helper to handle yes/no when awaiting confirmation ────────
     def _handle_confirmation_flow(self, wrapped_input):
+        """
+        While awaiting confirmation, if the user asks to BUY_ITEM or SELL_ITEM
+        again (e.g. “buy longsword”), restart that flow. Otherwise, resolve
+        the existing pending confirmation as before.
+        """
+        intent = wrapped_input.get("intent")
+
+        # 🔄 If they invoke a new buy/sell inside a confirmation, restart that flow
+        if intent == PlayerIntent.BUY_ITEM:
+            return self._list_or_detail(PlayerIntent.BUY_ITEM, wrapped_input)
+        if intent == PlayerIntent.SELL_ITEM:
+            return self._list_or_detail(PlayerIntent.SELL_ITEM, wrapped_input)
+
+        # ✅ Otherwise handle the pending confirmation
         pending = self.convo.pending_action
 
         # both straight BUY_ITEM *and* BUY_CONFIRM go to the same finaliser
@@ -53,6 +67,7 @@ class ConversationService:
         if pending in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_CONFIRM}:
             return self.sell_handler.handle_sell_confirm(wrapped_input)
 
+        # fallback to any other confirm (e.g. generic yes/no flows)
         return self.generic_handler.handle_confirm(wrapped_input)
 
     # ─── helper to reset on cancellation ───────────────────────────
@@ -79,6 +94,8 @@ class ConversationService:
                 # set up the pending buy flow
                 self.convo.set_pending_item(item)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                # remember exactly which item we’re confirming
+                self.convo.set_pending_confirm_item(item["item_name"])
                 self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_buy_confirm_prompt(
@@ -113,8 +130,7 @@ class ConversationService:
             return self.agent.shopkeeper_view_items_prompt()
 
         # 5️⃣ inspect fallback
-        return "❓ I couldn’t find anything called that. Try ‘inspect longsword’ or give me a number."
-
+        return "❓ I couldn’t find anything called that. Try ‘inspect longsword’ or inspect 42."
 
     # ─── main entrypoint ─────────────────────────────────────────
     def handle(self, player_input: str):
