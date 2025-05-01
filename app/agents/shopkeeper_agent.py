@@ -11,7 +11,8 @@ from app.models.items import (
     search_items_by_name_fuzzy
 )
 from app.interpreter import normalize_input
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 # --- Safe field normalizer ---
 def safe_normalized_field(item, field_name):
@@ -373,20 +374,77 @@ class BaseShopkeeper:
     def shopkeeper_check_balance_prompt(self, gold_amount: int) -> str:
         return f"Your party currently holds {gold_amount} gold."
 
+    from datetime import datetime, timedelta
+
+    from datetime import datetime, timedelta
+
     def shopkeeper_show_ledger(self, ledger_entries: list) -> str:
         if not ledger_entries:
-            return "Your ledger is empty. No purchases, sales, or deposits yet!"
+            return "Your ledger is empty—no purchases, sales, or deposits yet!"
 
-        lines = ["Here's your transaction history:"]
-        for entry in ledger_entries:
+        def humanize(ts_str: str) -> str:
+            try:
+                ts_utc = datetime.fromisoformat(ts_str)
+            except Exception:
+                return ts_str
+
+            now_local = datetime.now()
+            offset = now_local - datetime.utcnow()
+            ts_local = ts_utc + offset
+            delta = now_local - ts_local
+
+            if delta < timedelta(seconds=60):
+                return "just now"
+            if delta < timedelta(hours=1):
+                mins = int(delta.total_seconds() // 60)
+                return f"{mins} minute{'s' if mins != 1 else ''} ago"
+            if delta < timedelta(hours=24):
+                hrs = int(delta.total_seconds() // 3600)
+                return f"{hrs} hour{'s' if hrs != 1 else ''} ago"
+
+            # beyond 24h, format like “Wed 5th at 9:00 am”
+            def ordinal(n: int) -> str:
+                if 10 <= n % 100 <= 20:
+                    suf = "th"
+                else:
+                    suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+                return f"{n}{suf}"
+
+            weekday = ts_local.strftime("%a")  # e.g. “Wed”
+            day = ordinal(ts_local.day)  # e.g. “5th”
+            time = ts_local.strftime("%I:%M %p").lstrip("0").lower()  # “9:00 am”
+            return f"{weekday} {day} at {time}"
+
+        lines = ["📜 Transaction History:"]
+        for idx, entry in enumerate(ledger_entries, start=1):
             e = dict(entry)
-            timestamp = e.get("timestamp", "")[:16].replace("T", " ")
-            player = e.get("player_name", "Unknown")
-            item = e.get("item_name", "Something")
-            gold = e.get("amount", 0)
-            action = e.get("action", "ACTION")
+            ts_human = humanize(e.get("timestamp", ""))
+            player = e.get("player_name", "Someone")
+            action = e.get("action", "").lower()
+            item = e.get("item_name", "")
+            amount = e.get("amount", 0)
             balance = e.get("balance_after", "?")
-            lines.append(f" - {timestamp} | {player} | {action} '{item}' for {gold} gold (Balance: {balance})")
+
+            # Verb and what
+            if action in ("buy", "bought"):
+                verb = "bought"
+                what = f"{item} for {amount} gp"
+            elif action in ("sell", "sold"):
+                verb = "sold"
+                what = f"{item} for {amount} gp"
+            elif action == "deposit":
+                verb = "deposited"
+                what = f"{amount} gp"
+            elif action == "withdraw":
+                verb = "withdrew"
+                what = f"{amount} gp"
+            else:
+                verb = action or "did something with"
+                what = f"{item} for {amount} gp" if item else f"{amount} gp"
+
+            lines.append(
+                f"{idx}. {ts_human}: {player} {verb} {what}. Balance: {balance} gp."
+            )
 
         return "\n".join(lines)
 

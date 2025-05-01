@@ -8162,3 +8162,24 @@ CharacterID=1 | State=INTRODUCTION | Action=None | Item={"item_id": 69, "srd_ind
 CharacterID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
 CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
 CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_ITEMS | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_ITEM | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=BUY_ITEM | Item=[{"item_id": 131, "srd_index": "longsword", "item_name": "Longsword", "equipment_category": "Weapon", "gear_category": null, "tool_category": null, "weapon_category": "Martial", "armour_category": null, "weapon_range": "Melee", "category_range": "Martial Melee", "damage_dice": "1d8", "damage_type": "Slashing", "range_normal": 5, "range_long": null, "base_price": 15, "price_unit": "gp", "weight": 3.0, "desc": "", "rarity": "Common"}] | Input='None' | Intent=None
+CharacterID=1 | State=VIEWING_CATEGORIES | Action=PlayerIntent.BUY_ITEM | Item={"item_id": 131, "srd_index": "longsword", "item_name": "Longsword", "equipment_category": "Weapon", "gear_category": null, "tool_category": null, "weapon_category": "Martial", "armour_category": null, "weapon_range": "Melee", "category_range": "Martial Melee", "damage_dice": "1d8", "damage_type": "Slashing", "range_normal": 5, "range_long": null, "base_price": 15, "price_unit": "gp", "weight": 3.0, "desc": "", "rarity": "Common"} | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_CONFIRMATION | Action=PlayerIntent.BUY_ITEM | Item={"item_id": 131, "srd_index": "longsword", "item_name": "Longsword", "equipment_category": "Weapon", "gear_category": null, "tool_category": null, "weapon_category": "Martial", "armour_category": null, "weapon_range": "Melee", "category_range": "Martial Melee", "damage_dice": "1d8", "damage_type": "Slashing", "range_normal": 5, "range_long": null, "base_price": 15, "price_unit": "gp", "weight": 3.0, "desc": "", "rarity": "Common"} | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_CONFIRMATION | Action=PlayerIntent.BUY_ITEM | Item={"item_id": 131, "srd_index": "longsword", "item_name": "Longsword", "equipment_category": "Weapon", "gear_category": null, "tool_category": null, "weapon_category": "Martial", "armour_category": null, "weapon_range": "Melee", "category_range": "Martial Melee", "damage_dice": "1d8", "damage_type": "Slashing", "range_normal": 5, "range_long": null, "base_price": 15, "price_unit": "gp", "weight": 3.0, "desc": "", "rarity": "Common"} | Input='None' | Intent=None
+CharacterID=1 | State=INTRODUCTION | Action=None | Item={"item_id": 131, "srd_index": "longsword", "item_name": "Longsword", "equipment_category": "Weapon", "gear_category": null, "tool_category": null, "weapon_category": "Martial", "armour_category": null, "weapon_range": "Melee", "category_range": "Martial Melee", "damage_dice": "1d8", "damage_type": "Slashing", "range_normal": 5, "range_long": null, "base_price": 15, "price_unit": "gp", "weight": 3.0, "desc": "", "rarity": "Common"} | Input='None' | Intent=None
+CharacterID=1 | State=INTRODUCTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=None | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
+CharacterID=1 | State=AWAITING_ACTION | Action=VIEW_LEDGER | Item=None | Input='None' | Intent=None
