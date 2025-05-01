@@ -491,6 +491,13 @@ class BaseShopkeeper:
             f"{item.get('base_price', 0)} gp."
         )
 
+    def shopkeeper_inspect_item_prompt(self, lines: list[str]) -> str:
+        """
+        Turn the list of emoji-rich lines from InspectHandler
+        into one block of text to send back to the user.
+        """
+        return "\n".join(lines)
+
 
 
 

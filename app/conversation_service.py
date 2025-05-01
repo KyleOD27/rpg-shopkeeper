@@ -74,18 +74,26 @@ class ConversationService:
         # 1️⃣ single match
         if matches and len(matches) == 1:
             item = matches[0]
+
             if intent == PlayerIntent.BUY_ITEM:
+                # set up the pending buy flow
                 self.convo.set_pending_item(item)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
                 self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                 self.convo.save_state()
-                return self.agent.shopkeeper_buy_confirm_prompt(item, self.party_data.get("party_gold", 0))
-            # INSPECT
-            return self.inspect_handler.handle_inspect_item({
+                return self.agent.shopkeeper_buy_confirm_prompt(
+                    item,
+                    self.party_data.get("party_gold", 0)
+                )
+
+            # INSPECT flow: get the emoji‐rich list of lines
+            lines = self.inspect_handler.handle_inspect_item({
                 "text": raw,
                 "intent": intent,
                 "item": item["item_name"]
             })
+            # render them via your new helper
+            return self.agent.shopkeeper_inspect_item_prompt(lines)
 
         # 2️⃣ multiple
         if matches and len(matches) > 1:
