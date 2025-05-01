@@ -424,7 +424,7 @@ class BaseShopkeeper:
         cost = discount if discount is not None else base
         saved = base - cost if discount is not None else 0
 
-        discount_note = f" ( you saved {saved}g!)" if saved > 0 else ""
+        discount_note = f" (you saved {saved}g!)" if saved > 0 else ""
         name = item.get("item_name", "Unknown Item")
         cat = item.get("equipment_category", "")
         rar = item.get("rarity", "")
@@ -432,10 +432,31 @@ class BaseShopkeeper:
         lines = [
             f"🛒 You're about to buy a {name} ({cat}, {rar}).",
             f"💰 Price: {cost} gold{discount_note} | ⚖️ Weight: {item.get('weight', 0)} lbs",
-            f"🎒 Your gold: {party_gold}",
-            "",
-            "Would you like to proceed? (Say yes ✅  or no ❌)"
         ]
+
+        # 📜 Description
+        if item.get("desc"):
+            lines.append(f"📜 {item['desc']}")
+
+        # ⚔️ Weapon stats
+        if item.get("damage_dice"):
+            dmg_type = item.get("damage_type", "")
+            lines.append(f"⚔️ Damage: {item['damage_dice']} {dmg_type}".strip())
+
+        if item.get("weapon_range"):
+            lines.append(f"🎯 Weapon Range: {item['weapon_range']}")
+
+        if item.get("range_normal"):
+            span = f"{item['range_normal']} ft"
+            if item.get("range_long"):
+                span += f" / {item['range_long']} ft"
+            lines.append(f"📏 Range: {span}")
+
+        # 🎒 Your gold + confirm prompt
+        lines.append(f"🎒 Your gold: {party_gold}")
+        lines.append("")  # blank line before the question
+        lines.append("Would you like to proceed? (Say yes ✅ or no ❌)")
+
         return "\n".join(lines)
 
     def shopkeeper_generic_say(self, message):
