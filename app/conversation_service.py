@@ -253,27 +253,21 @@ class ConversationService:
         router[(ConversationState.AWAITING_ITEM_SELECTION, PlayerIntent.SELL_ITEM)] = \
             self.sell_handler.process_sell_item_flow
 
-        # ─── AWAITING_CONFIRMATION ───────────────────────────────
-        # haggle retry
+        # AWAITING_CONFIRMATION
         router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.HAGGLE)] = self.buy_handler.handle_haggle
-
-        # “I’d like to buy that” (from haggle-success path)
-        router[(ConversationState.AWAITING_CONFIRMATION,
-                PlayerIntent.BUY_CONFIRM)] = self.buy_handler.handle_confirm_purchase
-
-        # “Yes” / “Okay” / “Confirm”
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CONFIRM)] = self.buy_handler.handle_confirm_purchase
         router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CONFIRM)] = self._handle_confirmation_flow
-
-        # in case something downstream still registers as BUY_ITEM
         router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_ITEM)] = self._handle_confirmation_flow
-
-        # sell side
-        router[(ConversationState.AWAITING_CONFIRMATION,
-                PlayerIntent.SELL_CONFIRM)] = self.sell_handler.handle_sell_confirm
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CONFIRM)] = self.sell_handler.handle_sell_confirm
 
         # cancellations
         for c in (PlayerIntent.CANCEL, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CANCEL):
             router[(ConversationState.AWAITING_CONFIRMATION, c)] = self._handle_cancellation_flow
+
+        # ⭐ NEW: “show-gratitude” is valid in every state
+            gratitude_handler = self.generic_handler.handle_accept_thanks
+            for state in ConversationState:  # iterate over the enum members
+                router[(state, PlayerIntent.SHOW_GRATITUDE)] = gratitude_handler
 
         return router
 

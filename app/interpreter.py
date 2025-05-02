@@ -35,7 +35,7 @@ INTENT_KEYWORDS = {
     PlayerIntent.VIEW_WEAPON_CATEGORY: ["weapon","weapons"],
     PlayerIntent.VIEW_GEAR_CATEGORY: ["gear","adventuring gear","supplies","packs"],
     PlayerIntent.VIEW_TOOL_CATEGORY: ["tool","tools"],
-    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["items" "inventory"],
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["items", "inventory", "item", "shop"],
 
     PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light","medium","heavy"],
     PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["simple","martial"],
@@ -69,12 +69,12 @@ INTENT_KEYWORDS = {
 STOP_WORDS = {
     "a","an","the","and","or","but","of","for","to","in","on","at",
     "please","good","sir","maam","hey","hi","how","much","might","be",
-    "is","are","was","were","i","you","do","does"
+    "is","are","was","were","i","you","do","does", "something", "anything", "stuff"
 }
 
 # Phrases to strip as polite prefixes
 INTENT_PREFIXES = [
-    "i want to buy","i want to purchase","can i buy",
+    "want to buy","want to purchase","can i buy",
     "how much is","how much would","tell me about",
     "what does","what is","show me",
 ]
@@ -115,37 +115,84 @@ def preprocess(player_input: str) -> str:
 
 # ─── 3. LOCAL INTENT RANKER ─────────────────────────────────────────────
 
-def rank_intent_kw(user_input: str):
+# interpreter/ranker.py  (or wherever `rank_intent_kw` lives)
+# -------------------------------------------------------------
+
+# 0️⃣  ONE-TIME preference list – only consulted when two intents get
+#     the *same* keyword score.  Put the most important / specific
+#     intents first, the most generic ones last.
+PREFERRED_ORDER: list[PlayerIntent] = [
+    # Banking flows
+    PlayerIntent.DEPOSIT_GOLD,
+    PlayerIntent.WITHDRAW_GOLD,
+    PlayerIntent.CHECK_BALANCE,
+    PlayerIntent.VIEW_LEDGER,
+
+    # Inventory actions
+    PlayerIntent.BUY_ITEM,
+    PlayerIntent.SELL_ITEM,
+    PlayerIntent.INSPECT_ITEM,
+
+    # Browsing – sub-categories before their parents, so a
+    # tie on “armor” vs “heavy armor” still picks the latter.
+    PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
+    PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
+    PlayerIntent.VIEW_GEAR_SUBCATEGORY,
+    PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+
+    PlayerIntent.VIEW_ITEMS,                # catch-all list view
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY,
+    PlayerIntent.VIEW_WEAPON_CATEGORY,
+    PlayerIntent.VIEW_ARMOUR_CATEGORY,
+    PlayerIntent.VIEW_GEAR_CATEGORY,
+    PlayerIntent.VIEW_TOOL_CATEGORY,
+
+    # Generic chat & nav
+    PlayerIntent.SHOW_GRATITUDE,
+    PlayerIntent.GREETING,
+    PlayerIntent.NEXT,
+    PlayerIntent.PREVIOUS,
+]
+
+def _pref_index(intent: PlayerIntent) -> int:
+    """Return the intent’s position in the preference list (lower = better)."""
+    try:
+        return PREFERRED_ORDER.index(intent)
+    except ValueError:
+        return len(PREFERRED_ORDER)          # anything un-listed is lowest priority
+
+
+def rank_intent_kw(user_input: str) -> tuple[PlayerIntent, float]:
     """
-    Score each intent by counting how many of its keywords appear in the normalized input.
-    In a tie, prefer any VIEW_*_SUBCATEGORY intent over its parent category.
+    Score each intent by counting how many of its keywords appear in the
+    normalized input.  If two intents get the same score, break the tie with
+    `PREFERRED_ORDER` so we always pick the most specific / important intent
+    deterministically.
     """
     raw = normalize_input(user_input)
     logger.debug(f"[RANKER] raw normalized: {raw!r}")
 
-    # 1) build a map of intent → raw match count
-    scores = {
+    # 1) keyword hit-count per intent
+    scores: dict[PlayerIntent, int] = {
         intent: sum(1 for kw in kws if kw in raw)
         for intent, kws in INTENT_KEYWORDS.items()
     }
 
-    # 2) sort by (score, is_subcategory) descending
-    #    so that in a tie, any VIEW_*_SUBCATEGORY wins over VIEW_*_CATEGORY
-    sorted_intents = sorted(
-        scores.items(),
-        key=lambda kv: (
-            kv[1],                         # primary: highest score
-            kv[0].name.endswith("_SUBCATEGORY")  # tiebreak: subcategories first
-        ),
-        reverse=True
+    # 2) choose the "best" intent by:
+    #    (a) highest score, then
+    #    (b) earliest position in PREFERRED_ORDER
+    best_intent: PlayerIntent = max(
+        scores,
+        key=lambda i: (scores[i], -_pref_index(i))   # tuple sort
     )
 
-    best, best_score = sorted_intents[0]
-    total = max(len(INTENT_KEYWORDS[best]), 1)
-    conf = best_score / total
+    # 3) simple confidence = hits / keywords-for-that-intent
+    total_keywords = max(len(INTENT_KEYWORDS.get(best_intent, ())), 1)
+    confidence = scores[best_intent] / total_keywords
 
-    logger.debug(f"[RANKER] scores={scores}, best={best}, conf={conf:.2f}")
-    return best, conf
+    logger.debug(f"[RANKER] scores={scores}, best={best_intent}, conf={confidence:.2f}")
+    return best_intent, confidence
+
 
 
 

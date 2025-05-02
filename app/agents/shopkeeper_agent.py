@@ -549,7 +549,7 @@ class BaseShopkeeper:
             price = item.get("base_price", "?")
             lines.append(f" • [{item_id}] {name} — {price} gold")
 
-        lines.append("\n I like to be sure, just say the item number of the item you'd like to buy!")
+        lines.append("\n Just say the name or number to buy.. or would you like to see the full inventory?")
         return "\n".join(lines)
 
     def shopkeeper_say(self, text):
