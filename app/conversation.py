@@ -6,6 +6,9 @@ import json
 
 
 class PlayerIntent(Enum):
+    VIEW_ACCOUNT = auto()
+    VIEW_CHARACTER = auto()
+    VIEW_PROFILE = auto()
     VIEW_MOUNT_CATEGORY = auto()
     VIEW_TOOL_SUBCATEGORY = auto()
     VIEW_GEAR_SUBCATEGORY = auto()

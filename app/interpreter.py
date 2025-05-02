@@ -59,11 +59,19 @@ INTENT_KEYWORDS = {
     PlayerIntent.NEXT: ["next","more","show more","continue","keep going"],
     PlayerIntent.PREVIOUS: ["previous","back","go back","last page"],
 
-    PlayerIntent.INSPECT_ITEM: [
-        "inspect","details","tell me about","what does it do",
-        "info","information","what is","explain","describe","how much","see more"
-    ],
+    PlayerIntent.INSPECT_ITEM: [ "inspect","details","tell me about","what does it do",
+        "info","information","what is","explain","describe","how much","see more"],
+
+    PlayerIntent.VIEW_ACCOUNT: [
+        "my account", "account", "subscription", "profile", "user profile"],
+
+    PlayerIntent.VIEW_PROFILE: [
+        "profile","see profile","my profile","player info","party info",
+        "party","party profile","who am i","status","stats","character", "about me" ]
 }
+
+
+
 
 # Words to strip when sanitizing
 STOP_WORDS = {
@@ -126,6 +134,8 @@ PREFERRED_ORDER: list[PlayerIntent] = [
     PlayerIntent.DEPOSIT_GOLD,
     PlayerIntent.WITHDRAW_GOLD,
     PlayerIntent.CHECK_BALANCE,
+    PlayerIntent.VIEW_ACCOUNT,
+    PlayerIntent.VIEW_PROFILE,
     PlayerIntent.VIEW_LEDGER,
 
     # Inventory actions
@@ -411,6 +421,10 @@ def interpret_input(player_input: str, convo=None):
                 # always send the dict(s), never a plain name
                 meta["item"] = items if len(items) > 1 else items[0]
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+        if intent_r == PlayerIntent.VIEW_PROFILE:
+            return {"intent": PlayerIntent.VIEW_PROFILE, "metadata": {}}
+        if intent_r == PlayerIntent.VIEW_ACCOUNT:
+            return {"intent": PlayerIntent.VIEW_ACCOUNT, "metadata": {}}
 
         # CONFIRM/CANCEL/etc
         return {"intent": intent_r, "metadata": {}}

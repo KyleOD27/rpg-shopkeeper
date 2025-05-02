@@ -131,6 +131,48 @@ def get_item_details(conn, item_name: str):
         """, (item_name,))
         return cursor.fetchone()
 
+# ─── Account / character profile helper ────────────────────────────────
+def get_account_profile(character_id: int) -> dict:
+    """
+    Given the *current* character_id (the one in this chat session),
+    return:
+      user_name, phone_number, subscription_tier
+      characters -> list[{character_id, player_name, character_name, role,
+                          party_id, party_name}]
+    """
+    with get_connection() as conn:
+        cur = conn.cursor()
+
+        # 1.  Who is the user that owns this character?
+        cur.execute(
+            """SELECT u.user_id, u.user_name, u.phone_number, u.subscription_tier
+                 FROM users u
+                 JOIN characters c ON c.user_id = u.user_id
+                WHERE c.character_id = ?""",
+            (character_id,))
+        user = cur.fetchone()
+        if not user:
+            raise ValueError(f"character_id {character_id} not found")
+
+        # 2.  Pull *all* characters that user owns (join parties for names)
+        cur.execute(
+            """SELECT c.character_id, c.player_name, c.character_name, c.role,
+                      p.party_id, p.party_name
+                 FROM characters   c
+                 JOIN parties      p ON p.party_id = c.party_id
+                WHERE c.user_id = ?
+                ORDER BY c.character_id""",
+            (user["user_id"],))
+        chars = [dict(r) for r in cur.fetchall()]
+
+    return {
+        "user_name":        user["user_name"] or "Unnamed",
+        "phone_number":     user["phone_number"],
+        "subscription_tier": user["subscription_tier"],
+        "characters":       chars,
+    }
+
+
 
 if __name__ == "__main__":
     create_tables()

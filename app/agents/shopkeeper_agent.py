@@ -578,6 +578,61 @@ class BaseShopkeeper:
         """
         return "\n".join(lines)
 
+    # --- Profile Viewer ---
+    def shopkeeper_show_profile(self, party_data: dict) -> str:
+        """
+        Pretty print the player's profile / party info.
+        Only uses keys that already exist in `party_data`,
+        so it’s safe even if some are missing.
+        """
+        name        = party_data.get("player_name",  "Unknown Adventurer")
+        party_name  = party_data.get("party_name",   "Unnamed Party")
+        gold        = party_data.get("party_gold",   0)
+        visits      = party_data.get("visit_count",  1)
+        members     = party_data.get("party_members") or party_data.get("members") or []
+        lvl         = party_data.get("level")
+        klass       = party_data.get("class") or party_data.get("character_class")
+
+        lines = [
+            f"🪪 **Profile for {name}**",
+            f"🛡️ Party: {party_name}",
+            f"👥 Members: {', '.join(members) if members else 'Just you so far'}",
+            f"💰 Gold on hand: {gold}",
+            f"🏪 Visits to this shop: {visits}",
+        ]
+        if lvl is not None:
+            lines.append(f"✨ Level: {lvl}")
+        if klass:
+            lines.append(f"⚔️ Class: {klass}")
+
+        return "\n".join(lines)
+
+    # --- User-account overview ----------------------------------------
+    def shopkeeper_show_account(self, acct: dict) -> str:
+        lines = [
+            f"👤 **User:** {acct['user_name']}",
+            f"📱 Phone: {acct['phone_number']}",
+            f"💎 Tier: {acct['subscription_tier']}",
+            "───────────────  **CHARACTERS**  ───────────────"
+        ]
+        for idx, ch in enumerate(acct["characters"], start=1):
+            nm  = ch["character_name"] or ch["player_name"]
+            pty = ch["party_name"]
+            lines.append(f"{idx}. {nm}  (party: {pty})")
+        lines.append("\nReply with the number of a character for more details.")
+        return "\n".join(lines)
+
+    # --- Single-character detail --------------------------------------
+    def shopkeeper_show_character(self, ch: dict) -> str:
+        nm = ch["character_name"] or ch["player_name"]
+        lines = [
+            f"🪪 **Character: {nm}**",
+            f"🙍 Player name: {ch['player_name']}",
+            f"🛡️ Party: {ch['party_name']}",
+            f"🎭 Role: {ch['role'] or 'N/A'}",
+        ]
+        return "\n".join(lines)
+
 
 
 

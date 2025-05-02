@@ -5,11 +5,12 @@ from app.db import get_item_details, get_connection
 
 
 class GenericChatHandler:
-    def __init__(self, agent, party_data, convo, party_id):
+    def __init__(self, agent, party_data, convo, party_id, player_id):
         self.agent = agent
         self.party_data = party_data
         self.convo = convo
         self.party_id = party_id
+        self.player_id = player_id
 
     def handle_reply_to_greeting(self, player_input):
         return self.agent.shopkeeper_greeting(
@@ -145,3 +146,21 @@ class GenericChatHandler:
 
     def handle_farewell(self, player_input):
         return self.agent.shopkeeper_farewell()
+
+    def handle_view_profile(self, player_input):
+        return self.agent.shopkeeper_show_profile(self.party_data)
+
+    def handle_view_account(self, _input):
+        from app.db import get_account_profile
+        acct = get_account_profile(self.player_id)
+        # stash the list so we can resolve “1/2/3”
+        self.convo.set_pending_item(acct["characters"])
+        self.convo.set_pending_action(PlayerIntent.VIEW_ACCOUNT)
+        self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+        self.convo.save_state()
+        return self.agent.shopkeeper_show_account(acct)
+
+    # 🆕  chosen character details (numeric selection)
+    def handle_view_character(self, char_dict):
+        return self.agent.shopkeeper_show_character(char_dict)
+

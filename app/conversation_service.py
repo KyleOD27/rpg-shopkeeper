@@ -35,7 +35,7 @@ class ConversationService:
         self.sell_handler     = SellHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.deposit_handler  = DepositHandler(convo, agent, party_id, player_id, player_name, self.party_data)
         self.withdraw_handler = WithdrawHandler(convo, agent, party_id, player_id, player_name, self.party_data)
-        self.generic_handler  = GenericChatHandler(agent, self.party_data, convo, party_id)
+        self.generic_handler  = GenericChatHandler(agent, self.party_data, convo, party_id, player_id)
         self.inspect_handler  = InspectHandler(agent, self.party_data, convo, party_id)
         self.view_handler     = ViewHandler(convo, agent, self.buy_handler)
 
@@ -159,6 +159,16 @@ class ConversationService:
         # ─── 3. Numeric ID selection ─────────────────────────────
         if text.isdigit() and self.convo.state == ConversationState.AWAITING_ITEM_SELECTION:
             pending = self.convo.pending_action
+
+            # SPECIAL-CASE: account / character picker
+            if pending == PlayerIntent.VIEW_ACCOUNT:
+                idx = int(text) - 1
+                chars = self.convo.pending_item or []
+                if 0 <= idx < len(chars):
+                    self.convo.reset_state()  # clean slate
+                    return self.generic_handler.handle_view_character(chars[idx])
+                return self.agent.shopkeeper_generic_say("That number isn’t in the list—try again!")
+
             self.convo.debug(f"[HANDLE] numeric select → intent={pending}, id={text}")
             return self._list_or_detail(pending, {
                 "text": text,
@@ -223,7 +233,7 @@ class ConversationService:
             PlayerIntent.VIEW_GEAR_CATEGORY, PlayerIntent.VIEW_ARMOUR_CATEGORY,
             PlayerIntent.VIEW_TOOL_CATEGORY, PlayerIntent.VIEW_MOUNT_CATEGORY,
             PlayerIntent.DEPOSIT_GOLD, PlayerIntent.WITHDRAW_GOLD,
-            PlayerIntent.CHECK_BALANCE, PlayerIntent.VIEW_LEDGER
+            PlayerIntent.CHECK_BALANCE, PlayerIntent.VIEW_LEDGER, PlayerIntent.VIEW_PROFILE, PlayerIntent.VIEW_ACCOUNT
         ]
         for i in intro_intents:
             router[(ConversationState.INTRODUCTION, i)] = self._route_intent(i)
@@ -240,7 +250,7 @@ class ConversationService:
             PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM,
             PlayerIntent.DEPOSIT_GOLD, PlayerIntent.WITHDRAW_GOLD,
             PlayerIntent.CHECK_BALANCE, PlayerIntent.VIEW_LEDGER,
-            PlayerIntent.INSPECT_ITEM
+            PlayerIntent.INSPECT_ITEM, PlayerIntent.VIEW_PROFILE
         ]
         for i in action_intents:
             router[(ConversationState.AWAITING_ACTION, i)] = self._route_intent(i)
@@ -264,7 +274,7 @@ class ConversationService:
         for c in (PlayerIntent.CANCEL, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CANCEL):
             router[(ConversationState.AWAITING_CONFIRMATION, c)] = self._handle_cancellation_flow
 
-        # ⭐ NEW: “show-gratitude” is valid in every state
+        # “show-gratitude” is valid in every state
             gratitude_handler = self.generic_handler.handle_accept_thanks
             for state in ConversationState:  # iterate over the enum members
                 router[(state, PlayerIntent.SHOW_GRATITUDE)] = gratitude_handler
@@ -305,5 +315,9 @@ class ConversationService:
             return self.generic_handler.handle_check_balance
         if intent == PlayerIntent.VIEW_LEDGER:
             return self.generic_handler.handle_view_ledger
+        if intent == PlayerIntent.VIEW_PROFILE:
+            return self.generic_handler.handle_view_profile
+        if intent == PlayerIntent.VIEW_ACCOUNT:
+            return self.generic_handler.handle_view_account
 
         return self.generic_handler.handle_fallback
