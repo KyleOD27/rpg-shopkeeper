@@ -1,79 +1,88 @@
+# integrations/whatsapp/whatsapp_router.py
 import importlib
+from app.db import query_db
+
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
-from app.models.characters import get_character_by_id, get_character_id_by_player_name
+from app.auth.user_login import get_user_by_phone
+from app.models.parties import get_party_by_id
 from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops
-from app.config import SHOP_NAME, AUTO_LOGIN_NAME
+from app.config import SHOP_NAME
+from integrations.sms.sms_session_manager import SessionManager   # reuse
 
-# In-memory cache of sessions
-conversations = {}
-
-# Hardcoded sender mapping — you can extend this or load from config/db
-sender_to_player_id = {
-    "whatsapp:+447971548666": AUTO_LOGIN_NAME,
-}
+session_manager = SessionManager()
 
 def handle_whatsapp_command(sender: str, text: str) -> str:
     try:
-        if sender not in sender_to_player_id:
-            return "You’re not registered. Ask the Game Master to set you up! 🧙‍♂️"
+        # remove the `whatsapp:` prefix so the phone matches your DB
+        phone_e164 = sender.replace("whatsapp:", "")
+        user = get_user_by_phone(phone_e164)
+        if not user:
+            return "🚫 You’re not registered. Ask the Game Master to set you up!"
 
-        player_name = sender_to_player_id[sender]
-        print(f"[DEBUG] Mapped sender to player: {player_name}")
+        session = session_manager.get_session(sender)
 
-        player_id = get_character_id_by_player_name(player_name)
-        print(f"[DEBUG] Player ID: {player_id}")
-        if not player_id:
-            return "Character not found. Please ask the Game Master to check your setup."
+        if session is None:
+            character = query_db(
+                "SELECT * FROM characters WHERE user_id = ? ORDER BY character_id ASC LIMIT 1",
+                (user["user_id"],), one=True
+            )
+            if not character:
+                return "No character found for your user. Ask the Game Master to help you roll one up."
 
-        player = get_character_by_id(player_id)
-        print(f"[DEBUG] Player: {player}")
-        if not player:
-            return "Player details missing. Please contact the Game Master."
+            party = get_party_by_id(character["party_id"])
+            if not party:
+                return "Your party wasn’t found. Ask the Game Master to check setup."
 
-        party = get_character_by_id(player["party_id"])
-        print(f"[DEBUG] Party: {party}")
-        if not party:
-            return "Party not found. Please contact the Game Master."
+            shops = get_all_shops()
+            if not shops:
+                return "No shops found in the system."
 
-        all_shops = get_all_shops()
-        print(f"[DEBUG] All shops: {all_shops}")
-        if not all_shops:
-            return "No shops found in the system."
+            shop = next((s for s in shops if s["shop_name"].lower() == SHOP_NAME.lower()), shops[0])
+            increment_visit_count(party["party_id"], shop["shop_id"])
+            visit_count = get_visit_count(party["party_id"], shop["shop_id"])
 
-        if SHOP_NAME:
-            matching = [s for s in all_shops if s["shop_name"].lower() == SHOP_NAME.lower()]
-            shop = matching[0] if matching else all_shops[0]
-        else:
-            shop = all_shops[0]
-        print(f"[DEBUG] Selected shop: {shop}")
+            mod   = importlib.import_module(f"app.agents.personalities.{shop['agent_name'].lower()}")
+            Agent = getattr(mod, shop["agent_name"])
+            agent = Agent()
 
-        visit_count = get_visit_count(party["party_id"], shop["shop_id"])
-        increment_visit_count(party["party_id"], shop["shop_id"])
-        print(f"[DEBUG] Visit count: {visit_count}")
+            conversation = Conversation(character["character_id"])
 
-        mod = importlib.import_module(f'app.agents.personalities.{shop["agent_name"].lower()}')
-        print(f"[DEBUG] Imported module for: {shop['agent_name']}")
-        Agent = getattr(mod, shop["agent_name"])
-        agent = Agent()
+            session_manager.start_session(
+                sender,
+                conversation,
+                agent,
+                party,
+                character["player_name"],
+                character["character_id"]
+            )
 
-        if sender not in conversations:
-            conversations[sender] = Conversation(player_id)
+            session = session_manager.get_session(sender)
 
-        convo = conversations[sender]
+        # existing session
+        convo        = session["conversation"]
+        agent        = session["agent"]
+        party        = session["party"]
+        player_name  = session["player_name"]
+        character_id = session["character_id"]
+
         service = ConversationService(
-            convo=convo,
-            agent=agent,
-            party_id=party["party_id"],
-            player_id=player_id,
-            player_name=player["player_name"],
-            party_data=party,
+            convo       = convo,
+            agent       = agent,
+            party_id    = party["party_id"],
+            player_id   = character_id,
+            player_name = player_name,
+            party_data  = party,
         )
 
+        if text.strip().lower() == "reset":
+            session_manager.end_session(sender)
+            return "🧹 Your session has been reset. Send any message to start again!"
+
         response = service.handle(text)
-        print(f"[DEBUG] Agent response: {response}")
-        return response or "Hmm… no response from the shopkeeper. Try again?"
-    except Exception as e:
-        print(f"[ERROR] in handle_whatsapp_command: {e}")
-        return "Something broke when talking to the shopkeeper. Please tell the Game Master!"
+        return response or "Hmm… the shopkeeper says nothing. Try again?"
+
+    except Exception as exc:
+        print(f"[ERROR][handle_whatsapp_command] {exc}")
+        return "Something broke while speaking to the shopkeeper. Please tell the Game Master!"

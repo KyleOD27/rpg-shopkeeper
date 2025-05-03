@@ -1,74 +1,119 @@
+# integrations/whatsapp/whatsapp_webhook.py
+"""
+Flask endpoint Twilio will call for every inbound WhatsApp message.
+Behaviour mirrors sms_webhook.py but lives on /whatsapp instead of /sms.
+"""
+
+import logging, os
+from dotenv import load_dotenv
+from urllib.parse import urljoin
+
 from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
-from integrations.whatsapp.whatsapp_router import handle_whatsapp_command
-import logging
-import os
-from dotenv import load_dotenv
-import time
+from twilio.rest import Client
 
-# 🔧 Logging setup
+from integrations.whatsapp.whatsapp_router import handle_whatsapp_command
+from app.config import RuntimeFlags
+from app.utils.twilio_webhook_sync import sync_service_webhook   # ← NEW
+
+# ── 1. Env vars ──────────────────────────────────────────────────────────────
+load_dotenv()
+
+ACCOUNT_SID                  = os.getenv("TWILIO_ACCOUNT_SID")
+AUTH_TOKEN                   = os.getenv("TWILIO_AUTH_TOKEN")
+TO_WHATSAPP_NUMBER           = os.getenv("TO_WHATSAPP_NUMBER")            # e.g. whatsapp:+4479…
+FROM_WHATSAPP_NUMBER         = os.getenv("FROM_WHATSAPP_NUMBER")          # e.g. whatsapp:+14155238886
+WHATSAPP_SERVICE_SID         = os.getenv("WHATSAPP_MESSAGING_SERVICE_SID")
+NGROK_URL                    = os.getenv("NGROK_URL")                     # auto-updated by your script
+
+# 🔄  Push today's ngrok endpoint into Twilio so inbound traffic arrives
+if WHATSAPP_SERVICE_SID and NGROK_URL:
+    sync_service_webhook(WHATSAPP_SERVICE_SID, NGROK_URL, "/whatsapp")
+
+# ── 2. Flask + Twilio client setup ───────────────────────────────────────────
+app    = Flask(__name__)
+client = Client(ACCOUNT_SID, AUTH_TOKEN)
+
 logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
+    level   = logging.DEBUG if RuntimeFlags.DEBUG_MODE else logging.INFO,
+    format  = "%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("whatsapp_debug.log", mode="a")
+    ]
 )
 
-# 🌱 Load environment variables
-env_path = "../../.env"
-load_dotenv(dotenv_path=env_path)
-
-app = Flask(__name__)
-
+# ── 3. Inbound webhook — Twilio POSTs here ──────────────────────────────────
 @app.route("/whatsapp", methods=["POST"])
 def whatsapp():
-    app.logger.debug("📬 Incoming POST to /whatsapp")
-
-    form_data = dict(request.form)
-    app.logger.debug(f"📦 Form data received: {form_data}")
-
-    incoming_msg = request.form.get("Body", "").strip()
-    sender = request.form.get("From", "")
-
-    if not sender:
-        app.logger.warning("⚠️ No 'From' field found in request")
-    if not incoming_msg:
-        app.logger.warning("⚠️ No 'Body' field found in request")
-
-    app.logger.info(f"[RECEIVED] 📲 From {sender}: {incoming_msg}")
-
     try:
-        start_time = time.time()
+        form_data = request.form.to_dict()
+        app.logger.debug(f"📨 WhatsApp form data: {form_data}")
 
-        app.logger.debug("🧠 Routing to handler...")
-        response_text = handle_whatsapp_command(sender=sender, text=incoming_msg)
+        sender = form_data.get("From", "").strip()
+        body   = form_data.get("Body", "").strip()
 
-        duration = time.time() - start_time
-        app.logger.info(f"[REPLY] 📤 To {sender} ({duration:.2f}s): {response_text}")
+        if not sender or not body:
+            app.logger.warning("⚠️ Missing sender or body")
+            return Response(
+                "<Response><Message>Invalid WhatsApp message.</Message></Response>",
+                mimetype="application/xml",
+            )
 
-    except Exception as e:
-        app.logger.error("❌ Exception occurred in message handling", exc_info=True)
-        response_text = "Oops! Something went wrong. Please try again."
+        app.logger.info(f"📩 WA message from {sender}: '{body}'")
 
-    # 💬 Build Twilio response
-    try:
+        try:
+            reply = handle_whatsapp_command(sender=sender, text=body)
+        except Exception:
+            app.logger.exception("❌ Error in handle_whatsapp_command")
+            reply = (
+                "Oops! Something went wrong talking to the shopkeeper. "
+                "Please tell the Game Master."
+            )
+
         resp = MessagingResponse()
-        resp.message(response_text)
-        app.logger.debug("✅ TwiML response successfully created.")
+        resp.message(reply)
+        app.logger.info(f"📤 Replying to {sender}: '{reply}'")
+
         return Response(str(resp), mimetype="application/xml")
-    except Exception as e:
-        app.logger.critical("💥 Failed to create TwiML response!", exc_info=True)
-        return Response("<Response><Message>Internal error occurred.</Message></Response>", mimetype="application/xml")
 
-if __name__ == "__main__":
-    port = 5000
+    except Exception:
+        app.logger.exception("❌ Top-level /whatsapp failure")
+        return Response(
+            "<Response><Message>Major WhatsApp error. Try later.</Message></Response>",
+            mimetype="application/xml",
+        )
 
-    if __name__ == "__main__":
-        port = 5000
-        static_ngrok_url = os.getenv("NGROK_URL", "https://your-static-url.ngrok-free.app")
 
-        app.logger.info("🌐 Using static ngrok URL:")
-        app.logger.info(f"🔗 {static_ngrok_url}/whatsapp")
-        app.logger.info(f"🛡️ Starting Flask server on port {port}")
+# ── 4. Optional startup ping (handy in production) ──────────────────────────
+def send_startup_whatsapp():
+    try:
+        params = {
+            "body": "Shopkeeper is online",
+            "to":   TO_WHATSAPP_NUMBER,
+        }
+        if WHATSAPP_SERVICE_SID:
+            params["messaging_service_sid"] = WHATSAPP_SERVICE_SID
+        elif FROM_WHATSAPP_NUMBER:
+            params["from_"] = FROM_WHATSAPP_NUMBER
+        else:
+            raise ValueError(
+                "FROM_WHATSAPP_NUMBER or WHATSAPP_MESSAGING_SERVICE_SID required"
+            )
 
-        app.run(port=port, debug=True)
+        msg = client.messages.create(**params)
+        app.logger.info(f"✅ Startup WhatsApp sent (SID {msg.sid})")
 
+    except Exception as exc:
+        app.logger.warning(f"⚠️ Could not send startup WhatsApp: {exc}")
+
+
+# ── 5. Entrypoint ───────────────────────────────────────────────────────────
+def start_whatsapp_server():
+    port = 5001
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        app.logger.info(f"🔗 Ensure Twilio webhook points to: {NGROK_URL}/whatsapp")
+        send_startup_whatsapp()
+
+    app.logger.info(f"🚡 WhatsApp Flask server on port {port}")
+    app.run(port=port, debug=RuntimeFlags.DEBUG_MODE, host="0.0.0.0")

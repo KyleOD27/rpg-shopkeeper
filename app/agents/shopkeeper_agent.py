@@ -23,16 +23,37 @@ def safe_normalized_field(item, field_name):
         return normalize_input(value)
     return ""
 
+# ─── utility ────────────────────────────────────────────────
+def join_lines(*parts: str) -> str:
+    """
+    Collapse empty / None parts, strip each part, then join with a real
+    newline so WhatsApp renders separate lines.
+    """
+    return "\n".join(p.strip() for p in parts if p).rstrip()
+# ────────────────────────────────────────────────────────────
+
+
 
 class BaseShopkeeper:
     # --- Shop Greeting ---
-    def shopkeeper_greeting(self, party_name: str, visit_count: int, player_name: str) -> str:
+    def shopkeeper_greeting(self, party_name: str, visit_count: int,
+                            player_name: str) -> str:
         if visit_count == 1:
-            return f"Ah, {party_name} — first time in this shop? Nice to meet you, {player_name}."
+            return join_lines(
+                f"Ah, {player_name} of {party_name}.",
+                "First time at this shop? Nice to meet you.",
+                "To see what I can do just say *menu*."
+            )
         elif visit_count < 5:
-            return f"{party_name} again? I think you might like it here, {player_name}."
+            return join_lines(
+                f"{party_name} again?",
+                f"I think you might like it here, {player_name}."
+            )
         else:
-            return f"Back already, {player_name}? I'm flattered. This is visit number {visit_count}!"
+            return join_lines(
+                f"Back already, {player_name}?",
+                f"I'm flattered—this is visit number {visit_count}!"
+            )
 
     # --- Category Menus ---
 
@@ -341,6 +362,7 @@ class BaseShopkeeper:
         if not rows:
             return "Hmm... looks like we don't have any mounts or vehicles in stock right now."
 
+
         # fetch all to calculate total pages
         all_rows = get_items_by_mount_category("Mounts and Vehicles", page=1, page_size=9999)
         total_pages = max(1, (len(all_rows) + 4) // 5)
@@ -443,7 +465,7 @@ class BaseShopkeeper:
                 what = f"{item} for {amount} gp" if item else f"{amount} gp"
 
             lines.append(
-                f"{ts_human}: {player} {verb} a {what}."
+                f"{idx}. ({ts_human}) {player} {verb} {what}."
             )
 
         return "\n".join(lines)
@@ -489,8 +511,9 @@ class BaseShopkeeper:
         rar = item.get("rarity", "")
 
         lines = [
-            f"🛒 You're about to buy a {name} ({cat}, {rar}).",
-            f"💰 Price: {cost} gold{discount_note} | ⚖️ Weight: {item.get('weight', 0)} lbs",
+            f"You're about to buy a {name} ({cat}, {rar}).",
+            f"💰 Price: {cost} gold{discount_note}",
+            f"⚖️ Weight: {item.get('weight', 0)} lbs",
         ]
 
         # 📜 Description
@@ -511,10 +534,10 @@ class BaseShopkeeper:
                 span += f" / {item['range_long']} ft"
             lines.append(f"📏 Range: {span}")
 
-        # 🎒 Your gold + confirm prompt
-        lines.append(f"🎒 Your gold: {party_gold}")
-        lines.append("")  # blank line before the question
-        lines.append("Would you like to proceed? (Say yes ✅ or no ❌)")
+        #Your gold + confirm prompt
+        lines.append(f"Your party balance is: {party_gold}")
+        lines.append("")
+        lines.append("Would you like to proceed?")
 
         return "\n".join(lines)
 
@@ -523,14 +546,15 @@ class BaseShopkeeper:
 
     def shopkeeper_buy_success_prompt(self, item, cost):
         item_name = item.get("item_name", "the item")
-        return (f"✅ You successfully "
-                f"bought a {item_name} for {cost}🪙 gold! Enjoy!")
+        return (f"Okay that will be *{cost}* gold..."
+                f"Here you go, this is now yours *{item_name}*."
+                f"Enjoy!")
 
     def shopkeeper_deposit_success_prompt(self, amount, new_total):
-        return f" You deposited {amount}🪙 gold! Party balance is now {new_total} gold. ️💰"
+        return f" You deposited *{amount}* gold! Party balance is now *{new_total}* gold."
 
     def shopkeeper_withdraw_success_prompt(self, amount, new_total):
-        return f"You withdrew {amount}🪙 gold! Party balance is now {new_total} gold. 💸"
+        return f"You withdrew *{amount}* gold! Party balance is now *{new_total}* gold."
 
     def search_items_by_name(self, query, page=1):
         query = normalize_input(query)
@@ -547,7 +571,7 @@ class BaseShopkeeper:
             item_id = item.get("item_id", "?")
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
-            lines.append(f" • [{item_id}] {name} — {price} gold")
+            lines.append(f" • [{item_id}] *{name}*. Costs *{price}* gold")
 
         lines.append("\n Just say the name or number to buy.. or would you like to see the full inventory?")
         return "\n".join(lines)
@@ -594,7 +618,7 @@ class BaseShopkeeper:
         klass       = party_data.get("class") or party_data.get("character_class")
 
         lines = [
-            f"🪪 **Profile for {name}**",
+            f"🪪 *Profile for {name}*",
             f"🛡️ Party: {party_name}",
             f"👥 Members: {', '.join(members) if members else 'Just you so far'}",
             f"💰 Gold on hand: {gold}",
@@ -610,23 +634,24 @@ class BaseShopkeeper:
     # --- User-account overview ----------------------------------------
     def shopkeeper_show_account(self, acct: dict) -> str:
         lines = [
-            f"👤 **User:** {acct['user_name']}",
-            f"📱 Phone: {acct['phone_number']}",
-            f"💎 Tier: {acct['subscription_tier']}",
-            "───────────────  **CHARACTERS**  ───────────────"
+            f"👤 username: {acct['user_name']}",
+            f"📱 phone: {acct['phone_number']}",
+            f"💎 tier: {acct['subscription_tier']}",
+            f" ",
+            f"*owned characters:*",
         ]
         for idx, ch in enumerate(acct["characters"], start=1):
             nm  = ch["character_name"] or ch["player_name"]
             pty = ch["party_name"]
-            lines.append(f"{idx}. {nm}  (party: {pty})")
-        lines.append("\nReply with the number of a character for more details.")
+            lines.append(f"{idx}.Name: {nm}. Party: {pty})")
+        lines.append("\nReply with character number for more details.")
         return "\n".join(lines)
 
     # --- Single-character detail --------------------------------------
     def shopkeeper_show_character(self, ch: dict) -> str:
         nm = ch["character_name"] or ch["player_name"]
         lines = [
-            f"🪪 **Character: {nm}**",
+            f"🪪 *Character: {nm}*",
             f"🙍 Player name: {ch['player_name']}",
             f"🛡️ Party: {ch['party_name']}",
             f"🎭 Role: {ch['role'] or 'N/A'}",
