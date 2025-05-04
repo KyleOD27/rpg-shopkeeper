@@ -8,7 +8,7 @@ from app.models.visits import get_visit_count, increment_visit_count
 from app.models.shops import get_all_shops
 from app.config import SHOP_NAME
 from app.auth.user_login import get_user_by_phone
-from integrations.sms.sms_session_manager import SessionManager
+from integrations.sharedutils.shared_session_manager import SessionManager
 
 # Single global session manager
 session_manager = SessionManager()

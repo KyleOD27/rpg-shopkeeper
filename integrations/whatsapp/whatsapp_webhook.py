@@ -6,7 +6,6 @@ Behaviour mirrors sms_webhook.py but lives on /whatsapp instead of /sms.
 
 import logging, os
 from dotenv import load_dotenv
-from urllib.parse import urljoin
 
 from flask import Flask, request, Response
 from twilio.twiml.messaging_response import MessagingResponse
@@ -14,7 +13,7 @@ from twilio.rest import Client
 
 from integrations.whatsapp.whatsapp_router import handle_whatsapp_command
 from app.config import RuntimeFlags
-from app.utils.twilio_webhook_sync import sync_service_webhook   # ← NEW
+from integrations.sharedutils.twilio_webhook_sync import sync_service_webhook   # ← NEW
 
 # ── 1. Env vars ──────────────────────────────────────────────────────────────
 load_dotenv()

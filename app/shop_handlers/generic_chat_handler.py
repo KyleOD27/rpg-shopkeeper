@@ -42,96 +42,89 @@ class GenericChatHandler:
         self.convo.metadata["current_page"] = next_page
         self.convo.save_state()
 
-        # 1) Mounts don’t need a category key, so handle them immediately:
+        # 1) Mounts: no category key
         if section == "mount":
-            return self.agent.shopkeeper_show_items_by_mount_category({
-                "page": next_page
-            })
+            return self.agent.shopkeeper_show_items_by_mount_category({"page": next_page})
 
-        # 2) Everything else still uses a category metadata slot:
+        # 2) Pull whichever category key is relevant
         category = (
-                self.convo.metadata.get("current_category") or
-                self.convo.metadata.get("current_weapon_category") or
-                self.convo.metadata.get("current_armour_category") or
-                self.convo.metadata.get("current_gear_category") or
-                self.convo.metadata.get("current_tool_category")
+                self.convo.metadata.get("current_category_range")  # NEW ✅
+                or self.convo.metadata.get("current_weapon_category")
+                or self.convo.metadata.get("current_armour_category")
+                or self.convo.metadata.get("current_gear_category")
+                or self.convo.metadata.get("current_tool_category")
         )
         if not category:
-            return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
+            return self.agent.shopkeeper_generic_say(
+                "Next what? I’m not sure what you’re looking at!"
+            )
 
-        # 3) Dispatch back to the right paginator:
+        # 3) Dispatch
         if section == "weapon":
-            return self.agent.shopkeeper_show_items_by_weapon_category({
-                "weapon_category": category,
-                "page": next_page
-            })
+            if self.convo.metadata.get("current_category_range"):
+                return self.agent.shopkeeper_show_items_by_weapon_range(
+                    {"category_range": category, "page": next_page}
+                )
+            return self.agent.shopkeeper_show_items_by_weapon_category(
+                {"weapon_category": category, "page": next_page}
+            )
         elif section == "armor":
-            return self.agent.shopkeeper_show_items_by_armour_category({
-                "armour_category": category,
-                "page": next_page
-            })
+            return self.agent.shopkeeper_show_items_by_armour_category(
+                {"armour_category": category, "page": next_page}
+            )
         elif section == "gear":
-            return self.agent.shopkeeper_show_items_by_gear_category({
-                "gear_category": category,
-                "page": next_page
-            })
+            return self.agent.shopkeeper_show_items_by_gear_category(
+                {"gear_category": category, "page": next_page}
+            )
         elif section == "tool":
-            return self.agent.shopkeeper_show_items_by_tool_category({
-                "tool_category": category,
-                "page": next_page
-            })
+            return self.agent.shopkeeper_show_items_by_tool_category(
+                {"tool_category": category, "page": next_page}
+            )
 
-        # 4) Fallback
         return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
 
     def handle_previous_page(self, _input):
         section = self.convo.metadata.get("current_section", "equipment")
         current_page = self.convo.metadata.get("current_page", 1)
         prev_page = max(current_page - 1, 1)
-
         self.convo.metadata["current_page"] = prev_page
         self.convo.save_state()
 
-        # 1) Mounts & Vehicles don’t need a category key
         if section == "mount":
-            return self.agent.shopkeeper_show_items_by_mount_category({
-                "page": prev_page
-            })
+            return self.agent.shopkeeper_show_items_by_mount_category({"page": prev_page})
 
-        # 2) Everything else needs a category
         category = (
-                self.convo.metadata.get("current_category") or
-                self.convo.metadata.get("current_weapon_category") or
-                self.convo.metadata.get("current_armour_category") or
-                self.convo.metadata.get("current_gear_category") or
-                self.convo.metadata.get("current_tool_category")
+                self.convo.metadata.get("current_category_range")  # NEW ✅
+                or self.convo.metadata.get("current_weapon_category")
+                or self.convo.metadata.get("current_armour_category")
+                or self.convo.metadata.get("current_gear_category")
+                or self.convo.metadata.get("current_tool_category")
         )
         if not category:
             return self.agent.shopkeeper_generic_say(
                 "Previous what? I’m not sure what you’re looking at!"
             )
 
-        # 3) Dispatch to the right paginator
         if section == "weapon":
-            return self.agent.shopkeeper_show_items_by_weapon_category({
-                "weapon_category": category,
-                "page": prev_page
-            })
+            if self.convo.metadata.get("current_category_range"):
+                return self.agent.shopkeeper_show_items_by_weapon_range(
+                    {"category_range": category, "page": prev_page}
+                )
+            return self.agent.shopkeeper_show_items_by_weapon_category(
+                {"weapon_category": category, "page": prev_page}
+            )
         elif section == "armor":
-            return self.agent.shopkeeper_show_items_by_armour_category({
-                "armour_category": category,
-                "page": prev_page
-            })
+            return self.agent.shopkeeper_show_items_by_armour_category(
+                {"armour_category": category, "page": prev_page}
+            )
         elif section == "gear":
-            return self.agent.shopkeeper_show_items_by_gear_category({
-                "gear_category": category,
-                "page": prev_page
-            })
+            return self.agent.shopkeeper_show_items_by_gear_category(
+                {"gear_category": category, "page": prev_page}
+            )
         elif section == "tool":
-            return self.agent.shopkeeper_show_items_by_tool_category({
-                "tool_category": category,
-                "page": prev_page
-            })
+            return self.agent.shopkeeper_show_items_by_tool_category(
+                {"tool_category": category, "page": prev_page}
+            )
 
         # 4) Fallback if somehow we land here
         return self.agent.shopkeeper_generic_say(

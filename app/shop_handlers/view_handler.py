@@ -157,9 +157,9 @@ class ViewHandler:
         return self._handle_view_subcategory(
             payload,
             section="weapon",
-            key="category_range",  # ← NEW
+            key="category_range",  # ✅ keep: we’re keying on range
             show_func=self.agent.shopkeeper_show_items_by_weapon_range,
-            get_func=self.agent.get_weapon_categories,  # range list
+            get_func=self.agent.get_weapon_categories,  # 🔄 FIXED: was get_items_by_weapon_range
             list_func=self.agent.shopkeeper_list_weapon_categories
         )
 

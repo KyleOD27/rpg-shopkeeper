@@ -1,4 +1,4 @@
-# app/utils/twilio_webhook_sync.py
+# app/sharedutils/twilio_webhook_sync.py
 import os, logging
 from urllib.parse import urljoin
 from twilio.rest import Client

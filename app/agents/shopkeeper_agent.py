@@ -36,8 +36,8 @@ class BaseShopkeeper:
         if visit_count == 1:
             return join_lines(
                 f"Ah, {player_name} of {party_name}.",
-                "First time at this shop? Nice to meet you.",
-                "To see what I can do just say *menu*."
+                f"First time at this shop? Nice to meet you.",
+                f"To see what I can do just say *menu*."
             )
         elif visit_count < 5:
             return join_lines(
@@ -47,7 +47,9 @@ class BaseShopkeeper:
         else:
             return join_lines(
                 f"Back already, {player_name}?",
-                f"I'm flattered—this is visit number {visit_count}!"
+                f"I'm flattered, this is visit number {visit_count}!",
+                f" ",
+                f"What can I do for you today?"
             )
 
     # --- Category Menus ---
@@ -490,16 +492,17 @@ class BaseShopkeeper:
         return get_tool_categories()
 
     def shopkeeper_fallback_prompt(self) -> str:
-        return (
-            "Here's what I can help you with:\n\n"
-            "🛒 BUY – I have items available to purchase\n"
-            "📦 SELL – Sell me unwanted goods\n"
-            "💰 DEPOSIT – Top up your party balance\n"
-            "💸 WITHDRAW – Take back deposited gold\n"
-            "🪙 BALANCE – See your party balance\n"
-            "📚 LEDGER – See our trade history\n"
-            "📋 BROWSE – See what we have in stock\n"
-            "🔎 INSPECT – See specific item details\n"
+        return join_lines(
+            "Here’s what I can do for you:",
+            "",
+            "• *BROWSE*   see what’s in stock",
+            "• *BUY*      purchase an item",
+            "• *SELL*     trade in your loot",
+            "• *INSPECT*  details for one item",
+            "• *BALANCE*  check party gold",
+            "• *DEPOSIT*  add gold to the fund",
+            "• *WITHDRAW* take gold out",
+            "• *LEDGER*   view our trade history"
         )
 
     def shopkeeper_buy_confirm_prompt(self, item, party_gold, discount=None):
@@ -691,24 +694,36 @@ class BaseShopkeeper:
 
     def shopkeeper_show_items_by_weapon_range(self, player_input):
         """
-        Display weapons filtered by category_range
-        (e.g. 'martial melee', 'simple ranged').
+        List weapons for a given category_range (e.g. 'martial melee').
+        Expects player_input = {"category_range": str, "page": int}
         """
-        cat_range = player_input.get("category_range")
-        page      = int(player_input.get("page", 1))
+
+        cat_range = (player_input.get("category_range") or "").lower()
+        page = max(int(player_input.get("page", 1)), 1)
+
         if not cat_range:
             return "⚠️ I didn’t catch which weapon group you meant."
+
+        # ── fetch rows & total count ─────────────────────────────
         rows = get_items_by_weapon_range(cat_range, page, page_size=5)
         if not rows:
-            return f"Hmm… looks like we don’t have any **{cat_range.title()}** weapons in stock right now."
-        # total pages for the nav prompt
+            return (f"Hmm… looks like we don’t have any "
+                    f"**{cat_range.title()}** weapons in stock right now.")
+
         total = get_items_by_weapon_range(cat_range, 1, 9999)
-        total_pages = max(1, (len(total) + 4) // 5)
-        header = f"⚔️ {cat_range.title()} Weapons (Page {page} of {total_pages})\n"
-        body = [ f" • [{r['item_id']}] {r['item_name']} — {r['base_price']} gp"
-            for r in map(dict, rows) ]
-        if page < total_pages:
-            body.append("\nSay **next** to see more.")
+        pages = max(1, (len(total) + 4) // 5)
+
+        # ── build message ───────────────────────────────────────
+        header = f"⚔️ {cat_range.title()} Weapons (Page {page} of {pages})"
+        lines = [
+            f" • [{r['item_id']}] {r['item_name']} — {r['base_price']} gp"
+            for r in map(dict, rows)
+        ]
+
+        if page < pages:
+            lines.append("\nSay **next** to see more.")
         if page > 1:
-            body.append("Say **previous** to go back.")
-        return header + "\n".join(body)
+            lines.append("Say **previous** to go back.")
+
+        return join_lines(header, "", *lines)  # blank line after header
+

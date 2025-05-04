@@ -8,7 +8,7 @@ from app.models.parties import get_party_by_id
 from app.models.visits import increment_visit_count, get_visit_count
 from app.models.shops import get_all_shops
 from app.config import SHOP_NAME
-from integrations.sms.sms_session_manager import SessionManager  # reused
+from integrations.sharedutils.shared_session_manager import SessionManager  # reused
 
 session_manager = SessionManager()
 
