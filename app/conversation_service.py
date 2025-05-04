@@ -1,5 +1,6 @@
 from typing import Callable, Dict, Tuple, Any
 from app.interpreter import interpret_input, normalize_input, find_item_in_input
+from app.models.parties import get_party_gold
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
@@ -44,11 +45,6 @@ class ConversationService:
 
     # ─── helper to handle yes/no when awaiting confirmation ────────
     def _handle_confirmation_flow(self, wrapped_input):
-        """
-        While awaiting confirmation, if the user asks to BUY_ITEM or SELL_ITEM
-        again (e.g. “buy longsword”), restart that flow. Otherwise, resolve
-        the existing pending confirmation as before.
-        """
         intent = wrapped_input.get("intent")
 
         # 🔄 If they invoke a new buy/sell inside a confirmation, restart that flow
@@ -137,6 +133,7 @@ class ConversationService:
         import json
         text = player_input.strip()
         low  = text.lower()
+        self.party_data["party_gold"] = get_party_gold(self.party_id)
 
         # ─── 1. DM / admin ────────────────────────────────────────
         if low.startswith("dm "):
@@ -176,16 +173,16 @@ class ConversationService:
                 "item": None
             })
 
-        # ─── 4. SHORT-CIRCUIT “yes/no” on pending confirmation ────
+            # ─── 4. SHORT-CIRCUIT “yes/no” on pending confirmation ────
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
-            if low in {"yes", "y", "sure", "ok", "okay","deal"}:
-                pending = self.convo.pending_action
-                if pending in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM}:
-                    return self.buy_handler.handle_confirm_purchase({"text": text})
-                if pending == PlayerIntent.SELL_ITEM:
-                    return self.sell_handler.handle_sell_confirm({"text": text})
-            if low in {"no", "n", "cancel", "never mind"}:
-                return self._handle_cancellation_flow({"text": text})
+                if low in {"yes", "y", "sure", "ok", "okay", "deal"}:
+                    pending = self.convo.pending_action
+                    if pending in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM}:
+                        return self.buy_handler.handle_confirm_purchase({"text": text})
+                    if pending == PlayerIntent.SELL_ITEM:
+                        return self.sell_handler.handle_sell_confirm({"text": text})
+                if low in {"no", "n", "cancel", "never mind"}:
+                    return self._handle_cancellation_flow({"text": text})
 
         # ─── 5. interpret & route normally ───────────────────────
         intent_data = interpret_input(player_input, self.convo)

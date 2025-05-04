@@ -82,4 +82,10 @@ def add_new_party(party_name):
         print(f"[ERROR] Failed to add party: {e}")
         return None
 
+def get_party_gold(party_id: int) -> int:
+    return query_db(
+        "SELECT party_gold FROM parties WHERE party_id = ?",
+        (party_id,),
+        one=True
+    )[0]
 

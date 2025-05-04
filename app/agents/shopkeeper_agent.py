@@ -222,9 +222,9 @@ class BaseShopkeeper:
             lines.append(f" • {name} — {price} gold")
 
         if page < total_pages:
-            lines.append("\nSay **next** to see more.")
+            lines.append("\nSay _next_ to see more.")
         if page > 1:
-            lines.append("Say **previous** to go back.")
+            lines.append("Say _previous_ to go back.")
 
         return "\n".join(lines)
 
@@ -517,6 +517,7 @@ class BaseShopkeeper:
         rar = item.get("rarity", "")
         lines = [
             f"You're about to buy a {name} ({cat}, {rar}).",
+            f" ",
             f"💰 Price: {cost} gp{discount_note}",
             f"⚖️ Weight: {item.get('weight', 0)} lb",
         ]
@@ -549,7 +550,7 @@ class BaseShopkeeper:
             if ac is not None:
                 dex_bonus = item.get("dex_bonus")  # 0 / 1 / None
                 max_bonus = item.get("max_dex_bonus")
-                ac_line = f"🛡️ Base AC: {ac}"
+                ac_line = f"🎲️ Base AC: {ac}"
                 if dex_bonus:  # Dex allowed
                     if max_bonus:
                         ac_line += f" + Dex mod (max {max_bonus})"
@@ -568,9 +569,8 @@ class BaseShopkeeper:
 
         # ── balance + confirmation prompt ──────────────────────
         lines.extend([
-            f"🎒 Party balance: {party_gold} gp",
-            "",
-            "Would you like to proceed? (yes ✅ / no ❌)"
+            f" ",
+            f"Your party balance is *{party_gold}* gp. Would you like to proceed? (say _yes_ or _no_)"
         ])
 
         return "\n".join(lines)
@@ -580,9 +580,14 @@ class BaseShopkeeper:
 
     def shopkeeper_buy_success_prompt(self, item, cost):
         item_name = item.get("item_name", "the item")
-        return (f"Okay that will be *{cost}* gold..."
-                f"Here you go, this is now yours *{item_name}*."
-                f"Enjoy!")
+
+        return join_lines(
+            f"💰 That’ll be *{cost}* gold, thanks..",
+            " ",
+            f"Here you go. This *{item_name}* is now yours.",
+            " ",
+            f"_You gained a {item_name}!_"
+        )
 
     def shopkeeper_deposit_success_prompt(self, amount, new_total):
         return f" You deposited *{amount}* gold! Party balance is now *{new_total}* gold."
