@@ -173,6 +173,5 @@ def get_account_profile(character_id: int) -> dict:
     }
 
 
-
 if __name__ == "__main__":
     create_tables()

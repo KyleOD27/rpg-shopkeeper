@@ -8,7 +8,8 @@ from app.models.items import (
     get_tool_categories,
     get_items_by_armour_category, get_items_by_weapon_category, get_items_by_gear_category, get_items_by_tool_category,
     get_items_by_mount_category,
-    search_items_by_name_fuzzy
+    search_items_by_name_fuzzy,
+    get_items_by_weapon_range
 )
 from app.interpreter import normalize_input
 from datetime import datetime, timedelta
@@ -25,14 +26,8 @@ def safe_normalized_field(item, field_name):
 
 # ─── utility ────────────────────────────────────────────────
 def join_lines(*parts: str) -> str:
-    """
-    Collapse empty / None parts, strip each part, then join with a real
-    newline so WhatsApp renders separate lines.
-    """
     return "\n".join(p.strip() for p in parts if p).rstrip()
 # ────────────────────────────────────────────────────────────
-
-
 
 class BaseShopkeeper:
     # --- Shop Greeting ---
@@ -87,9 +82,8 @@ class BaseShopkeeper:
         lines.append("\n💬 Just say the category name to see what’s in stock!")
         return "\n".join(lines)
 
-
     def shopkeeper_list_weapon_categories(self, categories):
-        items = [dict(item) for item in get_all_items()]
+        items = [dict(itm) for itm in get_all_items()]
         return self.show_weapon_category_menu(categories, items)
 
     def shopkeeper_list_armour_categories(self, categories):
@@ -105,17 +99,26 @@ class BaseShopkeeper:
         return self.show_tool_category_menu(categories, items)
 
     def show_weapon_category_menu(self, categories, items):
+        """
+        Build the weapon-menu using item['category_range'] instead of
+        item['weapon_category'].
+
+        `categories` should now be the distinct list of category_range
+        strings you pulled from the DB, e.g.:
+            ['simple melee', 'simple ranged', 'martial melee', 'martial ranged']
+        """
+        # ── 1. count items per category_range ─────────────────────────
         counts = {cat: 0 for cat in categories}
-        for item in items:
-            cat = item["weapon_category"]
+        for itm in items:
+            cat = (itm.get("category_range") or "").lower()
             if cat in counts:
                 counts[cat] += 1
 
-        lines = [
-            "⚔️ Looking for something specific? Weapon types:"
-        ]
+        # ── 2. render menu ────────────────────────────────────────────
+        lines = ["⚔️ Looking for something specific? Weapon groups:"]
         for cat in categories:
-            lines.append(f"• {cat} ({counts[cat]} items)")
+            pretty = cat.title()  # capitalise nicely
+            lines.append(f"• {pretty} ({counts[cat]} items)")
 
         lines.append("\nJust say one to browse.")
         return "\n".join(lines)
@@ -500,27 +503,26 @@ class BaseShopkeeper:
         )
 
     def shopkeeper_buy_confirm_prompt(self, item, party_gold, discount=None):
-        # pick the right cost
+        # ── price block ─────────────────────────────────────────
         base = item.get("base_price", 0)
         cost = discount if discount is not None else base
         saved = base - cost if discount is not None else 0
+        discount_note = f" (you saved {saved} gp!)" if saved > 0 else ""
 
-        discount_note = f" (you saved {saved}g!)" if saved > 0 else ""
         name = item.get("item_name", "Unknown Item")
         cat = item.get("equipment_category", "")
         rar = item.get("rarity", "")
-
         lines = [
             f"You're about to buy a {name} ({cat}, {rar}).",
-            f"💰 Price: {cost} gold{discount_note}",
-            f"⚖️ Weight: {item.get('weight', 0)} lbs",
+            f"💰 Price: {cost} gp{discount_note}",
+            f"⚖️ Weight: {item.get('weight', 0)} lb",
         ]
 
-        # 📜 Description
+        # ── description (if any) ───────────────────────────────
         if item.get("desc"):
             lines.append(f"📜 {item['desc']}")
 
-        # ⚔️ Weapon stats
+        # ── weapon extras ──────────────────────────────────────
         if item.get("damage_dice"):
             dmg_type = item.get("damage_type", "")
             lines.append(f"⚔️ Damage: {item['damage_dice']} {dmg_type}".strip())
@@ -534,10 +536,39 @@ class BaseShopkeeper:
                 span += f" / {item['range_long']} ft"
             lines.append(f"📏 Range: {span}")
 
-        #Your gold + confirm prompt
-        lines.append(f"Your party balance is: {party_gold}")
-        lines.append("")
-        lines.append("Would you like to proceed?")
+        # ── armour extras ──────────────────────────────────────
+        if cat.lower() == "armor" or item.get("armour_category"):
+            armour_cat = item.get("armour_category", "Unknown")
+            lines.append(f"🛡️ Category: {armour_cat}")
+
+            # base AC & Dex rules
+            ac = item.get("base_ac")
+            if ac is not None:
+                dex_bonus = item.get("dex_bonus")  # 0 / 1 / None
+                max_bonus = item.get("max_dex_bonus")
+                ac_line = f"🛡️ Base AC: {ac}"
+                if dex_bonus:  # Dex allowed
+                    if max_bonus:
+                        ac_line += f" + Dex mod (max {max_bonus})"
+                    else:
+                        ac_line += " + Dex mod"
+                lines.append(ac_line)
+
+            # strength req (ignore 0 / None)
+            str_min = item.get("str_minimum")
+            if str_min:
+                lines.append(f"💪 Requires STR {str_min}")
+
+            # stealth
+            if item.get("stealth_disadvantage"):
+                lines.append("🥷 Disadvantage on Stealth checks")
+
+        # ── balance + confirmation prompt ──────────────────────
+        lines.extend([
+            f"🎒 Party balance: {party_gold} gp",
+            "",
+            "Would you like to proceed? (yes ✅ / no ❌)"
+        ])
 
         return "\n".join(lines)
 
@@ -658,8 +689,26 @@ class BaseShopkeeper:
         ]
         return "\n".join(lines)
 
-
-
-
-
-
+    def shopkeeper_show_items_by_weapon_range(self, player_input):
+        """
+        Display weapons filtered by category_range
+        (e.g. 'martial melee', 'simple ranged').
+        """
+        cat_range = player_input.get("category_range")
+        page      = int(player_input.get("page", 1))
+        if not cat_range:
+            return "⚠️ I didn’t catch which weapon group you meant."
+        rows = get_items_by_weapon_range(cat_range, page, page_size=5)
+        if not rows:
+            return f"Hmm… looks like we don’t have any **{cat_range.title()}** weapons in stock right now."
+        # total pages for the nav prompt
+        total = get_items_by_weapon_range(cat_range, 1, 9999)
+        total_pages = max(1, (len(total) + 4) // 5)
+        header = f"⚔️ {cat_range.title()} Weapons (Page {page} of {total_pages})\n"
+        body = [ f" • [{r['item_id']}] {r['item_name']} — {r['base_price']} gp"
+            for r in map(dict, rows) ]
+        if page < total_pages:
+            body.append("\nSay **next** to see more.")
+        if page > 1:
+            body.append("Say **previous** to go back.")
+        return header + "\n".join(body)

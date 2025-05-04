@@ -1,5 +1,6 @@
 from app.conversation import PlayerIntent, ConversationState
 from app.models.ledger import get_last_transactions
+from app.models.items import get_items_by_weapon_range
 from app.interpreter import get_equipment_category_from_input
 from app.db import get_item_details, get_connection
 
@@ -163,4 +164,3 @@ class GenericChatHandler:
     # 🆕  chosen character details (numeric selection)
     def handle_view_character(self, char_dict):
         return self.agent.shopkeeper_show_character(char_dict)
-

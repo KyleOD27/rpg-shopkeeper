@@ -20,7 +20,7 @@ CATEGORY_MAPPING = {
 }
 
 class ConversationService:
-    def __init__(self, convo, agent, party_id, player_id, player_name, party_data):
+    def __init__(self, convo, agent, party_id, player_id, player_name, party_data, visit_count):
         self.convo = convo
         self.agent = agent
         self.party_id = party_id
@@ -28,7 +28,7 @@ class ConversationService:
 
         self.party_data = dict(party_data)
         self.party_data["player_name"] = player_name
-        self.party_data["visit_count"] = self.party_data.get("visit_count", 1)
+        self.party_data["visit_count"] = visit_count
 
         # Handlers
         self.buy_handler      = BuyHandler(convo, agent, party_id, player_id, player_name, self.party_data)

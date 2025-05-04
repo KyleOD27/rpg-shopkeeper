@@ -425,6 +425,12 @@ def interpret_input(player_input: str, convo=None):
             return {"intent": PlayerIntent.VIEW_PROFILE, "metadata": {}}
         if intent_r == PlayerIntent.VIEW_ACCOUNT:
             return {"intent": PlayerIntent.VIEW_ACCOUNT, "metadata": {}}
+        if intent_r == PlayerIntent.VIEW_WEAPON_SUBCATEGORY:
+            sub = get_subcategory_match("weapon", player_input)
+            meta = {}
+            if sub:
+                meta["category_range"] = sub.lower()  # keep lower-case
+            return {"intent": PlayerIntent.VIEW_WEAPON_SUBCATEGORY, "metadata": meta}
 
         # CONFIRM/CANCEL/etc
         return {"intent": intent_r, "metadata": {}}

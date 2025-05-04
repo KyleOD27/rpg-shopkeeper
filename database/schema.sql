@@ -47,28 +47,45 @@ CREATE TABLE characters (
     UNIQUE(party_id, player_name)
 );
 
--- ITEMS TABLE (COMPATIBLE WITH SRD)
+DROP TABLE IF EXISTS items;
+
 CREATE TABLE items (
-    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    srd_index TEXT UNIQUE,
-    item_name TEXT NOT NULL,
-    equipment_category TEXT,
-    gear_category TEXT,
-    tool_category TEXT,
-    weapon_category TEXT,
-    armour_category TEXT,
-    weapon_range TEXT,                  -- NEW: e.g., "melee"
-    category_range TEXT,                -- NEW: e.g., "martial melee"
-    damage_dice TEXT,                   -- NEW: e.g., "1d8"
-    damage_type TEXT,                   -- NEW: e.g., "Slashing"
-    range_normal INTEGER,              -- NEW: e.g., 5
-    range_long INTEGER,                -- NEW: e.g., null
-    base_price INTEGER DEFAULT 0,
-    price_unit TEXT DEFAULT 'gp',
-    weight REAL,
-    desc TEXT,
-    rarity TEXT CHECK(rarity IN ('Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary')) DEFAULT 'Common'
+    item_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    srd_index      TEXT UNIQUE,
+    item_name      TEXT NOT NULL,
+
+    -- categories
+    equipment_category TEXT,     -- “Armor”, “Weapon”, …
+    armour_category    TEXT,     -- “Light”, “Medium”, “Heavy”, “Shield”
+    weapon_category    TEXT,
+    gear_category      TEXT,
+    tool_category      TEXT,
+
+    -- weapon stats
+    weapon_range   TEXT,
+    category_range TEXT,
+    damage_dice    TEXT,
+    damage_type    TEXT,
+    range_normal   INTEGER,
+    range_long     INTEGER,
+
+    -- armour stats (★ NEW ★)
+    base_ac               INTEGER,
+    dex_bonus             BOOLEAN,  -- 0/1   (True if any Dex mod is allowed)
+    max_dex_bonus         INTEGER,  -- NULL or 2
+    str_minimum           INTEGER,  -- NULL if none
+    stealth_disadvantage  BOOLEAN,  -- 0/1
+
+    -- misc
+    base_price     INTEGER DEFAULT 0,
+    price_unit     TEXT    DEFAULT 'gp',
+    weight         REAL,
+    desc           TEXT,
+    rarity         TEXT
+        CHECK(rarity IN ('Common', 'Uncommon','Rare','Very Rare','Legendary'))
+        DEFAULT 'Common'
 );
+
 
 
 -- TRANSACTION LEDGER

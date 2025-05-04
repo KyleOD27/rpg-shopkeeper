@@ -55,15 +55,16 @@ def get_all_equipment_categories():
 
 
 def get_weapon_categories():
-    sql = """
-    SELECT DISTINCT weapon_category
-    FROM items
-    WHERE equipment_category = 'Weapon'
-      AND weapon_category IS NOT NULL
-    ORDER BY weapon_category
-    """
-    rows = query_db(sql)
-    return [row["weapon_category"] for row in rows if row["weapon_category"]]
+    """Return distinct category_range values (lower-case)."""
+    rows = query_db(
+        """
+        SELECT DISTINCT LOWER(category_range) AS cr
+        FROM items
+        WHERE category_range IS NOT NULL
+        ORDER BY cr
+        """
+    )
+    return [r["cr"] for r in rows]
 
 def get_armour_categories():
     sql = """
@@ -178,6 +179,19 @@ def search_items_by_name_fuzzy(item_name, page=1, page_size=10):
     """
     return query_db(sql, (f"%{item_name}%", page_size, offset))
 
+
+def get_items_by_weapon_range(cat_range: str, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    return query_db(
+        """
+        SELECT item_id, item_name, base_price
+        FROM items
+        WHERE LOWER(category_range) = LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+        """,
+        (cat_range, page_size, offset),
+    )
 
 
 

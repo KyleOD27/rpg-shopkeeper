@@ -1,95 +1,86 @@
-# srd_item_loader.py
-
-import sqlite3
-import requests
-import time
+# srd_item_loader.py  – armour-aware rewrite
+import sqlite3, requests, json, time
 from pathlib import Path
 
-# Configuration
 BASE_URL = "https://www.dnd5eapi.co/api/2014"
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # adjust if needed
-DB_PATH = BASE_DIR / 'rpg-shopkeeper.db'
+DB_PATH  = Path(__file__).resolve().parents[2] / "rpg-shopkeeper.db"
 
 def fetch_all_items():
-    response = requests.get(f"{BASE_URL}/equipment/")
-    response.raise_for_status()
-    return response.json()["results"]
+    r = requests.get(f"{BASE_URL}/equipment/")
+    r.raise_for_status()
+    return r.json()["results"]
 
-def fetch_item_detail(index):
-    response = requests.get(f"{BASE_URL}/equipment/{index}")
-    response.raise_for_status()
-    return response.json()
+def fetch_item(index: str) -> dict:
+    r = requests.get(f"{BASE_URL}/equipment/{index}")
+    r.raise_for_status()
+    return r.json()
 
-def map_to_srd_schema(item):
-    # Only extract damage if present
-    damage = item.get("damage", {})
-    damage_type = damage.get("damage_type", {}) if damage else {}
-
-    # Only extract range if present
-    item_range = item.get("range", {}) if "range" in item else {}
+def map_to_row(item: dict) -> dict:
+    # weapon helpers
+    dmg         = item.get("damage") or {}
+    dmg_type    = (dmg.get("damage_type") or {}).get("name")
+    rng         = item.get("range") or {}
+    # armour helpers
+    ac_block    = item.get("armor_class") or {}
+    dex_bonus   = ac_block.get("dex_bonus")          # bool
+    max_bonus   = ac_block.get("max_bonus")          # int | None
 
     return {
-        "srd_index": item.get("index"),
-        "item_name": item.get("name"),
-        "equipment_category": item.get("equipment_category", {}).get("name"),
-        "gear_category": item.get("gear_category", {}).get("name") if "gear_category" in item else None,
-        "tool_category": item.get("tool_category") if "tool_category" in item else None,
-        "weapon_category": item.get("weapon_category") if "weapon_category" in item else None,
-        "armour_category": item.get("armor_category") if "armor_category" in item else None,
-        "weapon_range": item.get("weapon_range"),
-        "category_range": item.get("category_range"),
-        "damage_dice": damage.get("damage_dice") if damage else None,
-        "damage_type": damage_type.get("name") if damage_type else None,
-        "range_normal": item_range.get("normal"),
-        "range_long": item_range.get("long"),
+        "srd_index":         item["index"],
+        "item_name":         item["name"],
+        "equipment_category":item.get("equipment_category", {}).get("name"),
+        "armour_category":   item.get("armor_category"),        # note API uses US spelling
+        "weapon_category":   item.get("weapon_category"),
+        "gear_category":     item.get("gear_category", {}).get("name"),
+        "tool_category":     item.get("tool_category"),
+
+        # weapon
+        "weapon_range":  item.get("weapon_range"),
+        "category_range":item.get("category_range"),
+        "damage_dice":   dmg.get("damage_dice"),
+        "damage_type":   dmg_type,
+        "range_normal":  rng.get("normal"),
+        "range_long":    rng.get("long"),
+
+        # armour
+        "base_ac":              ac_block.get("base"),
+        "dex_bonus":            1 if dex_bonus else 0 if dex_bonus is not None else None,
+        "max_dex_bonus":        max_bonus,
+        "str_minimum":          item.get("str_minimum"),
+        "stealth_disadvantage": 1 if item.get("stealth_disadvantage") else 0
+                                 if "stealth_disadvantage" in item else None,
+
+        # misc
         "base_price": item.get("cost", {}).get("quantity", 0),
         "price_unit": item.get("cost", {}).get("unit", "gp"),
-        "weight": item.get("weight"),
-        "desc": "\n".join(item.get("desc", [])) if "desc" in item else None,
-        "rarity": "Common"
+        "weight":     item.get("weight"),
+        "desc":       "\n".join(item.get("desc", [])),
+        "rarity":     "Common",
     }
 
-
-
-
-def insert_item(cursor, mapped):
-    cursor.execute("""
-        INSERT OR IGNORE INTO items (
-            srd_index, item_name, equipment_category, gear_category, tool_category,
-            weapon_category, armour_category, weapon_range, category_range,
-            damage_dice, damage_type, range_normal, range_long,
-            base_price, price_unit, weight, desc, rarity
-        ) VALUES (
-            :srd_index, :item_name, :equipment_category, :gear_category, :tool_category,
-            :weapon_category, :armour_category, :weapon_range, :category_range,
-            :damage_dice, :damage_type, :range_normal, :range_long,
-            :base_price, :price_unit, :weight, :desc, :rarity
-        )
-    """, mapped)
-
+def insert(cursor, row: dict):
+    fields = ", ".join(row.keys())
+    placeholders = ":" + ", :".join(row.keys())
+    cursor.execute(f"INSERT OR IGNORE INTO items ({fields}) VALUES ({placeholders})", row)
 
 def main():
-    print(f"📂 Using database: {DB_PATH}")
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    print("🌐 Fetching SRD item list...")
-    item_list = fetch_all_items()
-    print(f"🔎 Found {len(item_list)} items.")
-
-    for i, item in enumerate(item_list, start=1):
-        try:
-            print(f"➡️ {i}/{len(item_list)} - {item['name']}")
-            detail = fetch_item_detail(item["index"])
-            mapped = map_to_srd_schema(detail)
-            insert_item(cursor, mapped)
-            time.sleep(0.2)
-        except Exception as e:
-            print(f"❌ Error on item {item['name']}: {e}")
-
-    conn.commit()
-    conn.close()
-    print("✅ All items loaded into database.")
+    print(f"📂 DB: {DB_PATH}")
+    conn, cur = sqlite3.connect(DB_PATH), None
+    try:
+        cur = conn.cursor()
+        items = fetch_all_items()
+        print(f"🌐 Fetching {len(items)} SRD items…")
+        for idx, meta in enumerate(items, 1):
+            print(f"  {idx}/{len(items):3}  {meta['name']}")
+            detail = fetch_item(meta["index"])
+            insert(cur, map_to_row(detail))
+            time.sleep(0.15)
+        conn.commit()
+        print("✅  Done.")
+    finally:
+        if cur:
+            cur.close()
+        conn.close()
 
 if __name__ == "__main__":
     main()

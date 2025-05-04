@@ -81,7 +81,7 @@ class ViewHandler:
                 "get_func": self.agent.get_weapon_categories,
                 "process_func": self.process_view_weapon_subcategory,
                 "subcategory_intent": PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
-                "payload_key": "weapon_category"
+                "payload_key": "category_range"
             },
             "gear": {
                 "get_func": self.agent.get_gear_categories,
@@ -154,7 +154,14 @@ class ViewHandler:
         return self._handle_view_subcategory(payload, "armor", "armour_category", self.agent.shopkeeper_show_items_by_armour_category, self.agent.get_armour_categories, self.agent.shopkeeper_list_armour_categories)
 
     def process_view_weapon_subcategory(self, payload):
-        return self._handle_view_subcategory(payload, "weapon", "weapon_category", self.agent.shopkeeper_show_items_by_weapon_category, self.agent.get_weapon_categories, self.agent.shopkeeper_list_weapon_categories)
+        return self._handle_view_subcategory(
+            payload,
+            section="weapon",
+            key="category_range",  # ← NEW
+            show_func=self.agent.shopkeeper_show_items_by_weapon_range,
+            get_func=self.agent.get_weapon_categories,  # range list
+            list_func=self.agent.shopkeeper_list_weapon_categories
+        )
 
     def process_view_gear_subcategory(self, payload):
         return self._handle_view_subcategory(payload, "gear", "gear_category", self.agent.shopkeeper_show_items_by_gear_category, self.agent.get_gear_categories, self.agent.shopkeeper_list_gear_categories)

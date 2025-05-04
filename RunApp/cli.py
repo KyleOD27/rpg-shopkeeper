@@ -171,7 +171,7 @@ def main():
     print(greeting)
 
     convo = Conversation(character_id)
-    service = ConversationService(convo, agent, party_id, character_id, player_name, party)
+    service = ConversationService(convo, agent, party_id, character_id, player_name, party, visit_count)
 
     while True:
         player_input = input(">> ").strip()
