@@ -34,14 +34,14 @@ INTENT_KEYWORDS = {
     PlayerIntent.VIEW_ARMOUR_CATEGORY: ["armor","armour"],
     PlayerIntent.VIEW_WEAPON_CATEGORY: ["weapon","weapons"],
     PlayerIntent.VIEW_GEAR_CATEGORY: ["gear","adventuring gear","supplies","packs"],
-    PlayerIntent.VIEW_TOOL_CATEGORY: ["tool","tools"],
+    PlayerIntent.VIEW_TOOL_CATEGORY: ["tool", "tools"],
     PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["items", "inventory", "item", "shop"],
+    PlayerIntent.VIEW_MOUNT_CATEGORY: ["mounts and vehicles", "mounts", "mount", "vehicle", "vehicles"],
 
     PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light","medium","heavy"],
-    PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["simple","martial"],
-    PlayerIntent.VIEW_GEAR_SUBCATEGORY: ["ammunition", "arcane foci","druidic foci", "equipment packs", "holy symbols", "kits", "standard gear"],
+    PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ["martial melee","martial ranged","simple melee","simple ranged"],
+    PlayerIntent.VIEW_GEAR_SUBCATEGORY: ["ammunition", "arcane foci","druidic foci", "equipment packs", "holy symbols", "kits", "standard gear", "standard"],
     PlayerIntent.VIEW_TOOL_SUBCATEGORY: ["artisan's tools", "artisans tools", "gaming sets","musical instrument", "other tools"],
-
 
     PlayerIntent.BUY_ITEM: ["buy","purchase","get","acquire","grab","want"],
     PlayerIntent.SELL_ITEM: ["sell","offload","trade in"],
