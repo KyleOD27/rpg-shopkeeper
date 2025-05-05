@@ -71,8 +71,6 @@ INTENT_KEYWORDS = {
 }
 
 
-
-
 # Words to strip when sanitizing
 STOP_WORDS = {
     "a","an","the","and","or","but","of","for","to","in","on","at",
@@ -257,7 +255,7 @@ def find_item_in_input(player_input: str, convo=None):
     5) Fuzzy by token
     6) Fallback to convo.pending_item
     """
-    raw = normalize_input(player_input)
+    raw = preprocess(player_input)      # intent prefixes & stop-words stripped
     # strip polite prefixes only for matching
     for p in [
         "could you","would you","can you","i want to","i'd like to",
@@ -314,7 +312,7 @@ def find_item_in_input(player_input: str, convo=None):
     # 4️⃣ fuzzy tokens
     matches = []
     for w in words:
-        close = get_close_matches(w, name_map.keys(), n=3, cutoff=0.6)
+        close = get_close_matches(w, name_map.keys(), n=3, cutoff=0.7)
         for nm in close:
             itm = name_map[nm]
             if itm not in matches:

@@ -37,7 +37,8 @@ class BaseShopkeeper:
             return join_lines(
                 f"Ah, {player_name} of {party_name}.",
                 f"First time at this shop? Nice to meet you.",
-                f"To see what I can do just say *menu*."
+                f" ",
+                f"To get started, just say _menu_"
             )
         elif visit_count < 5:
             return join_lines(
@@ -46,8 +47,7 @@ class BaseShopkeeper:
             )
         else:
             return join_lines(
-                f"Back already, {player_name}?",
-                f"I'm flattered, this is visit number {visit_count}!",
+                f"Back already, {player_name}? I'm flattered, this is visit {visit_count}!",
                 f" ",
                 f"What can I do for you today?"
             )
@@ -570,7 +570,7 @@ class BaseShopkeeper:
         # ── balance + confirmation prompt ──────────────────────
         lines.extend([
             f" ",
-            f"Your party balance is *{party_gold}* gp. Would you like to proceed? (say _yes_ or _no_)"
+            f"Your party balance is *{party_gold}* gp. Would you like to proceed with the purchase?"
         ])
 
         return "\n".join(lines)
