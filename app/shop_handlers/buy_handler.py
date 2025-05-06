@@ -140,10 +140,11 @@ class BuyHandler:
 
             return (
                 f"Alright, alright, you twisted my arm.\n"
+                f" \n"
                 f"How about *{discounted_price}* gp for the *{item_name}*?\n"
                 f" \n"
                 f"Your balance is *{gold}* gp."
-                f" Would you like to proceed with the purchase? (Say _yes_ or _no_)"
+                f" Would you like to proceed with the purchase?"
             )
 
         # ❌ Haggle failed — re-offer at full price
@@ -159,10 +160,11 @@ class BuyHandler:
 
         return (
             f"😅 Nice try, but that price is already a bargain.\n"
+            f" \n"
             f"The *{item_name}* still costs *{full_price}* gp.\n"
             f" \n"
             f"Your balance is *{gold}* gp."
-            f" Would you like to proceed with the purchase? (Say _yes_ or _no_)"
+            f" Would you like to proceed with the purchase?"
         )
 
     def handle_confirm_purchase(self, player_input):

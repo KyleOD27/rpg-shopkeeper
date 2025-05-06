@@ -516,15 +516,16 @@ class BaseShopkeeper:
         cat = item.get("equipment_category", "")
         rar = item.get("rarity", "")
         lines = [
-            f"You're about to buy a {name} ({cat}, {rar}).",
+            f"You're about to buy a *{name}* ({cat}, {rar}).",
             f" ",
             f"💰 Price: {cost} gp{discount_note}",
             f"⚖️ Weight: {item.get('weight', 0)} lb",
+            f" ",
         ]
 
         # ── description (if any) ───────────────────────────────
         if item.get("desc"):
-            lines.append(f"📜 {item['desc']}")
+            lines.append(f"📜 _{item['desc']}_")
 
         # ── weapon extras ──────────────────────────────────────
         if item.get("damage_dice"):
