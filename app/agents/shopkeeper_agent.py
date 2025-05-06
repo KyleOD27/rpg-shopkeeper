@@ -732,3 +732,58 @@ class BaseShopkeeper:
 
         return join_lines(header, "", *lines)  # blank line after header
 
+    # === SELL PROMPTS =====================================================
+
+    def shopkeeper_sell_offer_prompt(
+            self,
+            item: dict,
+            offer_price: int,
+            gold_before: int
+    ) -> str:
+        """
+        First message when the player chooses an item to sell.
+        Shows the offer and asks for confirmation.
+        """
+        name = item.get("item_name") or item.get("name") or "that item"
+        future_balance = gold_before + offer_price
+        return (
+            f"I’ll give you *{offer_price} gp* for your *{name}*.\n"
+            f"That would bring your purse to *{future_balance} gp*.\n"
+            f"Deal?"
+        )
+
+    def shopkeeper_sell_success_prompt(
+            self,
+            item: dict,
+            price: int,
+            gold_after: int
+    ) -> str:
+        """
+        Confirmation after the sale has been booked.
+        """
+        name = item.get("item_name") or "item"
+        return (
+            f"Pleasure doing business!  Here’s *{price} gp* for the *{name}*.\n"
+            f"Your new balance is *{gold_after} gp*."
+        )
+
+    def shopkeeper_sell_cancel_prompt(self, item: dict | None) -> str:
+        """Used when the player declines the offer."""
+        name = (item or {}).get("item_name") or "that item"
+        return f"All right, we’ll keep the *{name}* off the counter then."
+
+    # Handy alias – lets the handler call either name
+    shopkeeper_sell_confirm_prompt = shopkeeper_sell_offer_prompt
+
+# === SELL: “Which item?” prompt ======================================
+
+    def shopkeeper_sell_enquire_item(self) -> str:
+        """
+        Called when the player says just 'sell' (or the matcher found nothing)
+        so we need to ask which item they’d like to trade.
+        """
+        return (
+        "Sure thing! What are you looking to sell?\n"
+        "• Say the item’s *name* or *ID number*."
+        )
+

@@ -78,6 +78,12 @@ STOP_WORDS = {
     "is","are","was","were","i","you","do","does", "something", "anything", "stuff"
 }
 
+SHOP_ACTION_WORDS: set[str] = {
+    "buy", "sell", "browse", "list",
+    "view", "show", "inspect",
+    "deposit", "withdraw", "balance",
+}
+
 # Phrases to strip as polite prefixes
 INTENT_PREFIXES = [
     "want to buy","want to purchase","can i buy",
@@ -246,6 +252,9 @@ def get_subcategory_match(section: str, player_input: str):
 
 # ─── 5. ITEM MATCHER ─────────────────────────────────────────────────────
 
+# ---------------------------------------------------------------------
+#  Item / category resolver
+# ---------------------------------------------------------------------
 def find_item_in_input(player_input: str, convo=None):
     """
     1) Strip polite prefixes from a temp copy
@@ -255,27 +264,35 @@ def find_item_in_input(player_input: str, convo=None):
     5) Fuzzy by token
     6) Fallback to convo.pending_item
     """
-    raw = preprocess(player_input)      # intent prefixes & stop-words stripped
-    # strip polite prefixes only for matching
-    for p in [
-        "could you","would you","can you","i want to","i'd like to",
-        "please","hey","good sir","thank you","thanks",
-        "would it cost","what does it do","i'm looking to"
-    ]:
+    raw = preprocess(player_input)  # intent prefixes & stop-words stripped
+
+    # polite fluff
+    for p in (
+        "could you", "would you", "can you", "i want to", "i'd like to",
+        "please", "good sir", "thank you", "thanks",
+        "would it cost", "what does it do", "i'm looking to"
+    ):
         raw = raw.replace(p, "")
     raw = raw.strip()
+
+    # 🚫 Early-exit guard — prevent “sell” → “Bell”, etc.
+    norm_raw = normalize_input(raw)
+    if norm_raw in SHOP_ACTION_WORDS or len(norm_raw) < 4:
+        logger.debug("[ITEM MATCH] skipped: stop-word or too short")
+        return None, None
+
     words = raw.split()
 
-    # load items
+    # ── load all items once ────────────────────────────────────────────
     items = []
     for rec in get_all_items():
         try:
             obj = json.loads(rec) if isinstance(rec, str) else rec
             items.append(dict(obj))
-        except:
+        except Exception:
             continue
 
-    # 1️⃣ by ID
+    # 1️⃣ by ID ---------------------------------------------------------
     digit = next((w for w in words if w.isdigit()), None)
     if digit:
         matches = [i for i in items if str(i.get("item_id")) == digit]
@@ -283,7 +300,7 @@ def find_item_in_input(player_input: str, convo=None):
             logger.debug(f"[ITEM MATCH] by ID {digit}: {matches}")
             return matches, None
 
-    # 2️⃣ by category
+    # 2️⃣ by category ---------------------------------------------------
     all_cats = (
         get_all_equipment_categories() +
         get_weapon_categories() +
@@ -293,26 +310,26 @@ def find_item_in_input(player_input: str, convo=None):
     )
     cat_map = {normalize_input(c): c for c in all_cats}
     for norm, orig in cat_map.items():
-        if norm in raw:
+        if norm in norm_raw:
             logger.debug(f"[ITEM MATCH] category full: {orig}")
             return None, orig
     for w in words:
-        close = get_close_matches(w, cat_map.keys(), n=1, cutoff=0.7)
+        close = get_close_matches(normalize_input(w), cat_map.keys(), n=1, cutoff=0.7)
         if close:
             logger.debug(f"[ITEM MATCH] category fuzzy: {cat_map[close[0]]}")
             return None, cat_map[close[0]]
 
-    # 3️⃣ full name
+    # 3️⃣ full name -----------------------------------------------------
     name_map = {normalize_input(i["item_name"]): i for i in items}
     for norm, itm in name_map.items():
-        if norm in raw:
+        if norm in norm_raw:
             logger.debug(f"[ITEM MATCH] full name: {itm['item_name']}")
             return [itm], None
 
-    # 4️⃣ fuzzy tokens
+    # 4️⃣ fuzzy tokens --------------------------------------------------
     matches = []
     for w in words:
-        close = get_close_matches(w, name_map.keys(), n=3, cutoff=0.7)
+        close = get_close_matches(normalize_input(w), name_map.keys(), n=3, cutoff=0.7)
         for nm in close:
             itm = name_map[nm]
             if itm not in matches:
@@ -321,7 +338,7 @@ def find_item_in_input(player_input: str, convo=None):
     if matches:
         return matches, None
 
-    # 5️⃣ fallback to pending
+    # 5️⃣ fallback to convo.pending_item -------------------------------
     if convo and convo.get_pending_item():
         pend = convo.get_pending_item()
         if isinstance(pend, dict):
@@ -333,6 +350,7 @@ def find_item_in_input(player_input: str, convo=None):
 
     logger.debug("[ITEM MATCH] no matches")
     return None, None
+
 
 
 # ─── 6. INTENT DETECTORS ─────────────────────────────────────────────────

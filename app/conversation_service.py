@@ -61,7 +61,7 @@ class ConversationService:
             return self.buy_handler.handle_confirm_purchase(wrapped_input)
 
         if pending in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_CONFIRM}:
-            return self.sell_handler.handle_sell_confirm(wrapped_input)
+            return self.sell_handler.handle_confirm_sale(wrapped_input)
 
         # fallback to any other confirm (e.g. generic yes/no flows)
         return self.generic_handler.handle_confirm(wrapped_input)
@@ -180,7 +180,7 @@ class ConversationService:
                     if pending in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM}:
                         return self.buy_handler.handle_confirm_purchase({"text": text})
                     if pending == PlayerIntent.SELL_ITEM:
-                        return self.sell_handler.handle_sell_confirm({"text": text})
+                        return self.sell_handler.handle_confirm_sale({"text": text})
                 if low in {"no", "n", "cancel", "never mind"}:
                     return self._handle_cancellation_flow({"text": text})
 
@@ -265,7 +265,7 @@ class ConversationService:
         router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_CONFIRM)] = self.buy_handler.handle_confirm_purchase
         router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.CONFIRM)] = self._handle_confirmation_flow
         router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.BUY_ITEM)] = self._handle_confirmation_flow
-        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CONFIRM)] = self.sell_handler.handle_sell_confirm
+        router[(ConversationState.AWAITING_CONFIRMATION, PlayerIntent.SELL_CONFIRM)] = self.sell_handler.handle_confirm_sale
 
         # cancellations
         for c in (PlayerIntent.CANCEL, PlayerIntent.BUY_CANCEL, PlayerIntent.SELL_CANCEL):
