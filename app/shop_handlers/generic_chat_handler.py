@@ -24,9 +24,20 @@ class GenericChatHandler:
         return self.agent.shopkeeper_fallback_prompt()
 
     def handle_view_ledger(self, player_input):
+        # 1) Fetch & normalise rows
         raw_entries = get_last_transactions(self.party_id)
         entries = [dict(row) for row in raw_entries]
-        return self.agent.shopkeeper_show_ledger(entries)
+
+        # 2) Cache ledger + paging info for follow-up “next / previous”
+        self.convo.metadata.update({
+            "current_section": "ledger",  # tells the pager we’re in Ledger view
+            "current_page": 1,  # start at page 1
+            "ledger_entries": entries,  # keep the list for later pages
+        })
+        self.convo.save_state()
+
+        # 3) Render page 1
+        return self.agent.shopkeeper_show_ledger(entries, page=1)
 
     def handle_accept_thanks(self, player_input):
         return self.agent.shopkeeper_accept_thanks()
@@ -35,31 +46,36 @@ class GenericChatHandler:
         current_gold = self.party_data.get("party_gold", 0)
         return self.agent.shopkeeper_check_balance_prompt(current_gold)
 
+    # ─────────────────────────────────────────────────────────────
     def handle_next_page(self, _input):
         section = self.convo.metadata.get("current_section", "equipment")
         current_page = self.convo.metadata.get("current_page", 1)
         next_page = current_page + 1
+
+        # ── Ledger paging ────────────────────────────────────────
+        if section == "ledger":
+            ledger_entries = self.convo.metadata.get("ledger_entries", [])
+            self.convo.metadata["current_page"] = next_page
+            self.convo.save_state()
+            return self.agent.shopkeeper_show_ledger(ledger_entries, page=next_page)
+
+        # ── Existing logic (mounts / items) ─────────────────────
         self.convo.metadata["current_page"] = next_page
         self.convo.save_state()
 
-        # 1) Mounts: no category key
         if section == "mount":
             return self.agent.shopkeeper_show_items_by_mount_category({"page": next_page})
 
-        # 2) Pull whichever category key is relevant
         category = (
-                self.convo.metadata.get("current_category_range")  # NEW ✅
+                self.convo.metadata.get("current_category_range")
                 or self.convo.metadata.get("current_weapon_category")
                 or self.convo.metadata.get("current_armour_category")
                 or self.convo.metadata.get("current_gear_category")
                 or self.convo.metadata.get("current_tool_category")
         )
         if not category:
-            return self.agent.shopkeeper_generic_say(
-                "Next what? I’m not sure what you’re looking at!"
-            )
+            return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
 
-        # 3) Dispatch
         if section == "weapon":
             if self.convo.metadata.get("current_category_range"):
                 return self.agent.shopkeeper_show_items_by_weapon_range(
@@ -83,10 +99,20 @@ class GenericChatHandler:
 
         return self.agent.shopkeeper_generic_say("Next what? I’m not sure what you’re looking at!")
 
+    # ─────────────────────────────────────────────────────────────
     def handle_previous_page(self, _input):
         section = self.convo.metadata.get("current_section", "equipment")
         current_page = self.convo.metadata.get("current_page", 1)
         prev_page = max(current_page - 1, 1)
+
+        # ── Ledger paging ────────────────────────────────────────
+        if section == "ledger":
+            ledger_entries = self.convo.metadata.get("ledger_entries", [])
+            self.convo.metadata["current_page"] = prev_page
+            self.convo.save_state()
+            return self.agent.shopkeeper_show_ledger(ledger_entries, page=prev_page)
+
+        # ── Existing logic (mounts / items) ─────────────────────
         self.convo.metadata["current_page"] = prev_page
         self.convo.save_state()
 
@@ -94,16 +120,14 @@ class GenericChatHandler:
             return self.agent.shopkeeper_show_items_by_mount_category({"page": prev_page})
 
         category = (
-                self.convo.metadata.get("current_category_range")  # NEW ✅
+                self.convo.metadata.get("current_category_range")
                 or self.convo.metadata.get("current_weapon_category")
                 or self.convo.metadata.get("current_armour_category")
                 or self.convo.metadata.get("current_gear_category")
                 or self.convo.metadata.get("current_tool_category")
         )
         if not category:
-            return self.agent.shopkeeper_generic_say(
-                "Previous what? I’m not sure what you’re looking at!"
-            )
+            return self.agent.shopkeeper_generic_say("Previous what? I’m not sure what you’re looking at!")
 
         if section == "weapon":
             if self.convo.metadata.get("current_category_range"):
@@ -126,10 +150,7 @@ class GenericChatHandler:
                 {"tool_category": category, "page": prev_page}
             )
 
-        # 4) Fallback if somehow we land here
-        return self.agent.shopkeeper_generic_say(
-            "Previous what? I’m not sure what you’re looking at!"
-        )
+        return self.agent.shopkeeper_generic_say("Previous what? I’m not sure what you’re looking at!")
 
     def handle_confirm(self, player_input):
         # Generic fallback if no special confirmation handler was active

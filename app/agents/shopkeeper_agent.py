@@ -13,6 +13,8 @@ from app.models.items import (
 )
 from app.interpreter import normalize_input
 from datetime import datetime, timedelta
+from collections import defaultdict
+
 
 
 # --- Safe field normalizer ---
@@ -401,14 +403,28 @@ class BaseShopkeeper:
     def shopkeeper_check_balance_prompt(self, gold_amount: int) -> str:
         return f"Your party currently holds {gold_amount} gold."
 
+    from collections import defaultdict
     from datetime import datetime, timedelta
 
-    from datetime import datetime, timedelta
+    def shopkeeper_show_ledger(self, ledger_entries: list, page: int = 1) -> str:
+        """
+        Same pagination as before (5 records/page) but the output is grouped by the
+        human-readable timestamp, e.g.
 
-    def shopkeeper_show_ledger(self, ledger_entries: list) -> str:
+          📜 Transaction History (Page 1 of 2)
+
+          **6 hours ago**
+          • Kyle withdrew 10 gp
+          • Kyle deposited 1 000 gp
+          • Kyle sold Plate Armor for 900 gp
+          …
+
+        The helper `humanize` is unchanged.
+        """
         if not ledger_entries:
             return "Your ledger is empty—no purchases, sales, or deposits yet!"
 
+        # ── human-readable time helper ────────────────────────────────
         def humanize(ts_str: str) -> str:
             try:
                 ts_utc = datetime.fromisoformat(ts_str)
@@ -429,7 +445,6 @@ class BaseShopkeeper:
                 hrs = int(delta.total_seconds() // 3600)
                 return f"{hrs} hour{'s' if hrs != 1 else ''} ago"
 
-            # beyond 24h, format like “Wed 5th at 9:00 am”
             def ordinal(n: int) -> str:
                 if 10 <= n % 100 <= 20:
                     suf = "th"
@@ -437,43 +452,59 @@ class BaseShopkeeper:
                     suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
                 return f"{n}{suf}"
 
-            weekday = ts_local.strftime("%a")  # e.g. “Wed”
-            day = ordinal(ts_local.day)  # e.g. “5th”
-            time = ts_local.strftime("%I:%M %p").lstrip("0").lower()  # “9:00 am”
+            weekday = ts_local.strftime("%a")
+            day = ordinal(ts_local.day)
+            time = ts_local.strftime("%I:%M %p").lstrip("0").lower()
             return f"{weekday} {day} at {time}"
 
-        lines = ["📜 Transaction History:"]
-        for idx, entry in enumerate(ledger_entries, start=1):
-            e = dict(entry)
-            ts_human = humanize(e.get("timestamp", ""))
-            player = e.get("player_name", "Someone")
-            action = e.get("action", "").lower()
-            item = e.get("item_name", "")
-            amount = e.get("amount", 0)
-            balance = e.get("balance_after", "?")
+        # ── newest → oldest & paginate ────────────────────────────────
+        entries_sorted = sorted(
+            (dict(e) for e in ledger_entries),
+            key=lambda e: e.get("timestamp", ""),
+            reverse=True,
+        )
+        page_items, page, total_pages = self._paginate(entries_sorted, page, page_size=5)
 
-            # Verb and what
-            if action in ("buy", "bought"):
-                verb = "bought"
-                what = f"{item} for {amount} gp"
-            elif action in ("sell", "sold"):
-                verb = "sold"
-                what = f"{item} for {amount} gp"
+        # ── group items by humanised timestamp ───────────────────────
+        grouped: dict[str, list[str]] = defaultdict(list)
+
+        for entry in page_items:
+            ts_human = humanize(entry.get("timestamp", ""))
+            player = entry.get("player_name", "Someone")
+            action = (entry.get("action") or "").lower()
+            item = entry.get("item_name", "")
+            amount = entry.get("amount", 0)
+
+            if action in {"buy", "bought"}:
+                verb, what = "bought", f"{item} for {amount} gp"
+            elif action in {"sell", "sold"}:
+                verb, what = "sold", f"{item} for {amount} gp"
             elif action == "deposit":
-                verb = "deposited"
-                what = f"{amount} gp"
+                verb, what = "deposited", f"{amount} gp"
             elif action == "withdraw":
-                verb = "withdrew"
-                what = f"{amount} gp"
+                verb, what = "withdrew", f"{amount} gp"
             else:
                 verb = action or "did something with"
                 what = f"{item} for {amount} gp" if item else f"{amount} gp"
 
-            lines.append(
-                f"{idx}. ({ts_human}) {player} {verb} {what}."
-            )
+            grouped[ts_human].append(f"• {player} {verb} {what}")
 
-        return "\n".join(lines)
+        # ── build the message ────────────────────────────────────────
+        lines = [f"📜 Transaction History (Page {page} of {total_pages})", ""]
+
+        for ts_human, rows in grouped.items():
+            lines.append(f"*{ts_human}*",)
+            lines.append(" ")
+            lines.extend(rows)
+            lines.append(" ")
+
+        # ── nav prompts ───────────────────────────────────────────────
+        if page < total_pages:
+            lines.append("Say _next_ to see more.")
+        if page > 1:
+            lines.append("Say _previous_ to go back.")
+
+        return "\n".join(lines).rstrip()
 
     # --- NEW: Category Access Wrappers ---
     def get_equipment_categories(self):
