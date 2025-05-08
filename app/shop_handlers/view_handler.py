@@ -63,6 +63,7 @@ class ViewHandler:
         return self.agent.shopkeeper_view_items_prompt()
 
     def _set_section(self, section_name):
+        self.convo.metadata.clear()
         self.convo.metadata["current_section"] = section_name
         self.convo.state = ConversationState.VIEWING_CATEGORIES
         self.convo.save_state()

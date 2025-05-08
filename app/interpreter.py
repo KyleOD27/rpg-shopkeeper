@@ -62,11 +62,8 @@ INTENT_KEYWORDS = {
     PlayerIntent.INSPECT_ITEM: [ "inspect","details","tell me about","what does it do",
         "info","information","what is","explain","describe","how much","see more"],
 
-    PlayerIntent.VIEW_ACCOUNT: [
-        "my account", "account", "subscription", "profile", "user profile"],
-
     PlayerIntent.VIEW_PROFILE: [
-        "profile","see profile","my profile","player info","party info",
+        "profile", "see profile", "my profile","player info","party info",
         "party","party profile","who am i","status","stats","character", "about me" ]
 }
 
@@ -277,7 +274,7 @@ def find_item_in_input(player_input: str, convo=None):
 
     # 🚫 Early-exit guard — prevent “sell” → “Bell”, etc.
     norm_raw = normalize_input(raw)
-    if norm_raw in SHOP_ACTION_WORDS or len(norm_raw) < 4:
+    if norm_raw in SHOP_ACTION_WORDS or (len(norm_raw) < 4 and not norm_raw.isdigit()):
         logger.debug("[ITEM MATCH] skipped: stop-word or too short")
         return None, None
 

@@ -158,7 +158,7 @@ class ConversationService:
             pending = self.convo.pending_action
 
             # SPECIAL-CASE: account / character picker
-            if pending == PlayerIntent.VIEW_ACCOUNT:
+            if pending == PlayerIntent.VIEW_CHARACTER:
                 idx = int(text) - 1
                 chars = self.convo.pending_item or []
                 if 0 <= idx < len(chars):
@@ -230,7 +230,7 @@ class ConversationService:
             PlayerIntent.VIEW_GEAR_CATEGORY, PlayerIntent.VIEW_ARMOUR_CATEGORY,
             PlayerIntent.VIEW_TOOL_CATEGORY, PlayerIntent.VIEW_MOUNT_CATEGORY,
             PlayerIntent.DEPOSIT_GOLD, PlayerIntent.WITHDRAW_GOLD,
-            PlayerIntent.CHECK_BALANCE, PlayerIntent.VIEW_LEDGER, PlayerIntent.VIEW_PROFILE, PlayerIntent.VIEW_ACCOUNT
+            PlayerIntent.CHECK_BALANCE, PlayerIntent.VIEW_LEDGER, PlayerIntent.VIEW_PROFILE
         ]
         for i in intro_intents:
             router[(ConversationState.INTRODUCTION, i)] = self._route_intent(i)
@@ -314,7 +314,5 @@ class ConversationService:
             return self.generic_handler.handle_view_ledger
         if intent == PlayerIntent.VIEW_PROFILE:
             return self.generic_handler.handle_view_profile
-        if intent == PlayerIntent.VIEW_ACCOUNT:
-            return self.generic_handler.handle_view_account
 
         return self.generic_handler.handle_fallback

@@ -100,6 +100,7 @@ class InspectHandler:
             f"{EMOJI['type']} Type: {weapon_cat or gear_cat or 'N/A'}",
             f"{EMOJI['cost']} Cost: {price} {unit}",
             f"{EMOJI['weight']} Weight: {weight or 'Unknown'} lbs",
+            f" "
         ]
         if dmg_dice:
             lines.append(f"{EMOJI['damage']} Damage: {dmg_dice} {dmg_type or ''}".strip())

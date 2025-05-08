@@ -77,13 +77,13 @@ class BaseShopkeeper:
             if category in category_counts:
                 category_counts[category] += 1
 
-        lines = ["🧙‍♂️ What can I interest you in today, adventurer?\n"]
+        lines = ["Okay, here's what I have..\n"]
         for cat in categories:
             emoji = emoji_map.get(cat, "📦")
             count = category_counts.get(cat, 0)
-            lines.append(f"{emoji} {cat} ({count} items)")
+            lines.append(f"{emoji} {cat} _({count} items)_")
 
-        lines.append("\n💬 Just say the category name to see what’s in stock!")
+        lines.append("\nJust say the category name to see what’s in stock!")
         return "\n".join(lines)
 
     def shopkeeper_list_weapon_categories(self, categories):
@@ -525,15 +525,17 @@ class BaseShopkeeper:
     def shopkeeper_fallback_prompt(self) -> str:
         return join_lines(
             "Here’s what I can do for you:",
-            "",
-            "• *BROWSE*   see what’s in stock",
-            "• *BUY*      purchase an item",
-            "• *SELL*     trade in your loot",
+            " ",
+            "• *BROWSE*  see what’s in stock",
+            "• *BUY*  purchase an item",
+            "• *SELL*  trade in your loot",
             "• *INSPECT*  details for one item",
             "• *BALANCE*  check party gold",
             "• *DEPOSIT*  add gold to the fund",
             "• *WITHDRAW* take gold out",
-            "• *LEDGER*   view our trade history"
+            "• *LEDGER*  view our trade history",
+            " ",
+            "Just let me know! "
         )
 
     def shopkeeper_buy_confirm_prompt(self, item, party_gold, discount=None):
@@ -673,60 +675,61 @@ class BaseShopkeeper:
         """
         return "\n".join(lines)
 
-    # --- Profile Viewer ---
-    def shopkeeper_show_profile(self, party_data: dict) -> str:
+    # --- Unified Profile Viewer -------------------------------------------
+    def shopkeeper_show_profile(self, data: dict) -> str:
         """
-        Pretty print the player's profile / party info.
-        Only uses keys that already exist in `party_data`,
-        so it’s safe even if some are missing.
+        One-stop profile prompt.
+
+        Expects a *merged* structure that may include:
+          • account-level keys:  user_name, phone_number, subscription_tier
+          • party/player keys:   player_name, party_name, party_gold,
+                                 visit_count, party_members|members, level,
+                                 class|character_class
+          • characters:          list of character dicts (optional)
+
+        All keys are optional—missing values fall back to sensible defaults.
         """
-        name        = party_data.get("player_name",  "Unknown Adventurer")
-        party_name  = party_data.get("party_name",   "Unnamed Party")
-        gold        = party_data.get("party_gold",   0)
-        visits      = party_data.get("visit_count",  1)
-        members     = party_data.get("party_members") or party_data.get("members") or []
-        lvl         = party_data.get("level")
-        klass       = party_data.get("class") or party_data.get("character_class")
+
+        # ── account section ────────────────────────────────────────────────
+        user_name = data.get("user_name", "unknown-user")
+        phone = data.get("phone_number", "N/A")
+        tier = data.get("subscription_tier", "free")
+
+        # ── party / player section ─────────────────────────────────────────
+        name = data.get("player_name", "Unknown Adventurer")
+        party_name = data.get("party_name", "Unnamed Party")
+        gold = data.get("party_gold", 0)
+        visits = data.get("visit_count", 1)
+        members = data.get("party_members") or data.get("members") or []
+        level = data.get("level")
+        klass = data.get("class") or data.get("character_class")
 
         lines = [
             f"🪪 *Profile for {name}*",
+            f"👤 Account: {user_name} | 💎 Tier: {tier}",
+            f"📱 Phone: {phone}",
+            "",
             f"🛡️ Party: {party_name}",
             f"👥 Members: {', '.join(members) if members else 'Just you so far'}",
             f"💰 Gold on hand: {gold}",
             f"🏪 Visits to this shop: {visits}",
         ]
-        if lvl is not None:
-            lines.append(f"✨ Level: {lvl}")
+        if level is not None:
+            lines.append(f"✨ Level: {level}")
         if klass:
             lines.append(f"⚔️ Class: {klass}")
 
-        return "\n".join(lines)
+        # ── owned-characters section (optional) ────────────────────────────
+        chars = data.get("characters") or []
+        if chars:
+            lines.append("\n*Owned characters:*")
+            for idx, ch in enumerate(chars, start=1):
+                char_name = ch.get("character_name") or ch.get("player_name", "Unknown")
+                char_party = ch.get("party_name", "No party")
+                role = ch.get("role") or "N/A"
+                lines.append(f"{idx}. {char_name} | Party: {char_party} |"
+                             f" Role: {role}")
 
-    # --- User-account overview ----------------------------------------
-    def shopkeeper_show_account(self, acct: dict) -> str:
-        lines = [
-            f"👤 username: {acct['user_name']}",
-            f"📱 phone: {acct['phone_number']}",
-            f"💎 tier: {acct['subscription_tier']}",
-            f" ",
-            f"*owned characters:*",
-        ]
-        for idx, ch in enumerate(acct["characters"], start=1):
-            nm  = ch["character_name"] or ch["player_name"]
-            pty = ch["party_name"]
-            lines.append(f"{idx}.Name: {nm}. Party: {pty})")
-        lines.append("\nReply with character number for more details.")
-        return "\n".join(lines)
-
-    # --- Single-character detail --------------------------------------
-    def shopkeeper_show_character(self, ch: dict) -> str:
-        nm = ch["character_name"] or ch["player_name"]
-        lines = [
-            f"🪪 *Character: {nm}*",
-            f"🙍 Player name: {ch['player_name']}",
-            f"🛡️ Party: {ch['party_name']}",
-            f"🎭 Role: {ch['role'] or 'N/A'}",
-        ]
         return "\n".join(lines)
 
     def shopkeeper_show_items_by_weapon_range(self, player_input):

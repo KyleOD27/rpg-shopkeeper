@@ -1,8 +1,10 @@
+from collections import ChainMap
+
 from app.conversation import PlayerIntent, ConversationState
 from app.models.ledger import get_last_transactions
 from app.models.items import get_items_by_weapon_range
 from app.interpreter import get_equipment_category_from_input
-from app.db import get_item_details, get_connection
+from app.db import get_item_details, get_connection, get_account_profile
 
 
 class GenericChatHandler:
@@ -45,6 +47,7 @@ class GenericChatHandler:
     def handle_check_balance(self, player_input):
         current_gold = self.party_data.get("party_gold", 0)
         return self.agent.shopkeeper_check_balance_prompt(current_gold)
+
 
     # ─────────────────────────────────────────────────────────────
     def handle_next_page(self, _input):
@@ -162,19 +165,41 @@ class GenericChatHandler:
     def handle_farewell(self, player_input):
         return self.agent.shopkeeper_farewell()
 
-    def handle_view_profile(self, player_input):
-        return self.agent.shopkeeper_show_profile(self.party_data)
+    # ---------------------------------------------------------------------
+    # 📄  View profile / account / character – now all one prompt
+    # ---------------------------------------------------------------------
 
-    def handle_view_account(self, _input):
-        from app.db import get_account_profile
-        acct = get_account_profile(self.player_id)
-        # stash the list so we can resolve “1/2/3”
-        self.convo.set_pending_item(acct["characters"])
-        self.convo.set_pending_action(PlayerIntent.VIEW_ACCOUNT)
+    def handle_view_profile(self, player_input=None):
+        """
+        Show the full profile (account + current party data).
+
+        • Pull the account row.
+        • Merge it with the party-session snapshot.
+        • Stash the characters list so the user can still choose “1 / 2 / 3…”.
+        """
+
+        acct = get_account_profile(self.player_id)  # DB call
+        full_profile = dict(ChainMap(self.party_data, acct))  # acct wins if keys collide
+
+        # keep the numeric-selection workflow alive
+        self.convo.set_pending_item(full_profile.get("characters", []))
+        self.convo.set_pending_action(PlayerIntent.VIEW_CHARACTER)
         self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
         self.convo.save_state()
-        return self.agent.shopkeeper_show_account(acct)
 
-    # 🆕  chosen character details (numeric selection)
+        return self.agent.shopkeeper_show_profile(full_profile)
+
     def handle_view_character(self, char_dict):
-        return self.agent.shopkeeper_show_character(char_dict)
+        """
+        After the player replies “1”, “2”, … send the selected character
+        _through the same_ profile prompt. The unified viewer is robust
+        enough to print either a bare character dict or the merged account.
+        """
+        return self.agent.shopkeeper_show_profile(char_dict)
+
+    # …and delete these now-obsolete entry points:
+    #     • handle_view_account
+    #     • (old) handle_view_profile that only showed party_data
+    # ---------------------------------------------------------------------
+
+
