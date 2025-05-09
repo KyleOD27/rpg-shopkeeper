@@ -635,18 +635,42 @@ class BaseShopkeeper:
         return [dict(row) for row in rows] if rows else []
 
     def shopkeeper_list_matching_items(self, matching_items):
+        """
+        Build a WhatsApp‑friendly list of matching items with richer emoji and clearer formatting.
+
+        Example output:
+
+        🔎 Here's what I have like that:
+
+         • 🆔 _42_ | 🏷️ *Longsword* | 💰 *150* gold
+         • 🆔 _17_ | 🏷️ *Healing Potion* | 💰 *50* gold
+
+        Just say the item *name* or _number_ to see more details..
+        """
+
+        # Normalise to a list for easier iteration
         if isinstance(matching_items, dict):
             matching_items = [matching_items]
 
-        lines = ["🔎 Here's what I found:"]
+        # Header + blank line for visual separation
+        lines = [
+            "🔎 Here's what I have like that:",
+            ""  # blank line between header and first item
+        ]
 
         for item in matching_items:
             item_id = item.get("item_id", "?")
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
-            lines.append(f" • [{item_id}] *{name}*. Costs *{price}* gold")
 
-        lines.append("\n Just say the name or number to buy.. or would you like to see the full inventory?")
+            lines.append(
+                f" • _{item_id}_ | *{name}* | *{price}* gold"
+            )
+
+        lines.append(
+            "\nJust say the item _number_ or *name* or  to see more details.."
+        )
+
         return "\n".join(lines)
 
     def shopkeeper_say(self, text):

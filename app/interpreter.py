@@ -228,7 +228,17 @@ def get_category_match(player_input: str):
     return None, None
 
 def get_subcategory_match(section: str, player_input: str):
+    """
+    Return the *exact DB spelling* of a sub-category that best matches the
+    player’s phrase, giving priority to more specific names.
+
+    Match order:
+      1. exact equality after normalisation
+      2. containment, longest names first  (so "artisans tools" wins over "tools")
+      3. fuzzy nearest-neighbour fallback
+    """
     lowered = normalize_input(player_input)
+
     if section == "armor":
         cats = get_armour_categories()
     elif section == "weapon":
@@ -239,12 +249,23 @@ def get_subcategory_match(section: str, player_input: str):
         cats = get_tool_categories()
     else:
         return None
+
+    # map normalised → original
     norm_map = {normalize_input(c): c for c in cats}
-    for norm, orig in norm_map.items():
+
+    # ① exact match
+    if lowered in norm_map:
+        return norm_map[lowered]
+
+    # ② containment – test longer names first
+    for norm in sorted(norm_map.keys(), key=len, reverse=True):
         if norm in lowered:
-            return orig
-    close = get_close_matches(lowered, norm_map.keys(), n=1, cutoff=0.75)
+            return norm_map[norm]
+
+    # ③ fuzzy fallback
+    close = get_close_matches(lowered, norm_map.keys(), n=1, cutoff=0.70)
     return norm_map.get(close[0]) if close else None
+
 
 
 # ─── 5. ITEM MATCHER ─────────────────────────────────────────────────────
@@ -326,7 +347,7 @@ def find_item_in_input(player_input: str, convo=None):
     # 4️⃣ fuzzy tokens --------------------------------------------------
     matches = []
     for w in words:
-        close = get_close_matches(normalize_input(w), name_map.keys(), n=3, cutoff=0.7)
+        close = get_close_matches(normalize_input(w), name_map.keys(), n=3, cutoff=0.55)
         for nm in close:
             itm = name_map[nm]
             if itm not in matches:

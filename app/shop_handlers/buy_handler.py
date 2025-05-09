@@ -1,4 +1,5 @@
 # app/shop_handlers/buy_handler.py
+import re
 
 from app.interpreter import find_item_in_input, normalize_input
 from app.models.items import get_item_by_name
@@ -48,6 +49,13 @@ class BuyHandler:
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+
+                # 🆕 store canonical-name → item dict for instant lookup later
+                self.convo.name_to_item = {
+                    re.sub(r"[^\w\s]", "", m["item_name"].lower()).strip(): m  # canonicalise once
+                    for m in matches
+                }
+
                 self.convo.save_state()
                 return self.agent.shopkeeper_list_matching_items(matches)
 
@@ -81,20 +89,59 @@ class BuyHandler:
         self.convo.set_pending_item(item)
         self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+
         self.convo.save_state()
+
 
     def process_item_selection(self, player_input):
         choice = player_input.get("text", "").strip()
-        pending = self.convo.get_pending_item()
-        if not pending:
-            self.convo.reset_state()
-            return self.agent.shopkeeper_fallback_prompt()
 
+        # 1️⃣ strip an optional leading verb ----------------------------------
+        for p in ("buy ", "get ", "select ", "take ", "pick "):
+            if choice.lower().startswith(p):
+                choice = choice[len(p):].lstrip()
+                break
+        # --------------------------------------------------------------------
+
+        # what we remembered from the previous “🔎 Here's what I found” list
+        pending = self.convo.get_pending_item()
+
+        # 🛠  if the list is gone (e.g. after a reload) just run the usual
+        #     name/ID matching logic instead of bailing back to INTRODUCTION
+        if not pending:
+            matches, detected_category = find_item_in_input(choice, self.convo)
+
+            if matches:
+                # single match → confirm immediately
+                if len(matches) == 1:
+                    item = matches[0]
+                    self._stash_and_confirm(item)
+                    return self.agent.shopkeeper_buy_confirm_prompt(
+                        item,
+                        self.party_data["party_gold"],
+                        self.convo.discount,
+                    )
+
+                # multiple matches → show the list again
+                self.convo.set_pending_item(matches)
+                self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
+                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.save_state()
+                return self.agent.shopkeeper_list_matching_items(matches)
+
+            # nothing matched at all
+            return self.agent.shopkeeper_say(
+                "I’m not sure which item you mean. Try the full name or its ID number."
+            )
+
+        # --------------------------------------------------------------------
+        # original logic when we *do* still have the pending list -------------
         norm = normalize_input(choice)
         if isinstance(pending, list):
             item = next(
                 (i for i in pending
-                 if str(i["item_id"]) == norm or normalize_input(i["item_name"]) == norm),
+                 if str(i["item_id"]) == norm
+                 or normalize_input(i["item_name"]) == norm),
                 None
             )
         else:
@@ -110,7 +157,7 @@ class BuyHandler:
         return self.agent.shopkeeper_buy_confirm_prompt(
             item,
             self.party_data["party_gold"],
-            self.convo.discount
+            self.convo.discount,
         )
 
     def handle_haggle(self, player_input):
