@@ -119,7 +119,9 @@ class BaseShopkeeper:
                 counts[cat] += 1
 
         # ── 2. render menu ────────────────────────────────────────────
-        lines = ["⚔️ Looking for something specific? Weapon groups:"]
+        lines = ["⚔️ What type of weapon are you looking for?",
+                 " "]
+
         for cat in categories:
             pretty = cat.title()  # capitalise nicely
             lines.append(f"• {pretty} ({counts[cat]} items)")
@@ -249,19 +251,32 @@ class BaseShopkeeper:
         all_rows = get_items_by_weapon_category(weapon_category, page=1, page_size=9999)
         total_pages = max(1, (len(all_rows) + 4) // 5)
 
-        lines = [f"⚔️ {weapon_category.title()} Weapons (Page {page} of {total_pages})\n"]
-        for row in rows:
+        # Header + blank line
+        lines = [
+            f"⚔️ *{weapon_category.title()} Weapons*  _(Page {page} of {total_pages})_",
+            ""  # blank line before the first item
+        ]
 
+        # Item rows
+        for row in rows:
             item = dict(row)
             item_id = item.get("item_id", "?")
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
-            lines.append(f" • [{item_id}] {name} — {price} gold")
+
+            lines.append(f"id: *{item_id}* | {name} | {price} gold")
+
+        # Navigation footer (add a leading blank line if we show any nav links)
+        if page < total_pages or page > 1:
+            lines.append("")
 
         if page < total_pages:
-            lines.append("\nSay next to see more.")
+            lines.append("Say _next_ to see more.")
         if page > 1:
-            lines.append("Say previous to go back.")
+            lines.append("Say _previous_ to go back.")
+
+        # Specific-item CTA
+        lines.append("Give the item _id_ to buy!")
 
         return "\n".join(lines)
 
@@ -355,9 +370,9 @@ class BaseShopkeeper:
             lines.append(f" • [{item_id}] {name} — {price} gold")
 
         if page < total_pages:
-            lines.append("\nSay next to see more.")
+            lines.append("\nSay _next_ to see more.")
         if page > 1:
-            lines.append("Say previous to go back.")
+            lines.append("Say _previous_ to go back.")
 
         return "\n".join(lines)
 
@@ -374,18 +389,32 @@ class BaseShopkeeper:
         all_rows = get_items_by_mount_category("Mounts and Vehicles", page=1, page_size=9999)
         total_pages = max(1, (len(all_rows) + 4) // 5)
 
-        lines = [f"🏇 Mounts & Vehicles (Page {page} of {total_pages})\n"]
+        # Header + blank line
+        lines = [
+            f"🏇 *Mounts & Vehicles*  _(Page {page} of {total_pages})_",
+            ""  # blank line before the first item
+        ]
+
+        # Item rows
         for row in rows:
             item = dict(row)  # sqlite3.Row → dict
             item_id = item.get("item_id", "?")
             name = item.get("item_name", "Unknown Item")
             price = item.get("base_price", "?")
-            lines.append(f" • [{item_id}] {name} — {price} gold")
+
+            lines.append(f"id: *{item_id}* | {name} | {price} gold")
+
+        # Navigation footer (add a leading blank line if we show any nav links)
+        if page < total_pages or page > 1:
+            lines.append("")
 
         if page < total_pages:
-            lines.append("\nSay next to see more.")
+            lines.append("Say _next_ to see more.")
         if page > 1:
-            lines.append("Say previous to go back.")
+            lines.append("Say _previous_ to go back.")
+
+        # New “specific item” line
+        lines.append("Give the item _id_ to buy!")
 
         return "\n".join(lines)
 
@@ -777,19 +806,29 @@ class BaseShopkeeper:
         total = get_items_by_weapon_range(cat_range, 1, 9999)
         pages = max(1, (len(total) + 4) // 5)
 
-        # ── build message ───────────────────────────────────────
-        header = f"⚔️ {cat_range.title()} Weapons (Page {page} of {pages})"
+        # ── build message (template style + clear spacing) ─────────────────
         lines = [
-            f" • [{r['item_id']}] {r['item_name']} — {r['base_price']} gp"
-            for r in map(dict, rows)
+            f"⚔️ *{cat_range.title()} Weapons*  _(Pg {page} of {pages})_",
+            " "  # ← blank line **after header**
         ]
 
-        if page < pages:
-            lines.append("\nSay **next** to see more.")
-        if page > 1:
-            lines.append("Say **previous** to go back.")
+        # Item rows
+        for r in map(dict, rows):
+            item_id = r.get("item_id", "?")
+            name = r.get("item_name", "Unknown Item")
+            price = r.get("base_price", "?")
+            lines.append(f"id: *{item_id}* | {name} | {price} gold")
 
-        return join_lines(header, "", *lines)  # blank line after header
+        lines.append(" ")  # ← blank line **after list**
+
+        # Navigation footer
+        if page < pages:
+            lines.append("Say _next_ to see more.")
+        if page > 1:
+            lines.append("Say _previous_ to go back.")
+        lines.append("Give the item _id_ to buy!")
+
+        return join_lines(*lines)  # join_lines = "\n".join
 
     # === SELL PROMPTS =====================================================
 
