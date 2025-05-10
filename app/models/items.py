@@ -1,11 +1,11 @@
 from app.db import query_db
 
-# Get all items in Grizzlebeard's shop
+
 def get_all_items():
-    sql = "SELECT * FROM items"
+    sql = 'SELECT * FROM items'
     return query_db(sql)
 
-# Get a single item by its name (case-insensitive search)
+
 def get_item_by_name(item_name):
     sql = """
     SELECT * FROM items
@@ -13,7 +13,7 @@ def get_item_by_name(item_name):
     """
     return query_db(sql, (item_name,), one=True)
 
-# Optional: Get a single item by its ID
+
 def get_item_by_id(item_id):
     sql = """
     SELECT * FROM items
@@ -21,7 +21,7 @@ def get_item_by_id(item_id):
     """
     return query_db(sql, (item_id,), one=True)
 
-# Get all items in a given equipment category (case-insensitive match)
+
 def get_items_by_category(category):
     sql = """
     SELECT item_name, base_price
@@ -29,19 +29,19 @@ def get_items_by_category(category):
     WHERE LOWER(equipment_category) LIKE LOWER(?) OR LOWER(item_name) LIKE LOWER(?)
     ORDER BY item_name
     """
-    return query_db(sql, (f"%{category}%", f"%{category}%"))
-
+    return query_db(sql, (f'%{category}%', f'%{category}%'))
     if not rows:
-        return [f"Hmm... looks like we don't have anything in the '{category}' category right now."]
-
+        return [
+            f"Hmm... looks like we don't have anything in the '{category}' category right now."
+            ]
     lines = [f"Here's what we have in the **{category}** category:\n"]
     for row in rows:
         item = dict(row)
-        name = item.get("item_name", "Unknown Item")
-        price = item.get("base_price", "?")
-        lines.append(f" • {name} — {price} gold")
-
+        name = item.get('item_name', 'Unknown Item')
+        price = item.get('base_price', '?')
+        lines.append(f' • {name} — {price} gold')
     return lines
+
 
 def get_all_equipment_categories():
     sql = """
@@ -51,7 +51,8 @@ def get_all_equipment_categories():
     ORDER BY equipment_category
     """
     rows = query_db(sql)
-    return [row["equipment_category"] for row in rows if row["equipment_category"]]
+    return [row['equipment_category'] for row in rows if row[
+        'equipment_category']]
 
 
 def get_weapon_categories():
@@ -63,8 +64,9 @@ def get_weapon_categories():
         WHERE category_range IS NOT NULL
         ORDER BY cr
         """
-    )
-    return [r["cr"] for r in rows]
+        )
+    return [r['cr'] for r in rows]
+
 
 def get_armour_categories():
     sql = """
@@ -75,8 +77,7 @@ def get_armour_categories():
     ORDER BY armour_category
     """
     rows = query_db(sql)
-    return [row["armour_category"] for row in rows if row["armour_category"]]
-
+    return [row['armour_category'] for row in rows if row['armour_category']]
 
 
 def get_weapon_categories_from_db():
@@ -87,7 +88,7 @@ def get_weapon_categories_from_db():
     ORDER BY weapon_category
     """
     rows = query_db(sql)
-    return [row["weapon_category"] for row in rows if row["weapon_category"]]
+    return [row['weapon_category'] for row in rows if row['weapon_category']]
 
 
 def get_gear_categories():
@@ -99,7 +100,7 @@ def get_gear_categories():
     ORDER BY gear_category
     """
     rows = query_db(sql)
-    return [row["gear_category"] for row in rows if row["gear_category"]]
+    return [row['gear_category'] for row in rows if row['gear_category']]
 
 
 def get_tool_categories():
@@ -111,7 +112,8 @@ def get_tool_categories():
     ORDER BY tool_category
     """
     rows = query_db(sql)
-    return [row["tool_category"] for row in rows if row["tool_category"]]
+    return [row['tool_category'] for row in rows if row['tool_category']]
+
 
 def get_items_by_armour_category(armour_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -122,7 +124,8 @@ def get_items_by_armour_category(armour_category, page=1, page_size=10):
         ORDER BY item_name
         LIMIT ? OFFSET ?
     """
-    return query_db(query, (f"%{armour_category}%", page_size, offset))
+    return query_db(query, (f'%{armour_category}%', page_size, offset))
+
 
 def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -133,7 +136,8 @@ def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
         ORDER BY item_name
         LIMIT ? OFFSET ?
     """
-    return query_db(query, (f"%{weapon_category}%", page_size, offset))
+    return query_db(query, (f'%{weapon_category}%', page_size, offset))
+
 
 def get_items_by_gear_category(gear_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -144,7 +148,8 @@ def get_items_by_gear_category(gear_category, page=1, page_size=10):
         ORDER BY item_name
         LIMIT ? OFFSET ?
     """
-    return query_db(query, (f"%{gear_category}%", page_size, offset))
+    return query_db(query, (f'%{gear_category}%', page_size, offset))
+
 
 def get_items_by_tool_category(gear_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -155,7 +160,8 @@ def get_items_by_tool_category(gear_category, page=1, page_size=10):
         ORDER BY item_name
         LIMIT ? OFFSET ?
     """
-    return query_db(query, (f"%{gear_category}%", page_size, offset))
+    return query_db(query, (f'%{gear_category}%', page_size, offset))
+
 
 def get_items_by_mount_category(equipment_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -166,7 +172,8 @@ def get_items_by_mount_category(equipment_category, page=1, page_size=10):
         ORDER BY item_name
         LIMIT ? OFFSET ?
     """
-    return query_db(query, (f"%{equipment_category}%", page_size, offset))
+    return query_db(query, (f'%{equipment_category}%', page_size, offset))
+
 
 def search_items_by_name_fuzzy(item_name, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -177,7 +184,7 @@ def search_items_by_name_fuzzy(item_name, page=1, page_size=10):
         ORDER BY item_name
         LIMIT ? OFFSET ?
     """
-    return query_db(sql, (f"%{item_name}%", page_size, offset))
+    return query_db(sql, (f'%{item_name}%', page_size, offset))
 
 
 def get_items_by_weapon_range(cat_range: str, page=1, page_size=10):
@@ -189,9 +196,5 @@ def get_items_by_weapon_range(cat_range: str, page=1, page_size=10):
         WHERE LOWER(category_range) = LOWER(?)
         ORDER BY item_name
         LIMIT ? OFFSET ?
-        """,
-        (cat_range, page_size, offset),
-    )
-
-
-
+        """
+        , (cat_range, page_size, offset))
