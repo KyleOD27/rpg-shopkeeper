@@ -1,5 +1,7 @@
+import csv
+import os
 from enum import Enum, auto
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.db import get_convo_state, update_convo_state, log_convo_state
 from app.config import RuntimeFlags
 import json
@@ -67,9 +69,27 @@ class ConversationState(Enum):
 
 
 class Conversation(HandlerDebugMixin):
+    LOG_FILE = 'debug_log.csv'
 
     def __init__(self, character_id):
-        self.debug('→ Entering __init__')
+        # 1) Ensure CSV exists with a named header row
+        if not os.path.exists(self.LOG_FILE):
+            with open(self.LOG_FILE, 'w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    'Timestamp (UTC)',
+                    'Debug Note',
+                    'Character ID',
+                    'Conversation State',
+                    'Pending Action',
+                    'Pending Item',
+                    'User Input',
+                    'Normalized Input',
+                    'Player Intent',
+                    'Metadata'
+                ])
+
+        # 2) Now initialize your attributes
         self.character_id = character_id
         self.state = ConversationState.INTRODUCTION
         self.pending_action = None
@@ -80,15 +100,18 @@ class Conversation(HandlerDebugMixin):
         self.metadata = {}
         self.normalized_input = None
         self.item = None
+
+        # 3) And now it’s safe to log entry/exit
+        self.debug('→ Entering __init__')
         saved = get_convo_state(self.character_id)
         if saved:
             self.state = ConversationState(saved['current_state'])
             self.pending_action = saved['pending_action']
-            self.pending_item = saved['pending_item'] if saved['pending_item'
-                ] else None
+            self.pending_item = saved['pending_item'] or None
         else:
             self.save_state()
         self.debug('← Exiting __init__')
+
 
     def set_state(self, new_state: ConversationState):
         self.debug('→ Entering set_state')
@@ -157,7 +180,7 @@ class Conversation(HandlerDebugMixin):
 
     def can_attempt_haggle(self):
         self.debug('→ Entering can_attempt_haggle')
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         history = self.metadata.get('haggle_history', {'attempts': 0,
             'success': False, 'last_reset': now.isoformat()})
         last_reset = datetime.fromisoformat(history['last_reset'])
@@ -174,7 +197,7 @@ class Conversation(HandlerDebugMixin):
 
     def record_haggle_attempt(self, success: bool):
         self.debug('→ Entering record_haggle_attempt')
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         history = self.metadata.get('haggle_history', {'attempts': 0,
             'success': False, 'last_reset': now.isoformat()})
         last_reset = datetime.fromisoformat(history['last_reset'])
@@ -206,34 +229,44 @@ class Conversation(HandlerDebugMixin):
         self.debug('← Exiting save_state')
 
     def debug(self, note=None):
-        """Print detailed conversation state for debugging (safe if attrs unset)."""
+        """Print detailed conversation state and append a row to debug_log.csv."""
         if not RuntimeFlags.DEBUG_MODE:
             return
 
-        # Safely grab each field (fall back to 'N/A' or empty)
-        ch_id = getattr(self, 'character_id', 'N/A')
-        state_obj = getattr(self, 'state', None)
-        state_name = state_obj.name if state_obj else 'N/A'
-        action = getattr(self, 'pending_action', 'N/A')
-        item = getattr(self, 'pending_item', None) or 'None'
-        latest = getattr(self, 'latest_input', None) or 'N/A'
-        norm = getattr(self, 'normalized_input', None) or 'N/A'
-        intent_obj = getattr(self, 'player_intent', None)
-        intent = intent_obj.name if intent_obj else 'N/A'
-        metadata = getattr(self, 'metadata', {}) or {}
-
+        # --- console output ---
         print('[DEBUG] --- Conversation Debug Info ---')
         if note:
             print(f'Note: {note}')
-        print(f'Character ID: {ch_id}')
+        state_obj = getattr(self, 'state', None)
+        state_name = state_obj.name if state_obj else 'N/A'
+        print(f'Character ID: {getattr(self, "character_id", "N/A")}')
         print(f'State: {state_name}')
-        print(f'Action: {action}')
-        print(f'Item: {item}')
-        print(f'User Input: {latest}')
-        print(f'Normalized Input: {norm}')
-        print(f'Player Intent: {intent}')
-        print(f'Metadata: {metadata}')
+        print(f'Action: {getattr(self, "pending_action", "N/A")}')
+        print(f"Item: {getattr(self, 'pending_item', None) or 'None'}")
+        print(f"User Input: {getattr(self, 'latest_input', None) or 'N/A'}")
+        print(f"Normalized Input: {getattr(self, 'normalized_input', None) or 'N/A'}")
+        pi = getattr(self, 'player_intent', None)
+        print(f"Player Intent: {pi.name if pi else 'N/A'}")
+        md = getattr(self, 'metadata', {}) or {}
+        print(f"Metadata: {md}")
         print('--------------------------------------')
+
+        # --- CSV output ---
+        row = [
+            datetime.now(timezone.utc).isoformat(),
+            note or '',
+            getattr(self, 'character_id', ''),
+            state_name,
+            getattr(self, 'pending_action', ''),
+            json.dumps(self.pending_item) if self.pending_item is not None else '',
+            getattr(self, 'latest_input', '') or '',  # ← user_input in row
+            getattr(self, 'normalized_input', '') or '',
+            pi.name if pi else '',
+            json.dumps(md),
+        ]
+        with open(self.LOG_FILE, 'a', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(row)
 
     def set_pending_action(self, action):
         self.debug('→ Entering set_pending_action')
