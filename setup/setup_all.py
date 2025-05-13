@@ -1,12 +1,15 @@
 import sqlite3
+import string
 import argparse
-import os
 from pathlib import Path
+
 from integrations.dnd5e.srd_item_loader import main as load_srd_items
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / 'rpg-shopkeeper.db'
+
+# ─── Paths ────────────────────────────────────────────────────────────────────
+BASE_DIR   = Path(__file__).resolve().parent.parent
+DB_PATH    = BASE_DIR / 'rpg-shopkeeper.db'
 SCHEMA_SQL = BASE_DIR / 'database' / 'schema.sql'
-SEED_SQL = BASE_DIR / 'database' / 'seed_data.sql'
+SEED_SQL   = BASE_DIR / 'database' / 'seed_data.sql'
 
 
 def reset_database():
@@ -24,30 +27,72 @@ def run_sql_script(path: Path):
         print(f'📄 Executed: {path.name}')
 
 
+def step2_add_normalised_column(db_path: Path):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Add column if it doesn't exist yet
+    try:
+        cursor.execute("""
+            ALTER TABLE items
+            ADD COLUMN normalised_item_name TEXT;
+        """)
+    except sqlite3.OperationalError as e:
+        if "duplicate column name" in str(e).lower():
+            pass
+        else:
+            raise
+
+    # Build a translator to strip ASCII punctuation
+    translator = str.maketrans('', '', string.punctuation)
+
+    # Fetch, normalise and update each row
+    cursor.execute("SELECT item_id, item_name FROM items;")
+    for item_id, item_name in cursor.fetchall():
+        clean_name = item_name.translate(translator)
+        cursor.execute("""
+            UPDATE items
+            SET normalised_item_name = ?
+            WHERE item_id = ?;
+        """, (clean_name, item_id))
+
+    conn.commit()
+    conn.close()
+    print('✅ normalised_item_name populated for all items!')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Set up RPG Shopkeeper DB')
-    parser.add_argument('--reset', action='store_true', help=
-        'Delete and recreate database')
-    parser.add_argument('--no-srd', action='store_true', help=
-        'Skip SRD item loading')
-    parser.add_argument('--no-seed', action='store_true', help=
-        'Skip core seed data')
-    parser.add_argument('--only-srd', action='store_true', help=
-        'Only run SRD item loader')
+    parser.add_argument('--reset',     action='store_true', help='Delete and recreate database')
+    parser.add_argument('--no-srd',    action='store_true', help='Skip SRD item loading')
+    parser.add_argument('--no-seed',   action='store_true', help='Skip core seed data')
+    parser.add_argument('--only-srd',  action='store_true', help='Only run SRD item loader')
     args = parser.parse_args()
+
     if args.only_srd:
         load_srd_items()
+        # and then normalise those new SRD items too
+        step2_add_normalised_column(DB_PATH)
         return
+
     if args.reset:
         reset_database()
+
     print('📦 Setting up schema...')
     run_sql_script(SCHEMA_SQL)
+
     if not args.no_srd:
         print('🧙 Loading SRD items...')
         load_srd_items()
+
     if not args.no_seed:
         print('🌱 Seeding user/shop/party data...')
         run_sql_script(SEED_SQL)
+
+    # — now normalise every item_name we’ve just inserted —
+    print('🔡 Populating normalised_item_name...')
+    step2_add_normalised_column(DB_PATH)
+
     print('✅ Setup complete.')
 
 
