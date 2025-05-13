@@ -177,6 +177,33 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting _paginate')
         return items[start:end], page, total_pages
 
+    def _add_navigation_lines(
+            self,
+            lines: list[str],
+            page: int,
+            total_pages: int,
+            *,
+            include_buy_prompt: bool = False
+    ) -> None:
+        """
+        Appends the standard paging hints (and, optionally, the “buy by id”
+        prompt) to *lines*.
+
+        ─ page / total_pages are the same values you already have.
+        ─ include_buy_prompt=True adds the “Give the item _id_ to buy!” line.
+        """
+        # spacer only when at least one nav message will appear
+        if page < total_pages or page > 1:
+            lines.append('')
+
+        if page < total_pages:
+            lines.append('Say _next_ to see more.')
+        if page > 1:
+            lines.append('Say _previous_ to go back.')
+
+        if include_buy_prompt:
+            lines.append('Give the item _id_ to buy!')
+
     def _show_items(self, player_input, field, emoji, label):
         self.debug('→ Entering _show_items')
         category_value = player_input.get(field.replace('_category', ''))
@@ -205,10 +232,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
             lines.append(f' • {name} — {price} gold')
-        if page < total_pages:
-            lines.append('\nSay _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
+        self._add_navigation_lines(lines, page, total_pages)
         self.debug('← Exiting _show_items')
         return '\n'.join(lines)
 
@@ -243,13 +267,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
             lines.append(f'id: *{item_id}* | {name} | {price} gold')
-        if page < total_pages or page > 1:
-            lines.append('')
-        if page < total_pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
-        lines.append('Give the item _id_ to buy!')
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_weapon_category')
         return '\n'.join(lines)
 
@@ -279,11 +297,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             price = item.get('base_price', '?')
             lines.append(f'id: *{item_id}* | {name} | {price} gold')
         lines.append(' ')
-        if page < total_pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
-        lines.append('Give the item _id_ to buy!')
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_armour_category')
         return '\n'.join(lines)
 
@@ -312,11 +326,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             price = item.get('base_price', '?')
             lines.append(f'id: *{item_id}* | {name} | {price} gold')
         lines.append(' ')
-        if page < total_pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
-        lines.append('Give the item _id_ to buy!')
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_gear_category')
         return '\n'.join(lines)
 
@@ -345,11 +355,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             price = item.get('base_price', '?')
             lines.append(f'id: *{item_id}* | {name} | {price} gold')
         lines.append(' ')
-        if page < total_pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
-        lines.append('Give the item _id_ to buy!')
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_tool_category')
         return '\n'.join(lines)
 
@@ -373,13 +379,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
             lines.append(f'id: *{item_id}* | {name} | {price} gold')
-        if page < total_pages or page > 1:
-            lines.append('')
-        if page < total_pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
-        lines.append('Give the item _id_ to buy!')
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_mount_category')
         return '\n'.join(lines)
 
@@ -483,10 +483,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             lines.append(' ')
             lines.extend(rows)
             lines.append(' ')
-        if page < total_pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
+        self._add_navigation_lines(lines, page, total_pages)
         self.debug('← Exiting shopkeeper_show_ledger')
         return '\n'.join(lines).rstrip()
 
@@ -727,28 +724,30 @@ class BaseShopkeeper(HandlerDebugMixin):
         page = max(int(player_input.get('page', 1)), 1)
         if not cat_range:
             return '⚠️ I didn’t catch which weapon group you meant.'
+
         rows = get_items_by_weapon_range(cat_range, page, page_size=5)
         if not rows:
             return (
                 f'Hmm… looks like we don’t have any **{cat_range.title()}** weapons in stock right now.'
-                )
-        total = get_items_by_weapon_range(cat_range, 1, 9999)
-        pages = max(1, (len(total) + 4) // 5)
-        lines = [f'⚔️ *{cat_range.title()} Weapons*  _(Pg {page} of {pages})_',
-            ' ']
+            )
+
+        total_rows = get_items_by_weapon_range(cat_range, 1, 9999)
+        total_pages = max(1, (len(total_rows) + 4) // 5)
+
+        lines = [
+            f'⚔️ *{cat_range.title()} Weapons*  _(Pg {page} of {total_pages})_'
+        ]
         for r in map(dict, rows):
             item_id = r.get('item_id', '?')
             name = r.get('item_name', 'Unknown Item')
             price = r.get('base_price', '?')
             lines.append(f'id: *{item_id}* | {name} | {price} gold')
-        lines.append(' ')
-        if page < pages:
-            lines.append('Say _next_ to see more.')
-        if page > 1:
-            lines.append('Say _previous_ to go back.')
-        lines.append('Give the item _id_ to buy!')
+
+        # add the standard navigation + buy-prompt lines
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
+
         self.debug('← Exiting shopkeeper_show_items_by_weapon_range')
-        return join_lines(*lines)
+        return '\n'.join(lines)
 
     def shopkeeper_sell_offer_prompt(self, item: dict, offer_price: int,
         gold_before: int) ->str:
