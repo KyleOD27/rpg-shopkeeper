@@ -13,6 +13,13 @@ def get_item_by_name(item_name):
     """
     return query_db(sql, (item_name,), one=True)
 
+def get_item_by_normalised_name(item_name):
+    sql = """
+    SELECT * FROM items
+    WHERE LOWER(normalised_item_name) = LOWER(?)
+    """
+    return query_db(sql, (item_name,), one=True)
+
 
 def get_item_by_id(item_id):
     sql = """

@@ -202,6 +202,7 @@ def find_item_in_input(player_input: str, convo=None):
         except Exception:
             continue
     digit = next((w for w in words if w.isdigit()), None)
+
     if digit:
         matches = [i for i in items if str(i.get('item_id')) == digit]
         if matches:
@@ -211,6 +212,23 @@ def find_item_in_input(player_input: str, convo=None):
         ) + get_gear_categories() + get_armour_categories(
         ) + get_tool_categories()
     cat_map = {normalize_input(c): c for c in all_cats}
+
+    name_map = {normalize_input(i['normalised_item_name']): i for i in items}
+    for norm, itm in name_map.items():
+        if norm in norm_raw:
+            logger.debug(f"[ITEM MATCH] normalised full name: {itm['normalised_item_name']}")
+            return [itm], None
+    matches = []
+
+    for w in words:
+        close = get_close_matches(normalize_input(w), name_map.keys(), n=3,
+            cutoff=0.55)
+        for nm in close:
+            itm = name_map[nm]
+            if itm not in matches:
+                matches.append(itm)
+                logger.debug(f"[ITEM MATCH] fuzzy: {itm['item_name']}")
+
     for norm, orig in cat_map.items():
         if norm in norm_raw:
             logger.debug(f'[ITEM MATCH] category full: {orig}')
@@ -221,20 +239,7 @@ def find_item_in_input(player_input: str, convo=None):
         if close:
             logger.debug(f'[ITEM MATCH] category fuzzy: {cat_map[close[0]]}')
             return None, cat_map[close[0]]
-    name_map = {normalize_input(i['item_name']): i for i in items}
-    for norm, itm in name_map.items():
-        if norm in norm_raw:
-            logger.debug(f"[ITEM MATCH] full name: {itm['item_name']}")
-            return [itm], None
-    matches = []
-    for w in words:
-        close = get_close_matches(normalize_input(w), name_map.keys(), n=3,
-            cutoff=0.55)
-        for nm in close:
-            itm = name_map[nm]
-            if itm not in matches:
-                matches.append(itm)
-                logger.debug(f"[ITEM MATCH] fuzzy: {itm['item_name']}")
+
     if matches:
         return matches, None
     if convo and convo.get_pending_item():
