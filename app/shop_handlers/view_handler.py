@@ -16,53 +16,91 @@ class ViewHandler(HandlerDebugMixin):
         self.debug('← Exiting __init__')
 
 
-    def process_view_items_flow(self, player_input):
+    def process_view_items_flow(self, player_input: dict):
+        """
+        Decides which list (or sub-list) to show.
+
+        Rules
+        ─────
+        • Top-level “buy gear/armour/weapons/tools”  → VIEWING_CATEGORIES
+        • Named sub-category (“standard gear”, …)    → VIEWING_ITEMS
+        """
         self.debug('→ Entering process_view_items_flow')
-        intent = self.convo.player_intent
+
+        intent   = self.convo.player_intent
         raw_text = player_input.get('text', '')
-        section = self.convo.metadata.get('current_section')
-        repeated_section = (section == 'armor' and intent == PlayerIntent.
-            VIEW_ARMOUR_CATEGORY or section == 'weapon' and intent ==
-            PlayerIntent.VIEW_WEAPON_CATEGORY or section == 'gear' and 
-            intent == PlayerIntent.VIEW_GEAR_CATEGORY or section == 'tool' and
-            intent == PlayerIntent.VIEW_TOOL_CATEGORY)
+        section  = self.convo.metadata.get('current_section')
+
+        # ---------------------------------------------------------------
+        # 1.  If the user is *already* in the same section, drill deeper
+        # ---------------------------------------------------------------
+        repeated_section = (
+            section == 'armor'  and intent == PlayerIntent.VIEW_ARMOUR_CATEGORY  or
+            section == 'weapon' and intent == PlayerIntent.VIEW_WEAPON_CATEGORY or
+            section == 'gear'   and intent == PlayerIntent.VIEW_GEAR_CATEGORY   or
+            section == 'tool'   and intent == PlayerIntent.VIEW_TOOL_CATEGORY
+        )
         if repeated_section:
             return self._handle_subcategory_selection(section, raw_text)
-        self.convo.metadata['current_page'] = 1
-        ...
-        main_categories = {PlayerIntent.VIEW_ARMOUR_CATEGORY: ('armor',
-            self.agent.get_armour_categories, self.agent.
-            shopkeeper_list_armour_categories), PlayerIntent.
-            VIEW_WEAPON_CATEGORY: ('weapon', self.agent.
-            get_weapon_categories, self.agent.
-            shopkeeper_list_weapon_categories), PlayerIntent.
-            VIEW_GEAR_CATEGORY: ('gear', self.agent.get_gear_categories,
-            self.agent.shopkeeper_list_gear_categories), PlayerIntent.
-            VIEW_TOOL_CATEGORY: ('tool', self.agent.get_tool_categories,
-            self.agent.shopkeeper_list_tool_categories), PlayerIntent.
-            VIEW_MOUNT_CATEGORY: ('mount', None, self.agent.
-            shopkeeper_show_items_by_mount_category), PlayerIntent.
-            VIEW_EQUIPMENT_CATEGORY: ('equipment', None, self.agent.
-            shopkeeper_view_items_prompt)}
-        subcategory_intents = {PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
-            PlayerIntent.VIEW_WEAPON_SUBCATEGORY, PlayerIntent.
-            VIEW_GEAR_SUBCATEGORY, PlayerIntent.VIEW_TOOL_SUBCATEGORY}
+
+        # ---------------------------------------------------------------
+        # 2.  Main “category” intents  (show the grid)
+        # ---------------------------------------------------------------
+        main_categories = {
+            PlayerIntent.VIEW_ARMOUR_CATEGORY:  ('armor',  self.agent.get_armour_categories,
+                                                self.agent.shopkeeper_list_armour_categories),
+            PlayerIntent.VIEW_WEAPON_CATEGORY:  ('weapon', self.agent.get_weapon_categories,
+                                                self.agent.shopkeeper_list_weapon_categories),
+            PlayerIntent.VIEW_GEAR_CATEGORY:    ('gear',   self.agent.get_gear_categories,
+                                                self.agent.shopkeeper_list_gear_categories),
+            PlayerIntent.VIEW_TOOL_CATEGORY:    ('tool',   self.agent.get_tool_categories,
+                                                self.agent.shopkeeper_list_tool_categories),
+            PlayerIntent.VIEW_MOUNT_CATEGORY:   ('mount',  None,
+                                                self.agent.shopkeeper_show_items_by_mount_category),
+            PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ('equipment', None,
+                                                self.agent.shopkeeper_view_items_prompt),
+        }
         if intent in main_categories:
             section, get_func, view_func = main_categories[intent]
-            self._set_section(section)
+            self._set_section(section)                       # ← stores metadata
+            self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
+            self.convo.save_state()
             if get_func:
                 categories = get_func()
                 return view_func(categories)
-            else:
-                if intent == PlayerIntent.VIEW_EQUIPMENT_CATEGORY:
-                    return view_func()
-                return view_func(player_input)
-        if intent in subcategory_intents or intent == PlayerIntent.UNKNOWN:
-            current_section = self.convo.metadata.get('current_section')
-            if current_section:
-                return self._handle_subcategory_selection(current_section,
-                    raw_text)
-        self.convo.state = ConversationState.VIEWING_CATEGORIES
+            return view_func(player_input)                   # equipment / mount
+
+        # ---------------------------------------------------------------
+        # 3.  Sub-category intents  (show the item list)
+        #     → do NOT depend on metadata['current_section']
+        # ---------------------------------------------------------------
+        subcategory_intents = {
+            PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ('armor',  'armour_category',
+                                                   self.process_view_armour_subcategory),
+            PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ('weapon', 'category_range',
+                                                   self.process_view_weapon_subcategory),
+            PlayerIntent.VIEW_GEAR_SUBCATEGORY:   ('gear',   'gear_category',
+                                                   self.process_view_gear_subcategory),
+            PlayerIntent.VIEW_TOOL_SUBCATEGORY:   ('tool',   'tool_category',
+                                                   self.process_view_tool_subcategory),
+        }
+        if intent in subcategory_intents:
+            section, payload_key, handler = subcategory_intents[intent]
+
+            # Build the payload from the *user text* (e.g. "standard gear")
+            match = get_subcategory_match(section, raw_text)
+            if match:
+                self.convo.set_state(ConversationState.VIEWING_ITEMS)
+                self.convo.save_state()
+                return handler({payload_key: match, 'page': 1})
+
+            # Fallback to the old heuristic if no match is found
+            return self._handle_subcategory_selection(section, raw_text)
+
+        # ---------------------------------------------------------------
+        # 4.  Anything else → generic “What are you after?” prompt
+        # ---------------------------------------------------------------
+        self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
         self.convo.save_state()
         self.debug('← Exiting process_view_items_flow')
         return self.agent.shopkeeper_view_items_prompt()

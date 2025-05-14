@@ -7,56 +7,29 @@ from typing import Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 from app.conversation import PlayerIntent
-from app.models.items import get_all_items, get_all_equipment_categories, get_weapon_categories, get_gear_categories, get_armour_categories, get_tool_categories
+
+from app.models.items import (
+    get_all_items,
+    get_all_equipment_categories,
+    get_weapon_categories,
+    get_gear_categories,
+    get_armour_categories,
+    get_tool_categories)
+
+from app.keywords import (
+    INTENT_KEYWORDS,
+    STOP_WORDS,
+    SHOP_ACTION_WORDS,
+    INTENT_PREFIXES,
+    CONFIRMATION_WORDS,
+    CANCELLATION_WORDS,
+    GRATITUDE_KEYWORDS,
+    GOODBYE_KEYWORDS,
+    INTENT_CONF_THRESHOLD,
+)
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
-INTENT_KEYWORDS = {PlayerIntent.VIEW_ITEMS: ['items', 'inventory', 'stock',
-    'what do you have', 'show me', 'what do you sell', 'what do you buy',
-    'browse'], PlayerIntent.VIEW_ARMOUR_CATEGORY: ['armor', 'armour'],
-    PlayerIntent.VIEW_WEAPON_CATEGORY: ['weapon', 'weapons'], PlayerIntent.
-    VIEW_GEAR_CATEGORY: ['gear', 'adventuring gear', 'supplies', 'packs'],
-    PlayerIntent.VIEW_TOOL_CATEGORY: ['tool', 'tools'], PlayerIntent.
-    VIEW_EQUIPMENT_CATEGORY: ['items', 'inventory', 'item', 'shop'],
-    PlayerIntent.VIEW_MOUNT_CATEGORY: ['mounts and vehicles', 'mounts',
-    'mount', 'vehicle', 'vehicles'], PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
-    ['light', 'medium', 'heavy'], PlayerIntent.VIEW_WEAPON_SUBCATEGORY: [
-    'martial melee', 'martial ranged', 'simple melee', 'simple ranged'],
-    PlayerIntent.VIEW_GEAR_SUBCATEGORY: ['ammunition', 'arcane foci',
-    'druidic foci', 'equipment packs', 'holy symbols', 'kits',
-    'standard gear', 'standard'], PlayerIntent.VIEW_TOOL_SUBCATEGORY: [
-    "artisan's tools", 'artisans tools', 'gaming sets',
-    'musical instrument', 'other tools'], PlayerIntent.BUY_ITEM: ['buy',
-    'purchase', 'get', 'acquire', 'grab', 'want'], PlayerIntent.SELL_ITEM:
-    ['sell', 'offload', 'trade in'], PlayerIntent.DEPOSIT_GOLD: ['deposit',
-    'store gold', 'stash'], PlayerIntent.WITHDRAW_GOLD: ['withdraw',
-    'take gold', 'collect'], PlayerIntent.CHECK_BALANCE: ['balance',
-    'gold amount', 'how much gold', 'check funds'], PlayerIntent.
-    VIEW_LEDGER: ['ledger', 'transactions', 'history'], PlayerIntent.HAGGLE:
-    ['haggle', 'negotiate', 'bargain', 'deal', 'cheaper', 'discount'],
-    PlayerIntent.SHOW_GRATITUDE: ['thanks', 'thankyou', 'grateful', 'ty'],
-    PlayerIntent.GREETING: ['hello', 'hi', 'greetings', 'hallo', 'hey',
-    'what up'], PlayerIntent.NEXT: ['next', 'more', 'show more', 'continue',
-    'keep going'], PlayerIntent.PREVIOUS: ['previous', 'back', 'go back',
-    'last page'], PlayerIntent.INSPECT_ITEM: ['inspect', 'details',
-    'tell me about', 'what does it do', 'info', 'information', 'what is',
-    'explain', 'describe', 'how much', 'see more'], PlayerIntent.
-    VIEW_PROFILE: ['profile', 'see profile', 'my profile', 'player info',
-    'party info', 'party', 'party profile', 'who am i', 'status', 'stats',
-    'character', 'about me']}
-STOP_WORDS = {'a', 'an', 'the', 'and', 'or', 'but', 'of', 'for', 'to', 'in',
-    'on', 'at', 'please', 'good', 'sir', 'maam', 'hey', 'hi', 'how', 'much',
-    'might', 'be', 'is', 'are', 'was', 'were', 'i', 'you', 'do', 'does',
-    'something', 'anything', 'stuff'}
-SHOP_ACTION_WORDS: set[str] = {'buy', 'sell', 'browse', 'list', 'view',
-    'show', 'inspect', 'deposit', 'withdraw', 'balance'}
-INTENT_PREFIXES = ['want to buy', 'want to purchase', 'can i buy',
-    'how much is', 'how much would', 'tell me about', 'what does',
-    'what is', 'show me']
-CONFIRMATION_WORDS = ['yes', 'yeah', 'yep', 'sure', 'ok', 'okay', 'aye']
-CANCELLATION_WORDS = ['no', 'nah', 'cancel', 'stop', 'never', 'forget']
-GRATITUDE_KEYWORDS = ['thanks', 'thank you', 'ty', 'cheers']
-GOODBYE_KEYWORDS = ['bye', 'farewell', 'later', 'see you']
-INTENT_CONF_THRESHOLD = 0.1
 
 
 def normalize_input(text: str, convo=None) ->str:
@@ -346,7 +319,31 @@ def interpret_input(player_input: str, convo=None):
                 meta['category_range'] = sub.lower()
             return {'intent': PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
                 'metadata': meta}
+
+        if intent_r == PlayerIntent.VIEW_GEAR_SUBCATEGORY:
+            sub = get_subcategory_match('gear', player_input)
+            meta = {}
+            if sub:
+                meta['gear_category'] = sub.lower()
+            return {'intent': intent_r, 'metadata': meta}
+
+        if intent_r == PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
+            sub = get_subcategory_match('armor', player_input)
+            meta = {}
+            if sub:
+                meta['armour_category'] = sub.lower()
+            return {'intent': intent_r, 'metadata': meta}
+
+        if intent_r == PlayerIntent.VIEW_TOOL_SUBCATEGORY:
+            sub = get_subcategory_match('tool', player_input)
+            meta = {}
+            if sub:
+                meta['tool_category'] = sub.lower()
+            return {'intent': intent_r, 'metadata': meta}
+
         return {'intent': intent_r, 'metadata': {}}
+
+
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
         intent, items = detect_buy_intent(player_input, convo)
         meta = {}
