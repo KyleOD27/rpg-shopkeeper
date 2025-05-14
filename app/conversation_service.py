@@ -361,6 +361,8 @@ class ConversationService(HandlerDebugMixin):
             return self.generic_handler.handle_view_ledger
         if intent == PlayerIntent.VIEW_PROFILE:
             return self.generic_handler.handle_view_profile
+        if intent == PlayerIntent.HAGGLE:
+            return self.buy_handler.handle_haggle  # ← NEW
 
         self.debug('← Exiting _route_intent')
         return self.generic_handler.handle_fallback

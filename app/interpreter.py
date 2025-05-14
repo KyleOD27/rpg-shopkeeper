@@ -148,73 +148,86 @@ def get_subcategory_match(section: str, player_input: str):
 
 def find_item_in_input(player_input: str, convo=None):
     """
-    1) Strip polite prefixes from a temp copy
-    2) Numeric ID
-    3) Category name
-    4) Full item-name
-    5) Fuzzy by token
-    6) Fallback to convo.pending_item
+    Return (matches, detected_category)
+
+    Match order
+    ───────────
+      1. Numeric ID
+      2. Category name
+      3. Exact full-name substring        (unchanged, but direction flipped)
+      4. Token-subset relaxed match       (NEW: handles plurals & punctuation)
+      5. Fuzzy by token                   (unchanged)
+      6. Fallback to convo.pending_item
     """
+    # ── 0. Pre-clean ──────────────────────────────────────────────────────
     raw = preprocess(player_input)
-    for p in ('could you', 'would you', 'can you', 'i want to',
-        "i'd like to", 'please', 'good sir', 'thank you', 'thanks',
-        'would it cost', 'what does it do', "i'm looking to"):
+    for p in (
+        'could you', 'would you', 'can you', 'i want to', "i'd like to",
+        'please', 'good sir', 'thank you', 'thanks', 'would it cost',
+        'what does it do', "i'm looking to"
+    ):
         raw = raw.replace(p, '')
     raw = raw.strip()
-    norm_raw = normalize_input(raw)
-    if norm_raw in SHOP_ACTION_WORDS or len(norm_raw
-        ) < 4 and not norm_raw.isdigit():
+
+    norm_raw = normalize_input(raw).replace(',', '')          # strip commas
+    if norm_raw in SHOP_ACTION_WORDS or (len(norm_raw) < 4 and not norm_raw.isdigit()):
         logger.debug('[ITEM MATCH] skipped: stop-word or too short')
         return None, None
-    words = raw.split()
-    items = []
-    for rec in get_all_items():
-        try:
-            obj = json.loads(rec) if isinstance(rec, str) else rec
-            items.append(dict(obj))
-        except Exception:
-            continue
-    digit = next((w for w in words if w.isdigit()), None)
 
+    words   = raw.split()
+    items   = [dict(json.loads(r) if isinstance(r, str) else r) for r in get_all_items()]
+
+    # ── 1. Numeric ID ────────────────────────────────────────────────────
+    digit = next((w for w in words if w.isdigit()), None)
     if digit:
         matches = [i for i in items if str(i.get('item_id')) == digit]
         if matches:
             logger.debug(f'[ITEM MATCH] by ID {digit}: {matches}')
             return matches, None
-    all_cats = get_all_equipment_categories() + get_weapon_categories(
-        ) + get_gear_categories() + get_armour_categories(
-        ) + get_tool_categories()
+
+    # ── 2. Category match (unchanged) ────────────────────────────────────
+    all_cats = (
+        get_all_equipment_categories()
+        + get_weapon_categories()
+        + get_gear_categories()
+        + get_armour_categories()
+        + get_tool_categories()
+    )
     cat_map = {normalize_input(c): c for c in all_cats}
-
-    name_map = {normalize_input(i['normalised_item_name']): i for i in items}
-    for norm, itm in name_map.items():
+    for norm, orig in cat_map.items():
         if norm in norm_raw:
-            logger.debug(f"[ITEM MATCH] normalised full name: {itm['normalised_item_name']}")
-            return [itm], None
-    matches = []
+            logger.debug(f'[ITEM MATCH] category full: {orig}')
+            return None, orig
 
+    # ── 3. Exact substring but user ⊂ item  (direction flipped) ──────────
+    name_map = {normalize_input(i['normalised_item_name']).replace(',', ''): i for i in items}
+    for norm, itm in name_map.items():
+        if norm_raw in norm:
+            logger.debug(f"[ITEM MATCH] exact-substring: {itm['normalised_item_name']}")
+            return [itm], None
+
+    # ── 4. Token-subset relaxed match (handles plurals & punctuation) ────
+    raw_tokens = {w.rstrip('s') for w in norm_raw.split()}     # strip plural s
+    for norm, itm in name_map.items():
+        item_tokens = {w.rstrip('s') for w in norm.split()}
+        if raw_tokens.issubset(item_tokens):
+            logger.debug(f"[ITEM MATCH] token-subset: {itm['item_name']}")
+            return [itm], None
+
+    # ── 5. Fuzzy by token (unchanged) ────────────────────────────────────
+    matches = []
     for w in words:
-        close = get_close_matches(normalize_input(w), name_map.keys(), n=3,
-            cutoff=0.55)
+        close = get_close_matches(normalize_input(w), name_map.keys(), n=3, cutoff=0.55)
         for nm in close:
             itm = name_map[nm]
             if itm not in matches:
                 matches.append(itm)
                 logger.debug(f"[ITEM MATCH] fuzzy: {itm['item_name']}")
 
-    for norm, orig in cat_map.items():
-        if norm in norm_raw:
-            logger.debug(f'[ITEM MATCH] category full: {orig}')
-            return None, orig
-    for w in words:
-        close = get_close_matches(normalize_input(w), cat_map.keys(), n=1,
-            cutoff=0.7)
-        if close:
-            logger.debug(f'[ITEM MATCH] category fuzzy: {cat_map[close[0]]}')
-            return None, cat_map[close[0]]
-
     if matches:
         return matches, None
+
+    # ── 6. Fallback to convo.pending_item ────────────────────────────────
     if convo and convo.get_pending_item():
         pend = convo.get_pending_item()
         if isinstance(pend, dict):
@@ -223,6 +236,7 @@ def find_item_in_input(player_input: str, convo=None):
             return pend, None
         if isinstance(pend, str):
             return [{'item_name': pend}], None
+
     logger.debug('[ITEM MATCH] no matches')
     return None, None
 
