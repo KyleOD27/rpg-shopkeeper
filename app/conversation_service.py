@@ -129,7 +129,7 @@ class ConversationService(HandlerDebugMixin):
             return self.agent.shopkeeper_list_matching_items(matches)
 
         # ── 3. a recognised sub-category (e.g. “standard gear”) ───────────────
-        if intent == PlayerIntent.BUY_ITEM and detected_category:
+        if intent in (PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM) and detected_category:
             self.convo.set_state(ConversationState.VIEWING_ITEMS)  # ★ FIX ★
             self.convo.save_state()
             return self.agent.shopkeeper_show_items_by_category({
@@ -173,7 +173,7 @@ class ConversationService(HandlerDebugMixin):
 
         if text.isdigit() and self.convo.state in {
                             ConversationState.AWAITING_ITEM_SELECTION,
-                            ConversationState.VIEWING_ITEMS,  # ← NEW
+                            ConversationState.VIEWING_ITEMS,
                 }:
 
             pending = self.convo.pending_action

@@ -3,10 +3,10 @@ import os
 import json
 import logging
 from difflib import get_close_matches
-from typing import Optional
+from typing import Optional, Dict, Tuple, Any
 from dotenv import load_dotenv
 from openai import OpenAI
-from app.conversation import PlayerIntent
+from app.conversation import PlayerIntent, Conversation, ConversationState
 
 from app.models.items import (
     get_all_items,
@@ -61,14 +61,14 @@ def preprocess(player_input: str) ->str:
 PREFERRED_ORDER: list[PlayerIntent] = [PlayerIntent.DEPOSIT_GOLD,
     PlayerIntent.WITHDRAW_GOLD, PlayerIntent.CHECK_BALANCE, PlayerIntent.
     VIEW_ACCOUNT, PlayerIntent.VIEW_PROFILE, PlayerIntent.VIEW_LEDGER,
-    PlayerIntent.BUY_ITEM, PlayerIntent.SELL_ITEM, PlayerIntent.
-    INSPECT_ITEM, PlayerIntent.VIEW_WEAPON_SUBCATEGORY, PlayerIntent.
-    VIEW_ARMOUR_SUBCATEGORY, PlayerIntent.VIEW_GEAR_SUBCATEGORY,
-    PlayerIntent.VIEW_TOOL_SUBCATEGORY, PlayerIntent.VIEW_ITEMS,
+    PlayerIntent.INSPECT_ITEM, PlayerIntent.VIEW_ITEMS,
+    PlayerIntent.VIEW_WEAPON_SUBCATEGORY, PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
+    PlayerIntent.VIEW_GEAR_SUBCATEGORY,  PlayerIntent.VIEW_TOOL_SUBCATEGORY,
     PlayerIntent.VIEW_EQUIPMENT_CATEGORY, PlayerIntent.VIEW_WEAPON_CATEGORY,
     PlayerIntent.VIEW_ARMOUR_CATEGORY, PlayerIntent.VIEW_GEAR_CATEGORY,
     PlayerIntent.VIEW_TOOL_CATEGORY, PlayerIntent.SHOW_GRATITUDE,
-    PlayerIntent.GREETING, PlayerIntent.NEXT, PlayerIntent.PREVIOUS]
+    PlayerIntent.GREETING, PlayerIntent.NEXT, PlayerIntent.PREVIOUS,
+    PlayerIntent.BUY_ITEM, PlayerIntent.SELL_ITEM]
 
 
 def _pref_index(intent: PlayerIntent) ->int:
@@ -146,6 +146,25 @@ def get_subcategory_match(section: str, player_input: str):
     return norm_map.get(close[0]) if close else None
 
 
+# top of item_match.py  (or a nearby utils module)
+INTENT_LEADERS = {
+    *INTENT_KEYWORDS[PlayerIntent.BUY_ITEM],
+    *INTENT_KEYWORDS[PlayerIntent.SELL_ITEM],
+    *INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM],
+}
+
+def strip_leading_intent(text: str) -> str:
+    """
+    Remove ONE leading intent keyword + punctuation/spaces.
+    'buy crossbow, light' -> 'crossbow, light'
+    'inspect  wand'       -> 'wand'
+    """
+    t = text.lstrip()
+    for kw in INTENT_LEADERS:
+        if t.lower().startswith(kw):
+            return t[len(kw):].lstrip(" ,;:")
+    return text
+
 def find_item_in_input(player_input: str, convo=None):
     """
     Return (matches, detected_category)
@@ -169,13 +188,22 @@ def find_item_in_input(player_input: str, convo=None):
         raw = raw.replace(p, '')
     raw = raw.strip()
 
-    norm_raw = normalize_input(raw).replace(',', '')          # strip commas
-    if norm_raw in SHOP_ACTION_WORDS or (len(norm_raw) < 4 and not norm_raw.isdigit()):
+    # --- NEW: pre-cleaned variant with intent verb removed -------------
+    search_raw = strip_leading_intent(raw)
+    norm_raw = normalize_input(raw).replace(',', '')  # original
+    norm_search = normalize_input(search_raw).replace(',', '')  # NEW
+    # -------------------------------------------------------------------
+
+    if norm_raw in SHOP_ACTION_WORDS or (
+            len(norm_raw) < 4 and not norm_raw.isdigit()
+    ):
         logger.debug('[ITEM MATCH] skipped: stop-word or too short')
         return None, None
 
-    words   = raw.split()
-    items   = [dict(json.loads(r) if isinstance(r, str) else r) for r in get_all_items()]
+    words = raw.split()
+    words_search = search_raw.split()  # NEW
+    items = [dict(json.loads(r) if isinstance(r, str) else r)
+             for r in get_all_items()]
 
     # ── 1. Numeric ID ────────────────────────────────────────────────────
     digit = next((w for w in words if w.isdigit()), None)
@@ -185,7 +213,22 @@ def find_item_in_input(player_input: str, convo=None):
             logger.debug(f'[ITEM MATCH] by ID {digit}: {matches}')
             return matches, None
 
-    # ── 2. Category match (unchanged) ────────────────────────────────────
+    # ── 2. Exact substring but user ⊂ item  (direction flipped) ──────────
+    name_map = {normalize_input(i['normalised_item_name']).replace(',', ''): i for i in items}
+    for norm, itm in name_map.items():
+        if norm_raw in norm:
+            logger.debug(f"[ITEM MATCH] exact-substring: {itm['normalised_item_name']}")
+            return [itm], None
+
+    # 3. TOKEN-SUBSET (use search tokens)
+    search_tokens = {w.rstrip('s') for w in norm_search.split()}
+    for norm, itm in name_map.items():
+        item_tokens = {w.rstrip('s') for w in norm.split()}
+        if search_tokens and search_tokens.issubset(item_tokens):
+            logger.debug(f"[ITEM MATCH] token-subset: {itm['item_name']}")
+            return [itm], None
+
+    # ── 4. Category match (unchanged) ────────────────────────────────────
     all_cats = (
         get_all_equipment_categories()
         + get_weapon_categories()
@@ -199,30 +242,19 @@ def find_item_in_input(player_input: str, convo=None):
             logger.debug(f'[ITEM MATCH] category full: {orig}')
             return None, orig
 
-    # ── 3. Exact substring but user ⊂ item  (direction flipped) ──────────
-    name_map = {normalize_input(i['normalised_item_name']).replace(',', ''): i for i in items}
-    for norm, itm in name_map.items():
-        if norm_raw in norm:
-            logger.debug(f"[ITEM MATCH] exact-substring: {itm['normalised_item_name']}")
-            return [itm], None
 
-    # ── 4. Token-subset relaxed match (handles plurals & punctuation) ────
-    raw_tokens = {w.rstrip('s') for w in norm_raw.split()}     # strip plural s
-    for norm, itm in name_map.items():
-        item_tokens = {w.rstrip('s') for w in norm.split()}
-        if raw_tokens.issubset(item_tokens):
-            logger.debug(f"[ITEM MATCH] token-subset: {itm['item_name']}")
-            return [itm], None
 
-    # ── 5. Fuzzy by token (unchanged) ────────────────────────────────────
+    # 5. FUZZY by token (use words_search)
     matches = []
-    for w in words:
+    for w in words_search:
         close = get_close_matches(normalize_input(w), name_map.keys(), n=3, cutoff=0.55)
         for nm in close:
             itm = name_map[nm]
             if itm not in matches:
                 matches.append(itm)
                 logger.debug(f"[ITEM MATCH] fuzzy: {itm['item_name']}")
+    if matches:
+        return matches, None
 
     if matches:
         return matches, None
@@ -247,6 +279,7 @@ def detect_buy_intent(player_input: str, convo=None):
         BUY_NEEDS_ITEM, None)
 
 
+
 def detect_sell_intent(player_input: str, convo=None):
     items, _ = find_item_in_input(player_input, convo)
     return (PlayerIntent.SELL_ITEM, items) if items else (PlayerIntent.
@@ -265,157 +298,197 @@ def detect_withdraw_intent(player_input: str, convo=None):
         .WITHDRAW_NEEDS_AMOUNT, None)
 
 
-from app.conversation import PlayerIntent, ConversationState
-import re
+# ────────────────────────────────────────────────────────────────────────────
+#  Tables for intent → (metadata-field, helper-args)
+# ────────────────────────────────────────────────────────────────────────────
+CATEGORY_INTENTS: Dict[PlayerIntent, str] = {
+    PlayerIntent.VIEW_ARMOUR_CATEGORY:   "equipment_category",
+    PlayerIntent.VIEW_WEAPON_CATEGORY:   "equipment_category",
+    PlayerIntent.VIEW_GEAR_CATEGORY:     "equipment_category",
+    PlayerIntent.VIEW_TOOL_CATEGORY:     "equipment_category",
+    PlayerIntent.VIEW_EQUIPMENT_CATEGORY:"equipment_category",
+}
 
+SUBCATEGORY_INTENTS: Dict[PlayerIntent, Tuple[str, str]] = {
+    PlayerIntent.VIEW_WEAPON_SUBCATEGORY: ("category_range",  "weapon"),
+    PlayerIntent.VIEW_GEAR_SUBCATEGORY:   ("gear_category",   "gear"),
+    PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ("armour_category", "armor"),
+    PlayerIntent.VIEW_TOOL_SUBCATEGORY:   ("tool_category",   "tool"),
+}
 
-def interpret_input(player_input: str, convo=None):
-    logger.debug(f'[INTERPRETER] raw input: {player_input!r}')
+# ────────────────────────────────────────────────────────────────────────────
+def interpret_input(player_input: str, convo: Conversation | None = None) -> Dict[str, Any]:
+    """
+    Returns {"intent": PlayerIntent, "metadata": dict}
+    """
     lowered = normalize_input(player_input)
-    from app.conversation import ConversationState
-    if convo and convo.state == ConversationState.AWAITING_CONFIRMATION:
-        m = re.search('\\b(\\d+)\\b', lowered)
-        if m:
-            items, _ = find_item_in_input(player_input, convo)
-            if items:
-                meta = {}
-                meta['item'] = items if len(items) > 1 else items[0][
-                    'item_name']
-                logger.debug(
-                    f'[INTERPRETER] confirm-flow numeric-inspect override → INSPECT_ITEM, items={items!r}'
-                    )
-                return {'intent': PlayerIntent.INSPECT_ITEM, 'metadata': meta}
-    if convo and convo.state == ConversationState.AWAITING_CONFIRMATION:
-        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.
-            INSPECT_ITEM]):
-            items, _ = find_item_in_input(player_input, convo)
-            if items:
-                meta = {}
-                meta['item'] = items if len(items) > 1 else items[0][
-                    'item_name']
-                logger.debug(
-                    f'[INTERPRETER] confirm-flow keyword-inspect override → INSPECT_ITEM, items={items!r}'
-                    )
-                return {'intent': PlayerIntent.INSPECT_ITEM, 'metadata': meta}
+    logger.debug("[INTERPRETER] raw=%r  lowered=%r", player_input, lowered)
+
+    # 0️⃣ STATE-BASED OVERRIDES ────────────────────────────────────────────
+    early = _confirmation_overrides(player_input, lowered, convo)
+    if early:
+        return early
+
+    # 1️⃣ >>> UNIVERSAL  item-first short-circuit  <<< ----------------------------
+    items, _ = find_item_in_input(player_input, convo)
+    if items:                                          # we found at least one item
+        # decide which intent matches the user’s verb
+        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+            intent = PlayerIntent.INSPECT_ITEM
+        elif any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
+            intent = PlayerIntent.SELL_ITEM
+        elif any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
+            intent = PlayerIntent.BUY_ITEM
+        else:
+            # no explicit verb – default to BUY_ITEM (or pick another default)
+            intent = PlayerIntent.BUY_ITEM
+
+        logger.debug("[INTERPRETER] concrete item wins → %s", intent)
+        return {"intent": intent, "metadata": {"item": items}}
+    # 1️⃣ <<< end item-first block <<< --------------------------------------------
+
+    # 2️⃣ KEYWORD RANKER ───────────────────────────────────────────────────
     intent_r, conf = rank_intent_kw(player_input)
-    logger.debug(f'[INTERPRETER] ranker -> {intent_r} (conf={conf:.2f})')
+    logger.debug("[INTERPRETER] ranker → %s (conf=%.2f)", intent_r, conf)
+
     if conf >= INTENT_CONF_THRESHOLD:
-        meta = {}
-        if intent_r == PlayerIntent.BUY_ITEM:
-            intent, items = detect_buy_intent(player_input, convo)
-            meta['item'] = items
-            return {'intent': intent, 'metadata': meta}
-        if intent_r == PlayerIntent.SELL_ITEM:
-            intent, items = detect_sell_intent(player_input, convo)
-            meta['item'] = items
-            return {'intent': intent, 'metadata': meta}
-        if intent_r in {PlayerIntent.VIEW_ITEMS, PlayerIntent.
-            VIEW_ARMOUR_CATEGORY, PlayerIntent.VIEW_WEAPON_CATEGORY,
-            PlayerIntent.VIEW_GEAR_CATEGORY, PlayerIntent.
-            VIEW_TOOL_CATEGORY, PlayerIntent.VIEW_EQUIPMENT_CATEGORY}:
-            field, val = get_category_match(player_input)
+        result = _handle_ranked_intent(intent_r, player_input, lowered, convo)
+        if result:
+            return result
+
+    # 2️⃣ LONG-TAIL FALLBACK PARSER ────────────────────────────────────────
+    return _fallback_parse(player_input, lowered, convo)
+
+
+# ────────────────────────────────────────────────────────────────────────────
+#                                HELPERS
+# ────────────────────────────────────────────────────────────────────────────
+def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation | None):
+    """Special cases while the convo waits for a yes/no but the user types something else."""
+    if not (convo and convo.state == ConversationState.AWAITING_CONFIRMATION):
+        return None
+
+    # number → inspect N
+    if m := re.search(r"\b(\d+)\b", lowered):
+        items, _ = find_item_in_input(player_input, convo)
+        if items:
+            meta = {"item": items if len(items) > 1 else items[0]["item_name"]}
+            logger.debug("[INTERPRETER] confirm numeric → INSPECT_ITEM")
+            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    # explicit "inspect"
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+        items, _ = find_item_in_input(player_input, convo)
+        if items:
+            meta = {"item": items if len(items) > 1 else items[0]["item_name"]}
+            logger.debug("[INTERPRETER] confirm keyword → INSPECT_ITEM")
+            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    return None
+
+
+def _handle_ranked_intent(
+    intent_r: PlayerIntent,
+    raw: str,
+    lowered: str,
+    convo: Conversation | None,
+):
+    """Fast-path for high-confidence matches from ranker."""
+    meta: Dict[str, Any] = {}
+
+    # BUY / SELL ───────────────────────────────────────────────────────────
+    if intent_r is PlayerIntent.BUY_ITEM:
+        # ① FIRST: try to identify a concrete item name
+        intent, items = detect_buy_intent(raw, convo)
+        meta["item"] = items
+
+        # ② If no item matched, fall back to category / sub-category parsing
+        if not items:
+            field, val = get_category_match(raw)
             if field:
                 meta[field] = val
-            return {'intent': intent_r, 'metadata': meta}
-        if intent_r == PlayerIntent.INSPECT_ITEM:
-            items, _ = find_item_in_input(player_input, convo)
-            if items:
-                meta['item'] = items if len(items) > 1 else items[0]
-            return {'intent': PlayerIntent.INSPECT_ITEM, 'metadata': meta}
-        if intent_r == PlayerIntent.VIEW_PROFILE:
-            return {'intent': PlayerIntent.VIEW_PROFILE, 'metadata': {}}
-        if intent_r == PlayerIntent.VIEW_ACCOUNT:
-            return {'intent': PlayerIntent.VIEW_ACCOUNT, 'metadata': {}}
-        if intent_r == PlayerIntent.VIEW_WEAPON_SUBCATEGORY:
-            sub = get_subcategory_match('weapon', player_input)
-            meta = {}
-            if sub:
-                meta['category_range'] = sub.lower()
-            return {'intent': PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
-                'metadata': meta}
+                meta["current_section"] = val.lower()
 
-        if intent_r == PlayerIntent.VIEW_GEAR_SUBCATEGORY:
-            sub = get_subcategory_match('gear', player_input)
-            meta = {}
-            if sub:
-                meta['gear_category'] = sub.lower()
-            return {'intent': intent_r, 'metadata': meta}
+        return {"intent": intent, "metadata": meta}
 
-        if intent_r == PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
-            sub = get_subcategory_match('armor', player_input)
-            meta = {}
-            if sub:
-                meta['armour_category'] = sub.lower()
-            return {'intent': intent_r, 'metadata': meta}
+    if intent_r is PlayerIntent.SELL_ITEM:
+        intent, items = detect_sell_intent(raw, convo)
+        meta["item"] = items
+        return {"intent": intent, "metadata": meta}
 
-        if intent_r == PlayerIntent.VIEW_TOOL_SUBCATEGORY:
-            sub = get_subcategory_match('tool', player_input)
-            meta = {}
-            if sub:
-                meta['tool_category'] = sub.lower()
-            return {'intent': intent_r, 'metadata': meta}
-
-        return {'intent': intent_r, 'metadata': {}}
-
-
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
-        intent, items = detect_buy_intent(player_input, convo)
-        meta = {}
+        # INSPECT ──────────────────────────────────────────────────────────────
+    if intent_r is PlayerIntent.INSPECT_ITEM:
+        items, _ = find_item_in_input(raw, convo)
         if items:
-            meta['item'] = items
-        logger.debug(
-            f'[INTERPRETER] fallback BUY override → {intent}, items={items!r}')
-        return {'intent': intent, 'metadata': meta}
-    field, val = get_category_match(player_input)
-    if field:
-        intent_name = f'VIEW_{field.upper()}'
-        intent = getattr(PlayerIntent, intent_name, PlayerIntent.VIEW_ITEMS)
-        return {'intent': intent, 'metadata': {field: val}}
+            meta["item"] = items if len(items) > 1 else items[0]
+        return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    # CATEGORY VIEW ────────────────────────────────────────────────────────
+    if intent_r in CATEGORY_INTENTS:
+        field = CATEGORY_INTENTS[intent_r]
+        meta[field] = get_category_match(raw)[1]
+        return {"intent": intent_r, "metadata": meta}
+
+    # SUB-CATEGORY VIEW ────────────────────────────────────────────────────
+    if intent_r in SUBCATEGORY_INTENTS:
+        field, group = SUBCATEGORY_INTENTS[intent_r]
+        sub = get_subcategory_match(group, raw)
+        if sub:
+            meta[field] = sub.lower()
+        return {"intent": intent_r, "metadata": meta}
+
+
+
+    # SIMPLE INTENTS WITH NO EXTRA DATA ────────────────────────────────────
+    if intent_r in {PlayerIntent.VIEW_PROFILE, PlayerIntent.VIEW_ACCOUNT}:
+        return {"intent": intent_r, "metadata": {}}
+
+    # Default: let fallback handle it (may still match CONFIRM/GREET etc.)
+    return None
+
+
+def _fallback_parse(player_input: str, lowered: str, convo: Conversation | None):
+    """Slower keyword checks for low-confidence inputs."""
     words = lowered.split()
-    if any(w in words for w in CONFIRMATION_WORDS):
-        return {'intent': PlayerIntent.CONFIRM, 'metadata': {}}
-    if any(w in words for w in CANCELLATION_WORDS):
-        return {'intent': PlayerIntent.CANCEL, 'metadata': {}}
-    if any(w in words for w in GRATITUDE_KEYWORDS):
-        return {'intent': PlayerIntent.SHOW_GRATITUDE, 'metadata': {}}
-    if any(w in words for w in GOODBYE_KEYWORDS):
-        return {'intent': PlayerIntent.GOODBYE, 'metadata': {}}
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
-        items, _ = find_item_in_input(player_input, convo)
-        meta = {}
-        if items:
-            meta['item'] = items if len(items) > 1 else items[0]['item_name']
-        return {'intent': PlayerIntent.INSPECT_ITEM, 'metadata': meta}
-    items, _ = find_item_in_input(player_input, convo)
-    if items:
-        return {'intent': PlayerIntent.BUY_ITEM, 'metadata': {'item': items}}
-    logger.debug('[INTERPRETER] → UNKNOWN')
-    return {'intent': PlayerIntent.UNKNOWN, 'metadata': {}}
+
+    # BUY intent by verb only
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
         intent, items = detect_buy_intent(player_input, convo)
-        meta = {'item': items} if items else {}
-        logger.debug(
-            f'[INTERPRETER] fallback BUY override → {intent}, items={items!r}')
-        return {'intent': intent, 'metadata': meta}
+        meta = {"item": items} if items else {}
+        return {"intent": intent, "metadata": meta}
+
+    # category (plain "weapon", "armor", …)
     field, val = get_category_match(player_input)
     if field:
-        intent = getattr(PlayerIntent, f'VIEW_{field.upper()}',
-            PlayerIntent.VIEW_ITEMS)
-        return {'intent': intent, 'metadata': {field: val}}
-    if any(w in lowered.split() for w in GRATITUDE_KEYWORDS):
-        return {'intent': PlayerIntent.SHOW_GRATITUDE, 'metadata': {}}
-    if any(w in lowered.split() for w in GOODBYE_KEYWORDS):
-        return {'intent': PlayerIntent.GOODBYE, 'metadata': {}}
+        view_intent = getattr(PlayerIntent, f"VIEW_{field.upper()}", PlayerIntent.VIEW_ITEMS)
+        return {"intent": view_intent, "metadata": {field: val}}
+
+    # generic keywords
+    if any(w in words for w in CONFIRMATION_WORDS):
+        return {"intent": PlayerIntent.CONFIRM, "metadata": {}}
+    if any(w in words for w in CANCELLATION_WORDS):
+        return {"intent": PlayerIntent.CANCEL, "metadata": {}}
+    if any(w in words for w in GRATITUDE_KEYWORDS):
+        return {"intent": PlayerIntent.SHOW_GRATITUDE, "metadata": {}}
+    if any(w in words for w in GOODBYE_KEYWORDS):
+        return {"intent": PlayerIntent.GOODBYE, "metadata": {}}
+
+    # inspect keyword
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
         items, _ = find_item_in_input(player_input, convo)
         if items:
-            meta = {'item': items if len(items) > 1 else items[0]['item_name']}
-            return {'intent': PlayerIntent.INSPECT_ITEM, 'metadata': meta}
+            meta = {"item": items if len(items) > 1 else items[0]["item_name"]}
+            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": meta}
+
+    # raw item mention → implicit buy
     items, _ = find_item_in_input(player_input, convo)
     if items:
-        return {'intent': PlayerIntent.BUY_ITEM, 'metadata': {'item': items}}
-    logger.debug('[INTERPRETER] → UNKNOWN')
-    return {'intent': PlayerIntent.UNKNOWN, 'metadata': {}}
+        return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
+
+    # nothing matched
+    logger.debug("[INTERPRETER] → UNKNOWN")
+    return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
 
 
 load_dotenv()
