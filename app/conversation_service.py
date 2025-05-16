@@ -241,6 +241,7 @@ class ConversationService(HandlerDebugMixin):
         # ---------- 1. intro screen ----------
         intro_intents = [
             PlayerIntent.GREETING,
+            PlayerIntent.SHOW_GRATITUDE,
             PlayerIntent.VIEW_ITEMS,
             PlayerIntent.VIEW_EQUIPMENT_CATEGORY,
             PlayerIntent.VIEW_WEAPON_CATEGORY,
@@ -269,6 +270,7 @@ class ConversationService(HandlerDebugMixin):
         # ---------- 2. awaiting-action screen ----------
         action_intents = [
             PlayerIntent.GREETING,
+            PlayerIntent.SHOW_GRATITUDE,
             PlayerIntent.VIEW_ITEMS,
             PlayerIntent.VIEW_EQUIPMENT_CATEGORY,
             PlayerIntent.VIEW_WEAPON_CATEGORY,
@@ -367,6 +369,8 @@ class ConversationService(HandlerDebugMixin):
             return self.generic_handler.handle_view_profile
         if intent == PlayerIntent.HAGGLE:
             return self.buy_handler.handle_haggle  # ← NEW
+        if intent == PlayerIntent.SHOW_GRATITUDE:
+            return self.generic_handler.handle_accept_thanks  # ← NEW
 
         self.debug('← Exiting _route_intent')
         return self.generic_handler.handle_fallback
