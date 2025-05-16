@@ -1,100 +1,129 @@
+# setup/setup_all.py – resilient seeder (v2)
+# -----------------------------------------------------------------------------
+# * Works both online (full SRD import) and offline (local fallback_items.sql).
+# * Guards against missing integrations.dnd5e dependency.
+# * Provides --no-srd flag that still inserts fallback items, so tests always
+#   have something to query.
+# * Leaves CLI flags and normalisation logic unchanged.
+# -----------------------------------------------------------------------------
+
+from __future__ import annotations
+
+import argparse
+import logging
 import sqlite3
 import string
-import argparse
 from pathlib import Path
 
-from integrations.dnd5e.srd_item_loader import main as load_srd_items
+# ─── Optional SRD loader ─────────────────────────────────────────────────────
+try:
+    from integrations.dnd5e.srd_item_loader import main as load_srd_items  # type: ignore
+except Exception as exc:  # pragma: no cover – network / missing dep / etc.
+    logging.warning("SRD loader unavailable: %s – will fall back to local seed", exc)
+
+    def load_srd_items() -> None:  # type: ignore
+        raise RuntimeError("SRD loader not available in this environment")
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
-BASE_DIR   = Path(__file__).resolve().parent.parent
-DB_PATH    = BASE_DIR / 'rpg-shopkeeper.db'
-SCHEMA_SQL = BASE_DIR / 'database' / 'schema.sql'
-SEED_SQL   = BASE_DIR / 'database' / 'seed_data.sql'
+BASE_DIR = Path(__file__).resolve().parent.parent
+DB_PATH = BASE_DIR / "rpg-shopkeeper.db"
+SCHEMA_SQL = BASE_DIR / "database" / "schema.sql"
+SEED_SQL = BASE_DIR / "database" / "seed_data.sql"
+FALLBACK_SQL = BASE_DIR / "database" / "fallback_items.sql"
 
 
-def reset_database():
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def reset_database() -> None:
     if DB_PATH.exists():
         DB_PATH.unlink()
-        print('🗑️ Old database removed.')
+        print("🗑️  Old database removed.")
     else:
-        print('⚠️ No existing DB found. Proceeding fresh.')
+        print("⚠️  No existing DB found. Proceeding fresh.")
 
 
-def run_sql_script(path: Path):
+def run_sql_script(path: Path) -> None:
     with sqlite3.connect(DB_PATH) as conn:
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             conn.executescript(f.read())
-        print(f'📄 Executed: {path.name}')
+        print(f"📄 Executed: {path.name}")
 
 
-def step2_add_normalised_column(db_path: Path):
-    conn = sqlite3.connect(db_path)
+def populate_normalised_names() -> None:
+    """Create/populate normalised_item_name column (ASCII, no punctuation)."""
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Add column if it doesn't exist yet
     try:
-        cursor.execute("""
-            ALTER TABLE items
-            ADD COLUMN normalised_item_name TEXT;
-        """)
+        cursor.execute("ALTER TABLE items ADD COLUMN normalised_item_name TEXT;")
     except sqlite3.OperationalError as e:
-        if "duplicate column name" in str(e).lower():
-            pass
-        else:
+        if "duplicate column name" not in str(e).lower():
             raise
 
-    # Build a translator to strip ASCII punctuation
-    translator = str.maketrans('', '', string.punctuation)
+    translator = str.maketrans("", "", string.punctuation)
 
-    # Fetch, normalise and update each row
     cursor.execute("SELECT item_id, item_name FROM items;")
     for item_id, item_name in cursor.fetchall():
         clean_name = item_name.translate(translator)
-        cursor.execute("""
-            UPDATE items
-            SET normalised_item_name = ?
-            WHERE item_id = ?;
-        """, (clean_name, item_id))
+        cursor.execute(
+            "UPDATE items SET normalised_item_name = ? WHERE item_id = ?;",
+            (clean_name, item_id),
+        )
 
     conn.commit()
     conn.close()
-    print('✅ normalised_item_name populated for all items!')
+    print("✅  normalised_item_name populated for all items!")
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Set up RPG Shopkeeper DB')
-    parser.add_argument('--reset',     action='store_true', help='Delete and recreate database')
-    parser.add_argument('--no-srd',    action='store_true', help='Skip SRD item loading')
-    parser.add_argument('--no-seed',   action='store_true', help='Skip core seed data')
-    parser.add_argument('--only-srd',  action='store_true', help='Only run SRD item loader')
+# ─── Seeding logic ───────────────────────────────────────────────────────────
+
+def _insert_items(no_srd_flag: bool) -> None:
+    """Insert rows into items either from SRD API or local fallback."""
+    if no_srd_flag:
+        print("⚠️  --no-srd flag passed – using local fallback items.")
+        run_sql_script(FALLBACK_SQL)
+        return
+
+    try:
+        print("🧙  Loading SRD items …")
+        load_srd_items()
+    except Exception as exc:  # network, missing dep, etc.
+        logging.warning("SRD load failed: %s – falling back to local seed", exc)
+        run_sql_script(FALLBACK_SQL)
+
+
+# ─── CLI Entry point ─────────────────────────────────────────────────────────
+
+def main() -> None:  # noqa: C901
+    parser = argparse.ArgumentParser(description="Set up RPG Shopkeeper DB")
+    parser.add_argument("--reset", action="store_true", help="Delete and recreate database")
+    parser.add_argument("--no-srd", action="store_true", help="Skip SRD item loading (use fallback)")
+    parser.add_argument("--no-seed", action="store_true", help="Skip core seed data")
+    parser.add_argument("--only-srd", action="store_true", help="Only run SRD item loader + normalise")
     args = parser.parse_args()
 
     if args.only_srd:
-        load_srd_items()
-        # and then normalise those new SRD items too
-        step2_add_normalised_column(DB_PATH)
+        _insert_items(no_srd_flag=args.no_srd)
+        populate_normalised_names()
         return
 
     if args.reset:
         reset_database()
 
-    print('📦 Setting up schema...')
+    print("📦  Setting up schema …")
     run_sql_script(SCHEMA_SQL)
 
-    if not args.no_srd:
-        print('🧙 Loading SRD items...')
-        load_srd_items()
+    _insert_items(no_srd_flag=args.no_srd)
 
     if not args.no_seed:
-        print('🌱 Seeding user/shop/party data...')
+        print("🌱  Seeding user/shop/party data …")
         run_sql_script(SEED_SQL)
 
-    # — now normalise every item_name we’ve just inserted —
-    print('🔡 Populating normalised_item_name...')
-    step2_add_normalised_column(DB_PATH)
+    print("🔡  Populating normalised_item_name …")
+    populate_normalised_names()
 
-    print('✅ Setup complete.')
+    print("✅  Setup complete.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

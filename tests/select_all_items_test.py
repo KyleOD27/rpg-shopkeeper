@@ -1,25 +1,14 @@
-import sqlite3
-from pathlib import Path
+# tests/select_all_items_test.py
 from pprint import pprint
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / 'rpg-shopkeeper.db'
+from app import db as app_db   # ensures schema + seeded data
 
+def test_select_all_items() -> None:          # ← no arg
+    with app_db.get_connection() as conn:
+        rows = conn.execute("SELECT * FROM items").fetchall()
 
-def test_select_all_items(pretty=True):
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM items')
-        rows = cursor.fetchall()
-        print(f'🔍 Retrieved {len(rows)} items:\n')
-        for row in rows[:300]:
-            item = dict(row)
-            if pretty:
-                pprint(item, sort_dicts=False, width=100)
-                print()
-            else:
-                print(item)
+    print(f"🔍 Retrieved {len(rows)} items:\n")
+    for row in rows[:30]:                     # 30 is plenty for smoke
+        pprint(dict(row), sort_dicts=False, width=100)
+        print()
 
-
-if __name__ == '__main__':
-    test_select_all_items()
+    assert len(rows) > 0, "items table is empty!"
