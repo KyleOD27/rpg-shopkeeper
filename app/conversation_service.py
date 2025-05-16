@@ -120,6 +120,14 @@ class ConversationService(HandlerDebugMixin):
             })
             return self.agent.shopkeeper_inspect_item_prompt(lines)
 
+        # ── 3. a recognised sub-category (e.g. “standard gear”) ───────────────
+        if intent in (PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM) and detected_category:
+            self.convo.set_state(ConversationState.VIEWING_ITEMS)  # ★ FIX ★
+            self.convo.save_state()
+            return self.agent.shopkeeper_show_items_by_category({
+                'gear_category': detected_category  # change key if your API differs
+            })
+
         # ── 2. multiple fuzzy matches ──────────────────────────────────────────
         if matches and len(matches) > 1:
             self.convo.set_pending_item(matches)
@@ -128,13 +136,7 @@ class ConversationService(HandlerDebugMixin):
             self.convo.save_state()
             return self.agent.shopkeeper_list_matching_items(matches)
 
-        # ── 3. a recognised sub-category (e.g. “standard gear”) ───────────────
-        if intent in (PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM) and detected_category:
-            self.convo.set_state(ConversationState.VIEWING_ITEMS)  # ★ FIX ★
-            self.convo.save_state()
-            return self.agent.shopkeeper_show_items_by_category({
-                'gear_category': detected_category  # change key if your API differs
-            })
+
 
         # ── 4. user just typed “buy” with no clue ──────────────────────────────
         if intent == PlayerIntent.BUY_ITEM:
@@ -255,6 +257,8 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
             PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+            PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
+            PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
         ]
         for i in intro_intents:
             router[ConversationState.INTRODUCTION, i] = self._route_intent(i)
@@ -276,8 +280,8 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.BUY_NEEDS_ITEM,
             PlayerIntent.SELL_ITEM,
             PlayerIntent.SELL_NEEDS_ITEM,
-            PlayerIntent.DEPOSIT_GOLD,
-            PlayerIntent.WITHDRAW_GOLD,
+            PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
+            PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
             PlayerIntent.CHECK_BALANCE,
             PlayerIntent.VIEW_LEDGER,
             PlayerIntent.INSPECT_ITEM,
@@ -351,9 +355,9 @@ class ConversationService(HandlerDebugMixin):
             return self.generic_handler.handle_previous_page
         if intent == PlayerIntent.GREETING:
             return self.generic_handler.handle_reply_to_greeting
-        if intent == PlayerIntent.DEPOSIT_GOLD:
+        if intent in {PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
             return self.deposit_handler.process_deposit_gold_flow
-        if intent == PlayerIntent.WITHDRAW_GOLD:
+        if intent in {PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
             return self.withdraw_handler.process_withdraw_gold_flow
         if intent == PlayerIntent.CHECK_BALANCE:
             return self.generic_handler.handle_check_balance
