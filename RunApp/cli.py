@@ -13,6 +13,13 @@ from app.auth.user_login import get_user_by_phone, register_user, create_charact
 load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+import logging
+from app.config import RuntimeFlags
+
+logging.basicConfig(
+    level=logging.DEBUG if RuntimeFlags.DEBUG_MODE else logging.INFO,
+    format="%(levelname)s %(name)s: %(message)s",
+)
 
 def register_new_party():
     print('\n=== New Party Registration ===')

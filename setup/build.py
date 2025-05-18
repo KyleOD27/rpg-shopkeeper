@@ -150,6 +150,11 @@ def main() -> None:  # noqa: C901 – a little long but self‑contained
         # Bundle the live DB right next to the executable inside the bundle
         cmd += ["--add-data", f"{DB_FILE}{sep}."]
 
+    # ––– inside build.py, right after the other --add-data lines –––
+    conf = ROOT / ".env"
+    if conf.exists():
+        cmd += ["--add-data", f"{conf}{sep}."]  # drops .env next to EXE
+
     for mod in _collect_personality_modules():
         cmd += ["--hidden-import", mod]
 

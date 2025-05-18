@@ -176,7 +176,7 @@ def find_item_in_input(player_input: str, convo=None):
             return [itm], None
     matches = []
     for w in words:
-        for nm in get_close_matches(normalize_input(w), name_map.keys(), n=2, cutoff=0.85):
+        for nm in get_close_matches(normalize_input(w), name_map.keys(), n=2, cutoff=0.75):
             itm = name_map[nm]
             if itm not in matches:
                 matches.append(itm)
