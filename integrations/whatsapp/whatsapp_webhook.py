@@ -5,6 +5,7 @@ Flask endpoint Twilio will call for every inbound WhatsApp message.
 Behaviour mirrors sms_webhook.py but lives on /whatsapp instead of /sms.
 """
 
+import sys
 import logging
 import os
 from dotenv import load_dotenv
@@ -18,8 +19,8 @@ from integrations.sharedutils.twilio_webhook_sync import sync_service_webhook
 
 load_dotenv()
 
-ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-AUTH_TOKEN = os.getenv('AUTH_TOKEN', os.getenv('TWILIO_AUTH_TOKEN'))
+ACCOUNT_SID = os.getenv('TWILIO_SID', os.getenv('TWILIO_ACCOUNT_SID'))
+AUTH_TOKEN  = os.getenv('TWILIO_AUTH_TOKEN', os.getenv('AUTH_TOKEN'))
 TO_WHATSAPP_NUMBER = os.getenv('TO_WHATSAPP_NUMBER')
 FROM_WHATSAPP_NUMBER = os.getenv('FROM_WHATSAPP_NUMBER')
 WHATSAPP_SERVICE_SID = os.getenv('WHATSAPP_MESSAGING_SERVICE_SID')
@@ -97,12 +98,23 @@ def send_startup_whatsapp():
 
 
 def start_whatsapp_server():
-    port = 5001
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+    port = int(os.getenv("WHATSAPP_PORT", 5001))
+
+    # Detect PyInstaller (the exe) to disable the reloader
+    is_frozen = getattr(sys, "frozen", False)
+
+    if not is_frozen:
+        # local “python …” run → send the webhook hint & startup WhatsApp
         app.logger.info(f'🔗 Twilio webhook should point to: {NGROK_URL}/whatsapp')
         send_startup_whatsapp()
+
     app.logger.info(f'🚡 WhatsApp Flask server listening on port {port}')
-    app.run(port=port, debug=RuntimeFlags.DEBUG_MODE, host='0.0.0.0')
+    app.run(
+        port=port,
+        host='0.0.0.0',
+        debug=RuntimeFlags.DEBUG_MODE and not is_frozen,
+        use_reloader=False           # <-- key line: no second process
+    )
 
 
 if __name__ == '__main__':
