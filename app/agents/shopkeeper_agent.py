@@ -202,7 +202,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             lines.append('Say _previous_ to go back.')
 
         if include_buy_prompt:
-            lines.append('Just say the item _name_ or _number_!')
+            lines.append('Just say the item *id* or *name* if you are interested..')
 
     def _show_items(self, player_input, field, emoji, label):
         self.debug('→ Entering _show_items')

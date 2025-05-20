@@ -92,21 +92,30 @@ class ConversationService(HandlerDebugMixin):
         Decide whether the user wants to see an item *list* or a single *detail*.
 
         ── Logic ────────────────────────────────────────────────────────────────
-        1. Exact match (one item)   → confirm-buy or inspect flow.
+        1. Exact match (one item)   → confirm-buy / inspect flow.
         2. Multiple matches         → let user pick a number.
-        3. Recognised sub-category  → jump straight to item-list screen
-                                       (state = VIEWING_ITEMS).
-        4. Plain “buy” with no idea → show the “What are you after?” prompt.
-        5. Fallback                 →  couldn’t find that text.
+        3. Recognised sub-category  → jump straight to item-list screen.
+        4. Plain “buy …” with no clue → show “What are you after?” prompt.
+        5. Fallback                 → couldn’t find that text.
         """
         self.debug('→ Entering _list_or_detail')
 
         raw = wrapped_input['text']
-        matches, detected_category = find_item_in_input(raw, self.convo)
+
+        # use a looser fuzzy search for INSPECT flows so words like 'sword'
+        # return several hits; default remains strict for buy/sell.
+        cutoff = 0.55 if intent in (PlayerIntent.INSPECT_ITEM, PlayerIntent.UNKNOWN ) else 0.75
+        matches, detected_category = find_item_in_input(
+            raw,
+            self.convo,
+            fuzzy_cutoff=cutoff
+        )
 
         # ── 1. single exact match ──────────────────────────────────────────────
         if matches and len(matches) == 1:
             item = matches[0]
+
+            # BUY flow → confirmation prompt
             if intent == PlayerIntent.BUY_ITEM:
                 self.convo.set_pending_item(item)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
@@ -118,7 +127,7 @@ class ConversationService(HandlerDebugMixin):
                     self.party_data.get('party_gold', 0),
                 )
 
-            # inspect / sell path
+            # INSPECT / SELL path
             lines = self.inspect_handler.handle_inspect_item({
                 'text': raw,
                 'intent': intent,
@@ -126,12 +135,15 @@ class ConversationService(HandlerDebugMixin):
             })
             return self.agent.shopkeeper_inspect_item_prompt(lines)
 
-        # ── 3. a recognised sub-category (e.g. “standard gear”) ───────────────
-        if intent in (PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM) and detected_category:
-            self.convo.set_state(ConversationState.VIEWING_ITEMS)  # ★ FIX ★
+        # ── 3. recognised sub-category (e.g. “standard gear”) ────────────────
+        if (
+                intent in (PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM)
+                and detected_category
+        ):
+            self.convo.set_state(ConversationState.VIEWING_ITEMS)
             self.convo.save_state()
             return self.agent.shopkeeper_show_items_by_category({
-                'gear_category': detected_category  # change key if your API differs
+                'gear_category': detected_category
             })
 
         # ── 2. multiple fuzzy matches ──────────────────────────────────────────
@@ -142,8 +154,6 @@ class ConversationService(HandlerDebugMixin):
             self.convo.save_state()
             return self.agent.shopkeeper_list_matching_items(matches)
 
-
-
         # ── 4. user just typed “buy” with no clue ──────────────────────────────
         if intent == PlayerIntent.BUY_ITEM:
             return self.agent.shopkeeper_view_items_prompt()
@@ -152,7 +162,7 @@ class ConversationService(HandlerDebugMixin):
         self.debug('← Exiting _list_or_detail')
         return (
             '❓ I couldn’t find anything called that. '
-            'Try ‘inspect longsword’ or ‘inspect 42’.'
+            'Try “inspect longsword” or “inspect 42”.'
         )
 
     def handle(self, player_input: str):

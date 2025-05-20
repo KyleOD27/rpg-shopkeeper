@@ -155,20 +155,29 @@ def get_subcategory_match(section: str, player_input: str):
 
 # ─── Item matcher (trimmed) ─────────────────────────────────────────────
 
-def find_item_in_input(player_input: str, convo=None):
+def find_item_in_input(
+    player_input: str,
+    convo=None,
+    *,
+    fuzzy_cutoff: float = 0.75,   # ← caller can loosen/tighten match here
+    max_suggestions: int = 3      #   …and control list length if desired
+):
     """
     Return ([matched_items], None) or (None, None).
 
-    The word → item matcher now ignores every token that belongs to
-    EXCEPTION_WORDS (next, previous, yes, cancel, etc.) so navigation /
-    UI words can’t be mistaken for equipment names.
+    • Skips any token in EXCEPTION_WORDS so UI words ('next', 'back', …)
+      can’t become false item hits.
+    • `fuzzy_cutoff` lets callers decide how "loose" the fuzzy search is.
+      – strict flows: 0.75-0.85
+      – suggestion lists: 0.5-0.6
     """
-    raw = preprocess(player_input)            # usually: lower-case, trim
+
+    raw      = preprocess(player_input)
     norm_raw = normalize_input(raw)
 
     # ── quick exits ────────────────────────────────────────────────
     if (
-        norm_raw in EXCEPTION_WORDS              # NEW: hard skip keywords
+        norm_raw in EXCEPTION_WORDS
         or norm_raw in SHOP_ACTION_WORDS
         or (len(norm_raw) < 4 and not norm_raw.isdigit())
     ):
@@ -196,10 +205,14 @@ def find_item_in_input(player_input: str, convo=None):
     matches: list[dict] = []
     for w in words:
         lw = w.lower()
-        if lw in EXCEPTION_WORDS:               # NEW: skip navigation words
+        if lw in EXCEPTION_WORDS:
             continue
-        for nm in get_close_matches(normalize_input(w), name_map.keys(),
-                                    n=2, cutoff=0.75):
+        for nm in get_close_matches(
+            normalize_input(w),
+            name_map.keys(),
+            n=max_suggestions,
+            cutoff=fuzzy_cutoff
+        ):
             itm = name_map[nm]
             if itm not in matches:
                 matches.append(itm)
@@ -254,15 +267,17 @@ def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation
 
 # ─── Interpreter entry point ────────────────────────────────────────────
 
-def interpret_input(player_input: str, convo: Conversation | None = None) -> Dict[str, Any]:
+# ─── Interpreter entry point ────────────────────────────────────────────
+
+def interpret_input(player_input, convo=None):
     lowered = normalize_input(player_input)
 
-    # 0️⃣ confirmation overrides ---------------------------------------------
+    # 0️⃣ confirmation overrides -----------------------------------------
     early = _confirmation_overrides(player_input, lowered, convo)
     if early:
         return early
 
-    # 1️⃣ early banking detection --------------------------------------------
+    # 1️⃣ early banking detection ---------------------------------------
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_GOLD]):
         intent, amt = detect_deposit_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
@@ -270,31 +285,38 @@ def interpret_input(player_input: str, convo: Conversation | None = None) -> Dic
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
 
-    # 2️⃣ item‑first -----------------------------------------------------------
-    items, _ = find_item_in_input(player_input, convo)
+    # 2️⃣ item-first (strict cutoff) ------------------------------------
+    items, _ = find_item_in_input(player_input, convo)   # cutoff 0.75
     if items:
         if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
         if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
             return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
-        return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
+        return {"intent": PlayerIntent.BUY_ITEM,  "metadata": {"item": items}}
 
-    # 3️⃣ keyword ranker -------------------------------------------------------
+    # 3️⃣ keyword ranker -------------------------------------------------
     intent_r, conf = rank_intent_kw(player_input)
-    if conf >= INTENT_CONF_THRESHOLD and intent_r not in {
-        PlayerIntent.DEPOSIT_GOLD,
-        PlayerIntent.WITHDRAW_GOLD,
-    }:
+    if (conf >= INTENT_CONF_THRESHOLD and
+            intent_r not in (PlayerIntent.DEPOSIT_GOLD, PlayerIntent.WITHDRAW_GOLD)):
         return {"intent": intent_r, "metadata": {}}
 
-    # 4️⃣ polite words / fallbacks -------------------------------------------
+    # 4️⃣ polite words ---------------------------------------------------
     words = lowered.split()
     if any(w in words for w in GRATITUDE_KEYWORDS):
         return {"intent": PlayerIntent.SHOW_GRATITUDE, "metadata": {}}
     if any(w in words for w in GOODBYE_KEYWORDS):
         return {"intent": PlayerIntent.GOODBYE, "metadata": {}}
 
+    # 5️⃣ last-chance: maybe it's an item name (loose cutoff) ------------
+    loose_items, _ = find_item_in_input(player_input, convo,
+                                        fuzzy_cutoff=0.55)   # looser
+    if loose_items:
+        return {"intent": PlayerIntent.INSPECT_ITEM,
+                "metadata": {"item": loose_items}}
+
+    # fallback -----------------------------------------------------------
     return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
 
 # ─── GPT confirm fallback (unchanged) ───────────────────────────────────
 
