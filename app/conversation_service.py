@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable, Dict, Tuple, Any
 from app.interpreter import interpret_input, normalize_input, find_item_in_input
 from app.models.parties import get_party_gold
@@ -12,6 +14,10 @@ from commands.dm_commands import handle_dm_command
 from commands.admin_commands import handle_admin_command
 from app.conversation import ConversationState, PlayerIntent
 from app.utils.debug import HandlerDebugMixin
+from app.keywords import CONFIRMATION_WORDS, CANCELLATION_WORDS
+
+import json
+from json import JSONDecodeError
 
 
 CATEGORY_MAPPING = {PlayerIntent.VIEW_ARMOUR_CATEGORY: ('armour_category',
@@ -151,13 +157,20 @@ class ConversationService(HandlerDebugMixin):
 
     def handle(self, player_input: str):
         self.debug('→ Entering handle')
-        import json
+
         text = player_input.strip()
-        low = text.lower()
+        low  = text.lower()
+
+        # refresh party gold every turn
         self.party_data['party_gold'] = get_party_gold(self.party_id)
+
+        # ── out-of-band commands ───────────────────
         if low.startswith('dm '):
-            return handle_dm_command(self.party_id, self.player_id,
-                player_input, party_data=self.party_data)
+            return handle_dm_command(
+                self.party_id, self.player_id, player_input,
+                party_data=self.party_data
+            )
+
         if low.startswith('admin '):
             resp = handle_admin_command(player_input)
             if 'reset' in low:
@@ -166,69 +179,92 @@ class ConversationService(HandlerDebugMixin):
                 self.convo.set_discount(None)
                 self.convo.save_state()
             return resp
-        self.convo.set_input(player_input)
-        normalized = normalize_input(player_input) if isinstance(player_input,
-            str) else 'N/A'
-        self.convo.normalized_input = normalized
-        self.convo.debug(
-            f'[HANDLE] raw={player_input!r}, normalized={normalized!r}')
 
-        if text.isdigit() and self.convo.state in {
-                            ConversationState.AWAITING_ITEM_SELECTION,
-                            ConversationState.VIEWING_ITEMS,
-                }:
+        # store raw + normalised input on the convo
+        self.convo.set_input(player_input)
+        normalised = normalize_input(player_input) if isinstance(player_input, str) else 'N/A'
+        self.convo.normalized_input = normalised
+        self.convo.debug(f'[HANDLE] raw={player_input!r}, normalised={normalised!r}')
+
+        # ── numeric selection while browsing ───────
+        if (
+            low.isdigit()
+            and self.convo.state in {
+                ConversationState.AWAITING_ITEM_SELECTION,
+                ConversationState.VIEWING_ITEMS,
+            }
+        ):
+            idx = int(low)
+            if idx <= 0:
+                return self.agent.shopkeeper_generic_say('Choose a positive number!')
 
             pending = self.convo.pending_action
             if pending == PlayerIntent.VIEW_CHARACTER:
-                idx = int(text) - 1
                 chars = self.convo.pending_item or []
-                if 0 <= idx < len(chars):
+                char_idx = idx - 1
+                if 0 <= char_idx < len(chars):
                     self.convo.reset_state()
-                    return self.generic_handler.handle_view_character(chars
-                        [idx])
-                return self.agent.shopkeeper_generic_say(
-                    'That number isn’t in the list—try again!')
-            self.convo.debug(
-                f'[HANDLE] numeric select → intent={pending}, id={text}')
-            return self._list_or_detail(pending, {'text': text, 'intent':
-                pending, 'item': None})
+                    return self.generic_handler.handle_view_character(chars[char_idx])
+                return self.agent.shopkeeper_generic_say('That number isn’t in the list—try again!')
+
+            self.convo.debug(f'[HANDLE] numeric select → intent={pending}, id={idx}')
+            return self._list_or_detail(
+                pending,
+                {'text': text, 'intent': pending, 'item': None},
+            )
+
+        # ── confirmation / cancellation flow ───────
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
-            if low in {'yes', 'y', 'sure', 'ok', 'okay', 'deal'}:
+            if low in CONFIRMATION_WORDS:
                 pending = self.convo.pending_action
-                if pending in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM
-                    }:
-                    return self.buy_handler.handle_confirm_purchase({'text':
-                        text})
+                if pending in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_CONFIRM}:
+                    return self.buy_handler.handle_confirm_purchase({'text': text})
                 if pending == PlayerIntent.SELL_ITEM:
-                    return self.sell_handler.handle_confirm_sale({'text': text}
-                        )
-            if low in {'no', 'n', 'cancel', 'never mind'}:
+                    return self.sell_handler.handle_confirm_sale({'text': text})
+            if low in CANCELLATION_WORDS:
                 return self._handle_cancellation_flow({'text': text})
+
+        # ── primary NLU pass ───────────────────────
         intent_data = interpret_input(player_input, self.convo)
-        intent = intent_data.get('intent')
-        metadata = intent_data.get('metadata', {}) or {}
-        item = metadata.get('item')
+        intent    = intent_data.get('intent')
+        metadata  = intent_data.get('metadata', {}) or {}
+
+        # pop item out of metadata so we don't double-store
+        item = metadata.pop('item', None)
+
         self.convo.set_intent(intent)
         self.convo.debug(f'[HANDLE] intent={intent}, metadata={metadata}')
+
+        # map category-intents to metadata helpers
         if intent in CATEGORY_MAPPING:
             field, val = CATEGORY_MAPPING[intent]
             metadata[field] = val
-        wrapped = {'text': player_input, 'intent': intent, 'item': item, **
-            metadata}
+
+        # final payload for handler
+        wrapped: dict = {'text': player_input, 'intent': intent, **metadata}
+
         if item is not None:
             if isinstance(item, str):
+                # handle JSON-encoded item blobs from the interpreter
                 try:
                     item = json.loads(item)
-                except json.JSONDecodeError:
-                    pass
+                except JSONDecodeError:
+                    self.debug(f'[HANDLE] bad JSON in item: {item!r}')
+                    item = None
             wrapped['item'] = item
             self.convo.set_pending_item(item)
             self.convo.set_pending_action(intent)
-        handler = self.intent_router.get((self.convo.state, intent)
-            ) or self._route_intent(intent)
+
+        # ── route to the correct handler ───────────
+        handler = (
+            self.intent_router.get((self.convo.state, intent))
+            or self._route_intent(intent)
+        )
+
         self.convo.debug(
-            f'[HANDLE] routing → state={self.convo.state}, intent={intent}, handler={handler.__name__}'
-            )
+            f'[HANDLE] routing → state={self.convo.state}, intent={intent}, '
+            f'handler={handler.__name__}'
+        )
         self.debug('← Exiting handle')
         return handler(wrapped)
 

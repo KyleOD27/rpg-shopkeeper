@@ -37,6 +37,7 @@ from app.keywords import (
     GRATITUDE_KEYWORDS,
     GOODBYE_KEYWORDS,
     INTENT_CONF_THRESHOLD,
+    EXCEPTION_WORDS
 )
 
 logger = logging.getLogger(__name__)
@@ -155,36 +156,55 @@ def get_subcategory_match(section: str, player_input: str):
 # ─── Item matcher (trimmed) ─────────────────────────────────────────────
 
 def find_item_in_input(player_input: str, convo=None):
-    raw = preprocess(player_input)
+    """
+    Return ([matched_items], None) or (None, None).
+
+    The word → item matcher now ignores every token that belongs to
+    EXCEPTION_WORDS (next, previous, yes, cancel, etc.) so navigation /
+    UI words can’t be mistaken for equipment names.
+    """
+    raw = preprocess(player_input)            # usually: lower-case, trim
     norm_raw = normalize_input(raw)
-    if norm_raw in SHOP_ACTION_WORDS or (len(norm_raw) < 4 and not norm_raw.isdigit()):
+
+    # ── quick exits ────────────────────────────────────────────────
+    if (
+        norm_raw in EXCEPTION_WORDS              # NEW: hard skip keywords
+        or norm_raw in SHOP_ACTION_WORDS
+        or (len(norm_raw) < 4 and not norm_raw.isdigit())
+    ):
         return None, None
 
-    words = raw.split()
-    items = [dict(json.loads(r) if isinstance(r, str) else r) for r in get_all_items()]
+    words  = raw.split()
+    items  = [dict(json.loads(r) if isinstance(r, str) else r)
+              for r in get_all_items()]
 
-    # numeric ID
+    # ── numeric ID match ───────────────────────────────────────────
     if digit := next((w for w in words if w.isdigit()), None):
         matches = [i for i in items if str(i.get("item_id")) == digit]
         if matches:
             return matches, None
 
-    # exact / fuzzy name
+    # ── exact / fuzzy name match ───────────────────────────────────
     name_map = {normalize_input(i["item_name"]): i for i in items}
+
+    # exact substring first
     for norm, itm in name_map.items():
         if norm in norm_raw:
             return [itm], None
-    matches = []
+
+    # fuzzy – skip exception tokens
+    matches: list[dict] = []
     for w in words:
-        for nm in get_close_matches(normalize_input(w), name_map.keys(), n=2, cutoff=0.75):
+        lw = w.lower()
+        if lw in EXCEPTION_WORDS:               # NEW: skip navigation words
+            continue
+        for nm in get_close_matches(normalize_input(w), name_map.keys(),
+                                    n=2, cutoff=0.75):
             itm = name_map[nm]
             if itm not in matches:
                 matches.append(itm)
-    if matches:
-        return matches, None
 
-    return None, None
-
+    return (matches or None), None
 # ─── Banking helpers ────────────────────────────────────────────────────
 
 def _num_in(text: str) -> int | None:
