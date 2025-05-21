@@ -58,18 +58,16 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.VIEW_LEDGER:    ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE:         ["haggle", "negotiate", "bargain", "deal", "cheaper", "discount"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
-    PlayerIntent.GREETING:       ["hello", "hi", "greetings", "hallo", "hey", "what up"],
-    PlayerIntent.NEXT:           ["next", "more", "show more", "continue", "keep going"],
-    PlayerIntent.PREVIOUS:       ["previous", "back", "go back", "last page", "prev", "last"],
+    PlayerIntent.GREETING:       ["hello", "hi", "greetings", "hallo", "hey", "ey"],
+    PlayerIntent.NEXT:           ["next", "more", "show more", "continue", "another"],
+    PlayerIntent.PREVIOUS:       ["previous", "back",  "last", "prev", "last"],
     PlayerIntent.INSPECT_ITEM: [
-        "inspect", "details", "tell me about",
-        "what does it do", "info", "information",
-        "what is", "explain", "describe", "how much", "see",
+        "inspect", "details", "tell"
+        "info", "explain", "describe", "much",
     ],
     PlayerIntent.VIEW_PROFILE: [
-        "profile", "see profile", "my profile", "player info",
-        "party info", "party", "party profile", "who am i",
-        "status", "stats", "character", "about me",
+        "profile", "my", "player",
+        "party", "user", "character", "me",
     ],
 }
 

@@ -418,6 +418,8 @@ class ConversationService(HandlerDebugMixin):
         if intent == PlayerIntent.SHOW_GRATITUDE:
             return self.generic_handler.handle_accept_thanks  # ← NEW
 
+
+
         self.debug('← Exiting _route_intent')
         return self.generic_handler.handle_fallback
 

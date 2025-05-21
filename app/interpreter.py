@@ -101,14 +101,26 @@ def _pref_index(intent: PlayerIntent) -> int:
         return len(PREFERRED_ORDER)
 
 
-def rank_intent_kw(user_input: str) -> Tuple[PlayerIntent, float]:
+def rank_intent_kw(user_input: str,
+                   convo: Conversation | None = None   # ← new argument
+                   ) -> tuple[PlayerIntent, float]:
     raw = normalize_input(user_input)
     scores = {
         intent: sum(1 for kw in kws if kw in raw)
         for intent, kws in INTENT_KEYWORDS.items()
     }
     best_intent = max(scores, key=lambda i: (scores[i], -_pref_index(i)))
-    confidence = scores[best_intent] / max(len(INTENT_KEYWORDS[best_intent]), 1)
+    confidence  = scores[best_intent] / max(len(INTENT_KEYWORDS[best_intent]), 1)
+
+    # Log to the CSV if a Conversation was supplied, else fall back to console.
+    if convo is not None:
+        convo.debug(f"[RANK] {best_intent.name} {confidence:.2f} {scores}")
+    else:
+        logger.debug(
+            "[rank_intent_kw] %r → %s %.2f %s",
+            user_input, best_intent.name, confidence, scores,
+        )
+
     return best_intent, confidence
 
 # ─── Category helpers (unchanged) ───────────────────────────────────────
@@ -295,7 +307,7 @@ def interpret_input(player_input, convo=None):
         return {"intent": PlayerIntent.BUY_ITEM,  "metadata": {"item": items}}
 
     # 3️⃣ keyword ranker -------------------------------------------------
-    intent_r, conf = rank_intent_kw(player_input)
+    intent_r, conf = rank_intent_kw(player_input, convo)
     if (conf >= INTENT_CONF_THRESHOLD and
             intent_r not in (PlayerIntent.DEPOSIT_GOLD, PlayerIntent.WITHDRAW_GOLD)):
         return {"intent": intent_r, "metadata": {}}
