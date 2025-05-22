@@ -200,10 +200,11 @@ def get_item_details(conn, item_name: str):
         (item_name,),
     ).fetchone()
 
-
 def get_account_profile(character_id: int) -> dict:
     with _get_connection() as conn:
         cur = conn.cursor()
+
+        # ─── account row ─────────────────────────────
         cur.execute(
             """SELECT u.user_id, u.user_name, u.phone_number, u.subscription_tier
                  FROM users u
@@ -215,9 +216,10 @@ def get_account_profile(character_id: int) -> dict:
         if not user:
             raise ValueError(f"character_id {character_id} not found")
 
+        # ─── all chars that belong to *this user* ───
         cur.execute(
             """SELECT c.character_id, c.player_name, c.character_name, c.role,
-                      p.party_id, p.party_name
+                      p.party_id,  p.party_name
                  FROM characters c
                  JOIN parties     p ON p.party_id = c.party_id
                 WHERE c.user_id = ?
@@ -226,7 +228,62 @@ def get_account_profile(character_id: int) -> dict:
         )
         chars = [dict(r) for r in cur.fetchall()]
 
-    return dict(user) | {"characters": chars}
+        # Pick the first char’s party as the “active” header
+        active_party_id   = chars[0]["party_id"]  if chars else None
+        active_party_name = chars[0]["party_name"] if chars else None
+
+        owner_name  = get_party_owner_name(active_party_id) if active_party_id else None
+        member_list = get_party_member_names(active_party_id) if active_party_id else []
+
+    return (
+        dict(user)
+        | {
+            "player_name": chars[0]["player_name"] if chars else None,
+            "party_name":  active_party_name,
+            "party_owner_name": owner_name,
+            "party_members": member_list,          #  🆕  <<<<<<<<
+            "characters": chars,
+        }
+    )
+
+
+# ───────── Party owner helper ──────────────────────────────
+def get_party_owner_name(party_id: str) -> str | None:
+    row = query_db(
+        """SELECT COALESCE(c.player_name, u.user_name) AS owner_name
+             FROM party_owners  po
+             JOIN users        u  ON u.user_id = po.user_id
+        LEFT JOIN characters    c  ON c.user_id = u.user_id
+                                      AND c.party_id = po.party_id
+            WHERE po.party_id = ?
+            LIMIT 1""",
+        (party_id,),
+        one=True,
+    )
+    return row["owner_name"] if row else None
+
+# ───────── Party-member helper ─────────────────────────────
+def get_party_member_names(party_id: str) -> list[str]:
+    """
+    Return the display names of everyone who belongs to `party_id`
+    (character-player name if they have one in this party, otherwise account user_name).
+    """
+    rows = query_db(
+        """
+        SELECT DISTINCT
+               COALESCE(c.player_name, u.user_name)  AS member_name
+          FROM party_membership pm
+          JOIN users            u  ON u.user_id = pm.user_id
+     LEFT JOIN characters        c  ON c.user_id  = u.user_id
+                                    AND c.party_id = pm.party_id
+         WHERE pm.party_id = ?
+         ORDER BY member_name
+        """,
+        (party_id,),
+    )
+    return [r["member_name"] for r in rows]
+
+
 
 # ───────────────────── CLI utility (dev) ───────────────────
 if __name__ == "__main__":

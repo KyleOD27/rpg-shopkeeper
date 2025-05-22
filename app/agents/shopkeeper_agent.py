@@ -667,52 +667,56 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_inspect_item_prompt')
         return '\n'.join(lines)
 
-    def shopkeeper_show_profile(self, data: dict) ->str:
-        self.debug('→ Entering shopkeeper_show_profile')
-        """
-        One-stop profile prompt.
+    def shopkeeper_show_profile(self, data: dict) -> str:
+        self.debug("→ Entering shopkeeper_show_profile")
 
-        Expects a *merged* structure that may include:
-          • account-level keys:  user_name, phone_number, subscription_tier
-          • party/player keys:   player_name, party_name, party_gold,
-                                 visit_count, party_members|members, level,
-                                 class|character_class
-          • characters:          list of character dicts (optional)
+        # ─── account / party fields ─────────────────────────────
+        user_name = data.get("user_name", "unknown-user")
+        phone = data.get("phone_number", "N/A")
+        tier = data.get("subscription_tier", "free")
 
-        All keys are optional—missing values fall back to sensible defaults.
-        """
-        user_name = data.get('user_name', 'unknown-user')
-        phone = data.get('phone_number', 'N/A')
-        tier = data.get('subscription_tier', 'free')
-        name = data.get('player_name', 'Unknown Adventurer')
-        party_name = data.get('party_name', 'Unnamed Party')
-        gold = data.get('party_gold', 0)
-        visits = data.get('visit_count', 1)
-        members = data.get('party_members') or data.get('members') or []
-        level = data.get('level')
-        klass = data.get('class') or data.get('character_class')
-        lines = [f'🪪 *Profile for {name}*',
-            f'👤 Account: {user_name}\u2003|\u2003💎 Tier: {tier}',
-            f'📱 Phone: {phone}', '', f'🛡️ Party: {party_name}',
-            f"👥 Members: {', '.join(members) if members else 'Just you so far'}"
-            , f'💰 Gold on hand: {gold}', f'🏪 Visits to this shop: {visits}']
+        name = data.get("player_name", "Unknown Adventurer")
+        party_name = data.get("party_name", "Unnamed Party")
+        gold = data.get("party_gold", 0)
+        visits = data.get("visit_count", 1)
+        members = data.get("party_members") or data.get("members") or []
+
+        level = data.get("level")
+        klass = data.get("class") or data.get("character_class")
+
+        owner_name = data.get("party_owner_name", "Unknown")
+
+        # ─── assemble lines ────────────────────────────────────
+        lines = [
+            f"🪪 *Profile for {name}*",
+            f"👤 Account: {user_name}\u2003|\u2003💎 Tier: {tier}",
+            f"📱 Phone: {phone}",
+            "",
+            f"🛡️ Party: {party_name}",
+            f"👑 Owner: {owner_name}",
+            f"👥 Members: {', '.join(members) if members else 'Just you so far'}",
+            f"💰 Gold on hand: {gold}",
+            f"🏪 Visits to this shop: {visits}",
+        ]
         if level is not None:
-            lines.append(f'✨ Level: {level}')
+            lines.append(f"✨ Level: {level}")
         if klass:
-            lines.append(f'⚔️ Class: {klass}')
-        chars = data.get('characters') or []
+            lines.append(f"⚔️ Class: {klass}")
+
+        # ─── owned characters block (unchanged) ────────────────
+        chars = data.get("characters") or []
         if chars:
-            lines.append('\n*Owned characters:*')
+            lines.append("\n*Owned characters:*")
             for idx, ch in enumerate(chars, start=1):
-                char_name = ch.get('character_name') or ch.get('player_name',
-                    'Unknown')
-                char_party = ch.get('party_name', 'No party')
-                role = ch.get('role') or 'N/A'
+                char_name = ch.get("character_name") or ch.get("player_name", "Unknown")
+                char_party = ch.get("party_name", "No party")
+                role = ch.get("role") or "N/A"
                 lines.append(
-                    f'{idx}. {char_name}\u2003|\u2003Party: {char_party}\u2003|\u2003Role: {role}'
-                    )
-        self.debug('← Exiting shopkeeper_show_profile')
-        return '\n'.join(lines)
+                    f"{idx}. {char_name}\u2003|\u2003Party: {char_party}\u2003|\u2003Role: {role}"
+                )
+
+        self.debug("← Exiting shopkeeper_show_profile")
+        return "\n".join(lines)
 
     def shopkeeper_show_items_by_weapon_range(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_weapon_range')

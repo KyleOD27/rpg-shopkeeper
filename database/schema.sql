@@ -168,3 +168,15 @@ CREATE TABLE system_logs (
     action TEXT,
     details TEXT
 );
+
+CREATE TABLE audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp   DATETIME  DEFAULT CURRENT_TIMESTAMP,
+    entity_type TEXT      NOT NULL,
+    entity_id   TEXT      NOT NULL,
+    field       TEXT      NOT NULL,
+    old_value   TEXT,
+    new_value   TEXT,
+    changed_by  INTEGER,
+    FOREIGN KEY(changed_by) REFERENCES users(user_id)
+);
