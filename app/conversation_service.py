@@ -182,7 +182,7 @@ class ConversationService(HandlerDebugMixin):
             )
 
         if low.startswith('admin '):
-            resp = handle_admin_command(player_input)
+            resp = handle_admin_command(self.player_id, player_input)
             if 'reset' in low:
                 self.convo.reset_state()
                 self.convo.set_pending_item(None)
