@@ -1,21 +1,11 @@
-"""DM command handling module.
+# commands/dm_commands.py
+"""
+DM command handling module.
 
-Exports:
-    - DMCommandHandler : class
-    - handle_dm_command : legacy function wrapper
-
-The free function `handle_dm_command` delegates to a singleton instance of
-`DMCommandHandler`, so existing code that does::
-
-    from commands.dm_commands import handle_dm_command
-
-continues to work unchanged after the refactor.
-
-If you're integrating into a fresh component you should prefer::
-
-    from commands.dm_commands import DMCommandHandler
-    handler = DMCommandHandler()
-    handler.handle(...)
+Exports
+-------
+- DMCommandHandler : class
+- handle_dm_command : legacy function wrapper
 """
 
 from __future__ import annotations
@@ -29,14 +19,13 @@ from app.db import execute_db, query_db
 
 
 class DMCommandHandler:
-    """Class-based handler for every “dm …” Dungeon-Master command."""
+    """Dispatcher for every `dm …` Dungeon-Master console command."""
 
-    # ─────────────────────────── constants ────────────────────────────
-    VALID_TIERS: set[str] = {"Free", "Adventurer", "DM", "Guild"}
+    # DMs may promote only up to their own level
+    VALID_TIERS: set[str] = {"Free", "Adventurer", "DM"}
 
-    # ────────────────────────── constructor ───────────────────────────
+    # ───────────────────────── constructor ──────────────────────────
     def __init__(self) -> None:
-        # keyword  →  bound method
         self._commands: dict[str, callable] = {
             "add_gold": self._add_gold,
             "new_party": self._new_party,
@@ -47,11 +36,10 @@ class DMCommandHandler:
             "rename_char": self._rename_char,
             "see_users": self._see_users,
             "see_chars": self._see_chars,
-            # NEW
             "upgrade_user": self._upgrade_user,
         }
 
-    # ───────────────────── public entry-point ────────────────────────
+    # ───────────────────── public entry-point ───────────────────────
     def handle(
         self,
         party_id: int,
@@ -59,6 +47,21 @@ class DMCommandHandler:
         player_input: str,
         party_data: dict | None = None,
     ) -> str:
+        """Gate, parse and dispatch a DM command."""
+
+        # ─── PERMISSION CHECK ─────────────────────────────────────────
+        row = query_db(
+            "SELECT subscription_tier FROM users WHERE user_id = ?",
+            (player_id,),
+            one=True,
+        )
+        if (
+            not row
+            or row["subscription_tier"].lower() not in {"dm", "guild", "admin"}
+        ):
+            return "⛔  Only DM-tier (or higher) accounts may issue DM commands."
+
+        # ─── Dispatch logic ──────────────────────────────────────────
         parts = player_input.split()
         if len(parts) < 2 or parts[0].lower() != "dm":
             return "Invalid DM command."
@@ -73,8 +76,7 @@ class DMCommandHandler:
         except Exception as exc:  # pragma: no cover
             return f"❌ An unexpected error occurred: {exc}"
 
-
-    # ───────────────────────── helpers ────────────────────────────
+    # ─────────────────────── helpers ────────────────────────────────
     @staticmethod
     def _audit(
         entity_type: str,
@@ -84,7 +86,6 @@ class DMCommandHandler:
         new: Any,
         changed_by: int | None,
     ) -> None:
-        """Write a row to audit_log."""
         execute_db(
             """
             INSERT INTO audit_log

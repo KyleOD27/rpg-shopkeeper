@@ -3,7 +3,7 @@ CREATE TABLE users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone_number TEXT UNIQUE NOT NULL,
     user_name TEXT,
-    subscription_tier TEXT CHECK(subscription_tier IN ('Free', 'Adventurer', 'DM', 'Guild')) DEFAULT 'Free',
+    subscription_tier TEXT CHECK(subscription_tier IN ('Free', 'Adventurer', 'DM', 'Guild', 'ADMIN')) DEFAULT 'Free',
     lifetime_access BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

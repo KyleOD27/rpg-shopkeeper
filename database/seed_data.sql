@@ -7,9 +7,10 @@ INSERT INTO shops (shop_name, agent_name, location) VALUES
 
 -- Insert Users
 INSERT INTO users (phone_number, user_name, subscription_tier) VALUES
-('+447971548666', 'Kyle', 'DM'),       -- user_id = 1
-('+447851681361', 'Jaz', 'Adventurer'),              -- user_id = 2
-('+447940133344', 'Will', 'Adventurer');               -- user_id = 3
+('+447000', 'Admin', 'ADMIN'),                      -- user_id = 1
+('+447971548666', 'Kyle', 'DM'),                    -- user_id = 2
+('+447851681361', 'Jaz', 'Adventurer'),             -- user_id = 3
+('+447940133344', 'Will', 'Adventurer');            -- user_id = 4
 
 -- Insert Party
 INSERT INTO parties (party_id, party_name, party_gold, reputation_score) VALUES
@@ -21,21 +22,23 @@ INSERT INTO party_owners (party_id, user_id) VALUES
 
 -- Add Users to Party Membership
 INSERT INTO party_membership (party_id, user_id) VALUES
-('group_001', 1),  -- Kyle
-('group_001', 2),  -- Jaz
-('group_001', 3);  -- Will (DM)
+('group_001', 1),  -- Admin
+('group_001', 2),  -- Kyle
+('group_001', 3),  -- Jaz
+('group_001', 4);  -- Will (DM)
 
 -- Insert Characters
 INSERT INTO characters (user_id, party_id, player_name, character_name, role) VALUES
-(1, 'group_001', 'Kyle', 'Kookyko', 'Wizard'),
-(2, 'group_001', 'Jaz', 'JazzySmash', 'Bard'),
-(3, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
+(1, 'group_001', 'Admin', 'Jurgel', 'God'),
+(2, 'group_001', 'Kyle', 'Kookyko', 'Wizard'),
+(3, 'group_001', 'Jaz', 'JazzySmash', 'Bard'),
+(4, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
 
 -- Insert Shop Items
 
-
 -- Grant RPG Shop (shop_id = 1) access to all users
 INSERT INTO user_shop_access (user_id, shop_id) VALUES
-(1, 1),  -- Kyle
-(2, 1),  -- Jaz
-(3, 1);  -- Will
+(1, 1),
+(2, 1),
+(3, 1),
+(4, 1);
