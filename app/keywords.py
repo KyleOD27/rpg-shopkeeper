@@ -67,7 +67,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     ],
     PlayerIntent.VIEW_PROFILE: [
         "profile", "my", "player",
-        "party", "user", "character", "me",
+        "party", "user", "character",
     ],
 }
 
