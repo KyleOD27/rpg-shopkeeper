@@ -46,7 +46,7 @@ def get_items_by_category(category):
         item = dict(row)
         name = item.get('item_name', 'Unknown Item')
         price = item.get('base_price', '?')
-        lines.append(f' • {name} — {price} gold')
+        lines.append(f' • {name} — {price} cp')
     return lines
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, Dict, Tuple, Any
 from app.interpreter import interpret_input, normalize_input, find_item_in_input
-from app.models.parties import get_party_gold
+from app.models.parties import get_party_balance_cp
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler
@@ -124,7 +124,7 @@ class ConversationService(HandlerDebugMixin):
                 self.convo.save_state()
                 return self.agent.shopkeeper_buy_confirm_prompt(
                     item,
-                    self.party_data.get('party_gold', 0),
+                    self.party_data.get('party_balance_cp', 0),
                 )
 
             # INSPECT / SELL path
@@ -171,8 +171,8 @@ class ConversationService(HandlerDebugMixin):
         text = player_input.strip()
         low  = text.lower()
 
-        # refresh party gold every turn
-        self.party_data['party_gold'] = get_party_gold(self.party_id)
+        # refresh party balance every turn
+        self.party_data['party_balance_cp'] = get_party_balance_cp(self.party_id)
 
         # ── out-of-band commands ───────────────────
         if low.startswith('dm '):
@@ -295,8 +295,8 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_ARMOUR_CATEGORY,
             PlayerIntent.VIEW_TOOL_CATEGORY,
             PlayerIntent.VIEW_MOUNT_CATEGORY,
-            PlayerIntent.DEPOSIT_GOLD,
-            PlayerIntent.WITHDRAW_GOLD,
+            PlayerIntent.DEPOSIT_BALANCE,
+            PlayerIntent.WITHDRAW_BALANCE,
             PlayerIntent.CHECK_BALANCE,
             PlayerIntent.VIEW_LEDGER,
             PlayerIntent.VIEW_PROFILE,
@@ -304,8 +304,8 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
             PlayerIntent.VIEW_TOOL_SUBCATEGORY,
-            PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
-            PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
+            PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
+            PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
         ]
         for i in intro_intents:
             router[ConversationState.INTRODUCTION, i] = self._route_intent(i)
@@ -328,8 +328,8 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.BUY_NEEDS_ITEM,
             PlayerIntent.SELL_ITEM,
             PlayerIntent.SELL_NEEDS_ITEM,
-            PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
-            PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
+            PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
+            PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
             PlayerIntent.CHECK_BALANCE,
             PlayerIntent.VIEW_LEDGER,
             PlayerIntent.INSPECT_ITEM,
@@ -403,10 +403,10 @@ class ConversationService(HandlerDebugMixin):
             return self.generic_handler.handle_previous_page
         if intent == PlayerIntent.GREETING:
             return self.generic_handler.handle_reply_to_greeting
-        if intent in {PlayerIntent.DEPOSIT_GOLD, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
-            return self.deposit_handler.process_deposit_gold_flow
-        if intent in {PlayerIntent.WITHDRAW_GOLD, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
-            return self.withdraw_handler.process_withdraw_gold_flow
+        if intent in {PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
+            return self.deposit_handler.process_deposit_balance_cp_flow
+        if intent in {PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
+            return self.withdraw_handler.process_withdraw_balance_cp_flow
         if intent == PlayerIntent.CHECK_BALANCE:
             return self.generic_handler.handle_check_balance
         if intent == PlayerIntent.VIEW_LEDGER:

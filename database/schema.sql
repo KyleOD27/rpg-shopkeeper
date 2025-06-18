@@ -12,7 +12,7 @@ CREATE TABLE users (
 CREATE TABLE parties (
     party_id TEXT PRIMARY KEY,
     party_name TEXT,
-    party_gold INTEGER DEFAULT 100,
+    party_balance_cp INTEGER DEFAULT 100,
     reputation_score INTEGER DEFAULT 0
 );
 
@@ -55,8 +55,8 @@ CREATE TABLE items (
     item_name      TEXT NOT NULL,
 
     -- categories
-    equipment_category TEXT,     -- “Armor”, “Weapon”, …
-    armour_category    TEXT,     -- “Light”, “Medium”, “Heavy”, “Shield”
+    equipment_category TEXT,
+    armour_category    TEXT,
     weapon_category    TEXT,
     gear_category      TEXT,
     tool_category      TEXT,
@@ -69,38 +69,64 @@ CREATE TABLE items (
     range_normal   INTEGER,
     range_long     INTEGER,
 
-    -- armour stats (★ NEW ★)
+    -- armour stats
     base_ac               INTEGER,
-    dex_bonus             BOOLEAN,  -- 0/1   (True if any Dex mod is allowed)
-    max_dex_bonus         INTEGER,  -- NULL or 2
-    str_minimum           INTEGER,  -- NULL if none
-    stealth_disadvantage  BOOLEAN,  -- 0/1
+    dex_bonus             BOOLEAN,          -- 0/1
+    max_dex_bonus         INTEGER,
+    str_minimum           INTEGER,
+    stealth_disadvantage  BOOLEAN,          -- 0/1
 
     -- misc
     base_price     INTEGER DEFAULT 0,
-    price_unit     TEXT    DEFAULT 'gp',
+    price_unit     TEXT    DEFAULT 'gp',    -- cp | sp | ep | gp | pp
     weight         REAL,
     desc           TEXT,
     rarity         TEXT
-        CHECK(rarity IN ('Common', 'Uncommon','Rare','Very Rare','Legendary'))
-        DEFAULT 'Common'
+        CHECK (rarity IN ('Common','Uncommon','Rare','Very Rare','Legendary'))
+        DEFAULT 'Common',
+
+    -- ↳ FOREIGN KEY folded in
+    CONSTRAINT fk_items_unit
+        FOREIGN KEY (price_unit) REFERENCES currencies(unit)
 );
 
 
+-- Currency mapping
+CREATE TABLE currencies (
+    unit        TEXT PRIMARY KEY                -- cp | sp | ep | gp | pp
+        CHECK (unit IN ('cp','sp','ep','gp','pp')),
+    value_in_cp INTEGER NOT NULL                -- how many copper pieces one coin is worth
+);
 
--- TRANSACTION LEDGER
+INSERT INTO currencies (unit, value_in_cp) VALUES
+    ('cp',   1),      -- copper
+    ('sp',  10),      -- silver  = 10 cp
+    ('ep',  50),      -- electrum = 5 sp  = 50 cp
+    ('gp', 100),      -- gold     = 10 sp = 100 cp
+    ('pp',1000);      -- platinum = 10 gp = 1 000 cp
+
 CREATE TABLE transaction_ledger (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    party_id TEXT NOT NULL,
-    character_id INTEGER,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    action TEXT NOT NULL CHECK(action IN ('BUY', 'SELL', 'HAGGLE', 'ADJUST', 'DEPOSIT', 'WITHDRAW')),
-    item_name TEXT,
-    amount INTEGER,
+    id            INTEGER  PRIMARY KEY AUTOINCREMENT,
+    party_id      TEXT     NOT NULL,
+    character_id  INTEGER,
+    timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    action        TEXT     NOT NULL
+                 CHECK (action IN ('BUY','SELL','HAGGLE','ADJUST',
+                                   'DEPOSIT','WITHDRAW')),
+    item_name     TEXT,
+    amount        INTEGER,
+    currency      TEXT     DEFAULT 'gp',      -- cp | sp | ep | gp | pp
     balance_after INTEGER,
-    details TEXT,
-    FOREIGN KEY(party_id) REFERENCES parties(party_id),
-    FOREIGN KEY(character_id) REFERENCES characters(character_id)
+    details       TEXT,
+
+    -- foreign keys
+    CONSTRAINT fk_ledger_party
+        FOREIGN KEY (party_id)     REFERENCES parties(party_id),
+    CONSTRAINT fk_ledger_character
+        FOREIGN KEY (character_id) REFERENCES characters(character_id),
+    CONSTRAINT fk_ledger_unit
+        FOREIGN KEY (currency)     REFERENCES currencies(unit)
 );
 
 -- REPUTATION EVENTS
@@ -181,3 +207,4 @@ CREATE TABLE audit_log (
     changed_by  INTEGER,
     FOREIGN KEY(changed_by) REFERENCES users(user_id)
 );
+

@@ -18,8 +18,8 @@ Encourage them to:
 - BUY items
 - SELL items
 - HAGGLE over prices
-- DEPOSIT gold to the party stash
-- WITHDRAW gold from the party stash
+- DEPOSIT balance to the party stash
+- WITHDRAW balance from the party stash
 - CHECK their balance
 - REVIEW the transaction ledger
 
@@ -76,11 +76,11 @@ Remember: You are a shopkeeper running a business.
             "Ye want to buy *something*? That's nice. Try again with an actual item name — or say 'items' if ye need a reminder what's on me shelves."
             )
 
-    def generate_buy_confirmation_prompt(self, item, player_gold) ->str:
+    def generate_buy_confirmation_prompt(self, item, player_balance_cp) ->str:
         self.debug('→ Entering generate_buy_confirmation_prompt')
         self.debug('← Exiting generate_buy_confirmation_prompt')
         return (
-            f"So ye want to buy a {item['item_name']} for {item['base_price']} gold, eh? Ye've got {player_gold} gold. That sound like a deal?"
+            f"So ye want to buy a {item['item_name']} for {item['base_price']} gold, eh? Ye've got {player_balance_cp} gold. That sound like a deal?"
             )
 
     def generate_buy_success_prompt(self, item, result_message) ->str:

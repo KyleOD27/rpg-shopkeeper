@@ -50,9 +50,9 @@ class GenericChatHandler(HandlerDebugMixin):
 
     def handle_check_balance(self, player_input):
         self.debug('→ Entering handle_check_balance')
-        current_gold = self.party_data.get('party_gold', 0)
+        current_balance_cp = self.party_data.get('party_balance_cp', 0)
         self.debug('← Exiting handle_check_balance')
-        return self.agent.shopkeeper_check_balance_prompt(current_gold)
+        return self.agent.shopkeeper_check_balance_prompt(current_balance_cp)
 
     def handle_next_page(self, _input):
         self.debug('→ Entering handle_next_page')

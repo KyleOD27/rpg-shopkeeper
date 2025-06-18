@@ -6,7 +6,7 @@ create_party(party_id, 'The Ale-Forged')
 add_player_to_party(party_id, 'Daisy', 'Petalstorm', 'Druid')
 add_player_to_party(party_id, 'Ragnar', 'The Red', 'Fighter')
 party = get_party_by_id(party_id)
-print(f"Party Created: {party['party_name']} with {party['party_gold']} gold.")
+print(f"Party Created: {party['party_name']} with {party['party_balance_cp']} cp.")
 print("""
 === Party Members ===""")
 players = get_all_players_in_party(party_id)

@@ -1,7 +1,7 @@
 import re
 from app.interpreter import find_item_in_input, normalize_input
 from app.models.items import get_item_by_name
-from app.models.parties import update_party_gold
+from app.models.parties import update_party_balance_cp
 from app.models.ledger import record_transaction
 from app.conversation import ConversationState, PlayerIntent
 from app.shop_handlers.haggle_handler import HaggleHandler
@@ -51,7 +51,7 @@ class BuyHandler(HandlerDebugMixin):
                     item = matches[0]
                     self._stash_and_confirm(item)
                     return self.agent.shopkeeper_buy_confirm_prompt(item,
-                        self.party_data['party_gold'], self.convo.discount)
+                        self.party_data['party_balance_cp'], self.convo.discount)
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
@@ -71,7 +71,7 @@ class BuyHandler(HandlerDebugMixin):
             if item:
                 self._stash_and_confirm(item)
                 return self.agent.shopkeeper_buy_confirm_prompt(item, self.
-                    party_data['party_gold'], self.convo.discount)
+                    party_data['party_balance_cp'], self.convo.discount)
         self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
         self.debug('← Exiting process_buy_item_flow')
         return self.agent.get_equipment_categories()
@@ -100,7 +100,7 @@ class BuyHandler(HandlerDebugMixin):
                     item = matches[0]
                     self._stash_and_confirm(item)
                     return self.agent.shopkeeper_buy_confirm_prompt(item,
-                        self.party_data['party_gold'], self.convo.discount)
+                        self.party_data['party_balance_cp'], self.convo.discount)
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.BUY_ITEM)
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
@@ -122,7 +122,7 @@ class BuyHandler(HandlerDebugMixin):
         self._stash_and_confirm(item)
         self.debug('← Exiting process_item_selection')
         return self.agent.shopkeeper_buy_confirm_prompt(item, self.
-            party_data['party_gold'], self.convo.discount)
+            party_data['party_balance_cp'], self.convo.discount)
 
     def handle_haggle(self, player_input):
         self.debug('→ Entering handle_haggle')
@@ -142,12 +142,12 @@ class BuyHandler(HandlerDebugMixin):
             self.convo.save_state()
             discounted_price = self.convo.discount or item.get('base_price', 0)
             item_name = item['item_name']
-            gold = self.party_data['party_gold']
+            balance = self.party_data['party_balance_cp']
             return f"""Alright, alright, you twisted my arm.
  
 How about *{discounted_price}* gp for the *{item_name}*?
  
-Your balance is *{gold}* gp. Would you like to proceed with the purchase?"""
+Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
         self.convo.set_discount(None)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.set_pending_item(item)
@@ -155,13 +155,13 @@ Your balance is *{gold}* gp. Would you like to proceed with the purchase?"""
         self.convo.save_state()
         full_price = item.get('base_price', 0)
         item_name = item['item_name']
-        gold = self.party_data['party_gold']
+        balance = self.party_data['party_balance_cp']
         self.debug('← Exiting handle_haggle')
         return f"""😅 Nice try, but that price is already a bargain.
  
 The *{item_name}* still costs *{full_price}* gp.
  
-Your balance is *{gold}* gp. Would you like to proceed with the purchase?"""
+Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
 
     def handle_confirm_purchase(self, player_input):
         self.debug('→ Entering handle_confirm_purchase')
@@ -197,16 +197,16 @@ Your balance is *{gold}* gp. Would you like to proceed with the purchase?"""
         self.debug('→ Entering finalise_purchase')
         price = (self.convo.discount if self.convo.discount is not None else
             item['base_price'])
-        if self.party_data['party_gold'] < price:
+        if self.party_data['party_balance_cp'] < price:
             return self.agent.shopkeeper_buy_failure_prompt(item,
-                'Not enough gold.', self.party_data['party_gold'])
-        self.party_data['party_gold'] -= price
-        update_party_gold(self.party_id, self.party_data['party_gold'])
+                'Balance too low.', self.party_data['party_balance_cp'])
+        self.party_data['party_balance_cp'] -= price
+        update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
         saved = item['base_price'] - price
         note = f' (you saved {saved}g)' if saved > 0 else ''
         record_transaction(party_id=self.party_id, character_id=self.
             player_id, item_name=item['item_name'], amount=-price, action=
-            'BUY', balance_after=self.party_data['party_gold'], details=
+            'BUY', balance_after=self.party_data['party_balance_cp'], details=
             f'Purchased item{note}')
         self.debug('← Exiting finalise_purchase')
         return self.agent.shopkeeper_buy_success_prompt(item, price)

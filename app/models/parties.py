@@ -5,12 +5,6 @@ def get_party_by_id(party_id):
     sql = 'SELECT * FROM parties WHERE party_id = ?'
     return query_db(sql, (party_id,), one=True)
 
-
-def update_party_gold(party_id, new_gold_amount):
-    sql = 'UPDATE parties SET party_gold = ? WHERE party_id = ?'
-    execute_db(sql, (new_gold_amount, party_id))
-
-
 def update_reputation(party_id, change):
     party = get_party_by_id(party_id)
     if not party:
@@ -22,12 +16,12 @@ def update_reputation(party_id, change):
     execute_db(sql, (new_rep, party_id))
 
 
-def create_party(party_id, party_name, starting_gold=100):
+def create_party(party_id, party_name, starting_balance_cp=1000):
     sql = """
-        INSERT INTO parties (party_id, party_name, party_gold, reputation_score)
+        INSERT INTO parties (party_id, party_name, party_balance_cp, reputation_score)
         VALUES (?, ?, ?, 0)
     """
-    execute_db(sql, (party_id, party_name, starting_gold))
+    execute_db(sql, (party_id, party_name, starting_balance_cp))
 
 
 def add_player_to_party(party_id, player_name, character_name, role, passcode):
@@ -49,10 +43,9 @@ def get_party_by_id(party_id: str):
     return query_db('SELECT * FROM parties WHERE party_id = ?', (party_id,),
         one=True)
 
-
-def update_party_gold(party_id: str, new_gold: int):
-    execute_db('UPDATE parties SET party_gold = ? WHERE party_id = ?', (
-        new_gold, party_id))
+def update_party_balance_cp(party_id: str, new_party_balance_cp: int):
+    execute_db('UPDATE parties SET  party_balance_cp = ? WHERE party_id = ?', (
+        new_party_balance_cp, party_id))
 
 
 def get_all_parties():
@@ -70,7 +63,7 @@ def add_new_party(party_name):
     party_id = generate_next_party_id()
     try:
         sql = """
-            INSERT INTO parties (party_id, party_name, party_gold, reputation_score)
+            INSERT INTO parties (party_id, party_name,  party_balance_cp, reputation_score)
             VALUES (?, ?, 100, 0)
         """
         execute_db(sql, (party_id, party_name))
@@ -81,6 +74,6 @@ def add_new_party(party_name):
         return None
 
 
-def get_party_gold(party_id: int) ->int:
-    return query_db('SELECT party_gold FROM parties WHERE party_id = ?', (
+def get_party_balance_cp(party_id: int) ->int:
+    return query_db('SELECT party_balance_cp FROM parties WHERE party_id = ?', (
         party_id,), one=True)[0]

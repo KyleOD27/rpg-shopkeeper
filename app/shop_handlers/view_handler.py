@@ -175,7 +175,7 @@ class ViewHandler(HandlerDebugMixin):
                 self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
                 self.convo.metadata['pending_item'] = matching_items[0]
                 return self.agent.shopkeeper_buy_confirm_prompt(matching_items
-                    [0], self.agent.party_data.get('party_gold', 0))
+                    [0], self.agent.party_data.get('party_balance_cp', 0))
             else:
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
                 self.convo.metadata['matching_items'] = matching_items

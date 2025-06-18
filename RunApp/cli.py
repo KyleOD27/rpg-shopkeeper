@@ -192,7 +192,7 @@ def main():
     # 6) Greet the player ------------------------------------------------------
     print(f"\n=== Welcome to {agent.name}'s Shop ===")
     print(f"Party: {party['party_name']}")
-    print(f"Gold: {party['party_gold']}\n")
+    print(f"Balance: {party['party_balance_cp']}\n")
 
     greeting = agent.shopkeeper_greeting(party["party_name"], visit_count, player_name)
     print(greeting)

@@ -1,6 +1,6 @@
 from app.conversation import ConversationState, PlayerIntent
 from app.models.ledger import record_transaction
-from app.models.parties import update_party_gold
+from app.models.parties import update_party_balance_cp
 import re
 from app.utils.debug import HandlerDebugMixin
 
@@ -24,8 +24,8 @@ class DepositHandler(HandlerDebugMixin):
         self.debug('← Exiting __init__')
 
 
-    def process_deposit_gold_flow(self, player_input):
-        self.debug('→ Entering process_deposit_gold_flow')
+    def process_deposit_balance_cp_flow(self, player_input):
+        self.debug('→ Entering process_deposit_balance_cp_flow')
         text = player_input['text'] if isinstance(player_input, dict) else str(
             player_input)
         lowered = text.lower()
@@ -34,19 +34,19 @@ class DepositHandler(HandlerDebugMixin):
             self.convo.debug('Deposit amount missing — asking for it.')
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
             self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
-            return self.agent.shopkeeper_deposit_gold_prompt()
-        party_gold = self.party_data.get('party_gold', 0)
-        new_total = party_gold + amount
-        self.party_data['party_gold'] = new_total
-        update_party_gold(self.party_id, new_total)
+            return self.agent.shopkeeper_deposit_balance_cp_prompt()
+        party_balance_cp = self.party_data.get('party_balance_cp', 0)
+        new_total = party_balance_cp + amount
+        self.party_data['party_balance_cp'] = new_total
+        update_party_balance_cp(self.party_id, new_total)
         record_transaction(party_id=self.party_id, character_id=self.
             character_id, item_name=None, amount=amount, action='DEPOSIT',
             balance_after=new_total, details=
-            f'{self.player_name} deposited gold')
+            f'{self.player_name} deposited balance_cp')
         self.convo.debug(
             f'{self.player_name} deposited {amount}g. New total: {new_total}')
         self.convo.set_state(ConversationState.INTRODUCTION)
-        self.debug('← Exiting process_deposit_gold_flow')
+        self.debug('← Exiting process_deposit_balance_cp_flow')
         return self.agent.shopkeeper_deposit_success_prompt(amount, new_total)
 
     def _extract_amount(self, text):
@@ -63,15 +63,15 @@ class DepositHandler(HandlerDebugMixin):
             player_input)
         match = re.search('\\d+', text)
         if not match:
-            return self.agent.shopkeeper_deposit_gold_prompt()
+            return self.agent.shopkeeper_deposit_balance_cp_prompt()
         amount = int(match.group())
-        self.party_data['party_gold'] += amount
-        update_party_gold(self.party_id, self.party_data['party_gold'])
-        new_total = self.party_data['party_gold']
+        self.party_data['party_balance_cp'] += amount
+        update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
+        new_total = self.party_data['party_balance_cp']
         record_transaction(party_id=self.party_id, character_id=self.
             character_id, item_name=None, amount=amount, action='DEPOSIT',
             balance_after=new_total, details=
-            f'{self.player_name} deposited gold')
+            f'{self.player_name} deposited balance_cp')
         self.convo.reset_state()
         self.debug('← Exiting handle_confirm_deposit')
         return self.agent.shopkeeper_deposit_success_prompt(amount, new_total)
@@ -82,19 +82,19 @@ class DepositHandler(HandlerDebugMixin):
             player_input)
         match = re.search('\\d+', text)
         if not match:
-            return self.agent.shopkeeper_withdraw_gold_prompt()
+            return self.agent.shopkeeper_withdraw_balance_cp_prompt()
         amount = int(match.group())
-        current_gold = self.party_data.get('party_gold', 0)
-        if amount > current_gold:
+        current_balance_cp = self.party_data.get('party_balance_cp', 0)
+        if amount > current_balance_cp:
             return self.agent.shopkeeper_withdraw_insufficient_funds_prompt(
-                amount, current_gold)
-        self.party_data['party_gold'] -= amount
-        update_party_gold(self.party_id, self.party_data['party_gold'])
+                amount, current_balance_cp)
+        self.party_data['party_balance_cp'] -= amount
+        update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
         record_transaction(party_id=self.party_id, character_id=self.
             character_id, item_name=None, amount=amount, action='WITHDRAW',
-            balance_after=self.party_data['party_gold'], details=
-            f'{self.player_name} withdrew gold')
+            balance_after=self.party_data['party_balance_cp'], details=
+            f'{self.player_name} withdrew balance_cp')
         self.convo.reset_state()
         self.debug('← Exiting handle_confirm_withdraw')
         return self.agent.shopkeeper_withdraw_success_prompt(amount, self.
-            party_data['party_gold'])
+            party_data['party_balance_cp'])

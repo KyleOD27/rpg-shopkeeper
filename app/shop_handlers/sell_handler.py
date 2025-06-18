@@ -1,6 +1,6 @@
 from app.interpreter import find_item_in_input, normalize_input
 from app.models.items import get_item_by_name
-from app.models.parties import update_party_gold
+from app.models.parties import update_party_balance_cp
 from app.models.ledger import record_transaction
 from app.conversation import ConversationState, PlayerIntent
 from app.utils.debug import HandlerDebugMixin
@@ -55,7 +55,7 @@ class SellHandler(HandlerDebugMixin):
             offer_price = round(item.get('base_price', 0) * 0.6)
             self._stash_and_confirm(item)
             return self.agent.shopkeeper_sell_confirm_prompt(item,
-                offer_price, self.party_data['party_gold'])
+                offer_price, self.party_data['party_balance_cp'])
         self.convo.set_pending_item(matches)
         self.convo.set_pending_action(PlayerIntent.SELL_ITEM)
         self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
@@ -106,13 +106,13 @@ class SellHandler(HandlerDebugMixin):
         self.debug('→ Entering _finalise_sale')
         offer_price = round(item.get('base_price', 0) * 0.6)
         name = item.get('item_name') or item.get('name') or item.get('title')
-        self.party_data['party_gold'] += offer_price
-        update_party_gold(self.party_id, self.party_data['party_gold'])
+        self.party_data['party_balance_cp'] += offer_price
+        update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
         record_transaction(party_id=self.party_id, character_id=self.
             player_id, item_name=name, amount=offer_price, action='SELL',
-            balance_after=self.party_data['party_gold'], details='Sold item')
+            balance_after=self.party_data['party_balance_cp'], details='Sold item')
         self.convo.reset_state()
         self.convo.clear_pending()
         self.debug('← Exiting _finalise_sale')
         return self.agent.shopkeeper_sell_success_prompt(item, offer_price,
-            self.party_data['party_gold'])
+            self.party_data['party_balance_cp'])

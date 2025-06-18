@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.models.parties import get_party_by_id, add_new_party, update_party_gold
+from app.models.parties import get_party_by_id, add_new_party, update_party_balance_cp
 from app.models.characters import get_user_by_phone
 from app.auth.user_login import register_user, create_character_for_user
 from app.db import execute_db, query_db
@@ -27,7 +27,7 @@ class DMCommandHandler:
     # ───────────────────────── constructor ──────────────────────────
     def __init__(self) -> None:
         self._commands: dict[str, callable] = {
-            "add_gold": self._add_gold,
+            "add_cp": self._add_cp,
             "new_party": self._new_party,
             "new_user": self._new_user,
             "new_char": self._new_char,
@@ -97,9 +97,9 @@ class DMCommandHandler:
 
     # -- DM sub‑commands ---------------------------------------------------------
 
-    def _add_gold(self, party_id, player_id, args, party_data):
+    def _add_cp(self, party_id, player_id, args, party_data):
         if len(args) != 1:
-            return "Usage: dm add_gold <amount>"
+            return "Usage: dm add_cp <amount>"
         try:
             amount = int(args[0])
         except ValueError:
@@ -109,20 +109,20 @@ class DMCommandHandler:
         if not party:
             return "Party not found."
 
-        new_gold = party["party_gold"] + amount
-        update_party_gold(party_id, new_gold)
+        new_balance_cp = party["party_balance_cp"] + amount
+        update_party_balance_cp(party_id, new_balance_cp)
 
         if party_data is not None:
-            party_data["party_gold"] = new_gold
+            party_data["party_balance_cp"] = new_balance_cp
 
         execute_db(
             """
             INSERT INTO transaction_ledger (party_id, character_id, action, amount, balance_after, details)
             VALUES (?, ?, 'ADJUST', ?, ?, ?)
             """,
-            (party_id, player_id, amount, new_gold, f"DM granted {amount} gold"),
+            (party_id, player_id, amount, new_balance_cp, f"DM granted {amount} balance_cp"),
         )
-        return f"[DM] Added {amount} gold. Party gold is now {new_gold}. "
+        return f"[DM] Added {amount} balance_cp. Party balance_cp is now {new_balance_cp}. "
 
     def _new_party(self, _party_id, _player_id, args, _party_data):
         if not args:
@@ -307,7 +307,7 @@ class DMCommandHandler:
     def _help() -> str:
         return (
             "Unknown DM command. Available commands:\n"
-            "- dm add_gold <amount>\n"
+            "- dm add_cp <amount>\n"
             "- dm new_party <name>\n"
             "- dm new_user <+44...> <user name>\n"
             "- dm new_char <+44...> <party_id> <player> <char> <role>\n"

@@ -13,7 +13,7 @@ INSERT INTO users (phone_number, user_name, subscription_tier) VALUES
 ('+447940133344', 'Will', 'Adventurer');            -- user_id = 4
 
 -- Insert Party
-INSERT INTO parties (party_id, party_name, party_gold, reputation_score) VALUES
+INSERT INTO parties (party_id, party_name, party_balance_cp, reputation_score) VALUES
 ('group_001', 'The Cursed Cartographers', 100, 0);
 
 -- Insert Party Owner (Kyle is the DM)

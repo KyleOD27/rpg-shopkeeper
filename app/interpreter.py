@@ -70,8 +70,8 @@ def preprocess(player_input: str) -> str:
 # ─── Ranker helpers ─────────────────────────────────────────────────────
 
 PREFERRED_ORDER: list[PlayerIntent] = [
-    PlayerIntent.DEPOSIT_GOLD,
-    PlayerIntent.WITHDRAW_GOLD,
+    PlayerIntent.DEPOSIT_BALANCE,
+    PlayerIntent.WITHDRAW_BALANCE,
     PlayerIntent.CHECK_BALANCE,
     PlayerIntent.VIEW_LEDGER,
     PlayerIntent.BUY_ITEM,
@@ -240,7 +240,7 @@ def _num_in(text: str) -> int | None:
 def detect_deposit_intent(text: str):
     amt = _num_in(text)
     return (
-        PlayerIntent.DEPOSIT_GOLD if amt is not None else PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
+        PlayerIntent.DEPOSIT_BALANCE if amt is not None else PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
         amt,
     )
 
@@ -248,7 +248,7 @@ def detect_deposit_intent(text: str):
 def detect_withdraw_intent(text: str):
     amt = _num_in(text)
     return (
-        PlayerIntent.WITHDRAW_GOLD if amt is not None else PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
+        PlayerIntent.WITHDRAW_BALANCE if amt is not None else PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
         amt,
     )
 
@@ -260,10 +260,10 @@ def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation
         return None
 
     # Banking keywords should *break us out* of confirmation mode ------------
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_GOLD]):
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]):
         intent, amt = detect_deposit_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_GOLD]):
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
 
@@ -290,10 +290,10 @@ def interpret_input(player_input, convo=None):
         return early
 
     # 1️⃣ early banking detection ---------------------------------------
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_GOLD]):
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]):
         intent, amt = detect_deposit_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_GOLD]):
+    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
 
@@ -309,7 +309,7 @@ def interpret_input(player_input, convo=None):
     # 3️⃣ keyword ranker -------------------------------------------------
     intent_r, conf = rank_intent_kw(player_input, convo)
     if (conf >= INTENT_CONF_THRESHOLD and
-            intent_r not in (PlayerIntent.DEPOSIT_GOLD, PlayerIntent.WITHDRAW_GOLD)):
+            intent_r not in (PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.WITHDRAW_BALANCE)):
         return {"intent": intent_r, "metadata": {}}
 
     # 4️⃣ polite words ---------------------------------------------------

@@ -220,7 +220,7 @@ class BaseShopkeeper(HandlerDebugMixin):
                 for item in matching_items:
                     name = item.get('item_name', 'Unknown Item')
                     price = item.get('base_price', '?')
-                    lines.append(f' • {name} — {price} gold')
+                    lines.append(f' • {name} — {price} CP')
                 return '\n'.join(lines)
             return (
                 f"Hmm... looks like we don't have anything matching **{category_value}** right now."
@@ -231,7 +231,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         for item in page_items:
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f' • {name} — {price} gold')
+            lines.append(f' • {name} — {price} CP')
         self._add_navigation_lines(lines, page, total_pages)
         self.debug('← Exiting _show_items')
         return '\n'.join(lines)
@@ -266,7 +266,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+            lines.append(f'id: *{item_id}* | {name} | {price} cp')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_weapon_category')
         return '\n'.join(lines)
@@ -295,7 +295,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+            lines.append(f'id: *{item_id}* | {name} | {price} cp')
         lines.append(' ')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_armour_category')
@@ -324,7 +324,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+            lines.append(f'id: *{item_id}* | {name} | {price} cp')
         lines.append(' ')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_gear_category')
@@ -388,22 +388,22 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_accept_thanks')
         return 'No problem at all, thanks for being you!'
 
-    def shopkeeper_deposit_gold_prompt(self) ->str:
-        self.debug('→ Entering shopkeeper_deposit_gold_prompt')
-        self.debug('← Exiting shopkeeper_deposit_gold_prompt')
+    def shopkeeper_deposit_balance_cp_prompt(self) ->str:
+        self.debug('→ Entering shopkeeper_deposit_balance_cp_prompt')
+        self.debug('← Exiting shopkeeper_deposit_balance_cp_prompt')
         return (
-            'Stashing away some savings? How much gold shall I deposit for you?'
+            'Stashing away some savings? How much CP shall I deposit for you?'
             )
 
-    def shopkeeper_withdraw_gold_prompt(self) ->str:
-        self.debug('→ Entering shopkeeper_withdraw_gold_prompt')
-        self.debug('← Exiting shopkeeper_withdraw_gold_prompt')
+    def shopkeeper_withdraw_balance_cp_prompt(self) ->str:
+        self.debug('→ Entering shopkeeper_withdraw_balance_cp_prompt')
+        self.debug('← Exiting shopkeeper_withdraw_balance_cp_prompt')
         return 'Taking some coin out? How much would you like to withdraw?'
 
-    def shopkeeper_check_balance_prompt(self, gold_amount: int) ->str:
+    def shopkeeper_check_balance_prompt(self, cp_amount: int) ->str:
         self.debug('→ Entering shopkeeper_check_balance_prompt')
         self.debug('← Exiting shopkeeper_check_balance_prompt')
-        return f'Your party currently holds {gold_amount} gold.'
+        return f'Your party currently holds {cp_amount} cp.'
     from collections import defaultdict
     from datetime import datetime, timedelta
 
@@ -416,9 +416,9 @@ class BaseShopkeeper(HandlerDebugMixin):
           📜 Transaction History (Page 1 of 2)
 
           **6 hours ago**
-          • Kyle withdrew 10 gp
-          • Kyle deposited 1 000 gp
-          • Kyle sold Plate Armor for 900 gp
+          • Kyle withdrew 10 CP
+          • Kyle deposited 1 000 CP
+          • Kyle sold Plate Armor for 900 CP
           …
 
         The helper `humanize` is unchanged.
@@ -466,16 +466,16 @@ class BaseShopkeeper(HandlerDebugMixin):
             item = entry.get('item_name', '')
             amount = entry.get('amount', 0)
             if action in {'buy', 'bought'}:
-                verb, what = 'bought', f'{item} for {amount} gp'
+                verb, what = 'bought', f'{item} for {amount} CP'
             elif action in {'sell', 'sold'}:
-                verb, what = 'sold', f'{item} for {amount} gp'
+                verb, what = 'sold', f'{item} for {amount} CP'
             elif action == 'deposit':
-                verb, what = 'deposited', f'{amount} gp'
+                verb, what = 'deposited', f'{amount} CP'
             elif action == 'withdraw':
-                verb, what = 'withdrew', f'{amount} gp'
+                verb, what = 'withdrew', f'{amount} CP'
             else:
                 verb = action or 'did something with'
-                what = f'{item} for {amount} gp' if item else f'{amount} gp'
+                what = f'{item} for {amount} CP' if item else f'{amount} CP'
             grouped[ts_human].append(f'• {player} {verb} {what}')
         lines = [f'📜 Transaction History (Page {page} of {total_pages})', '']
         for ts_human, rows in grouped.items():
@@ -519,22 +519,22 @@ class BaseShopkeeper(HandlerDebugMixin):
             '• *BROWSE*  see what’s in stock', '• *BUY*  purchase an item',
             '• *SELL*  trade in your loot',
             '• *INSPECT*  details for one item',
-            '• *BALANCE*  check party gold',
-            '• *DEPOSIT*  add gold to the fund',
-            '• *WITHDRAW* take gold out',
+            '• *BALANCE*  check party balance',
+            '• *DEPOSIT*  add to the fund',
+            '• *WITHDRAW* take out of the fund',
             '• *LEDGER*  view our trade history', ' ', 'Just let me know! ')
 
-    def shopkeeper_buy_confirm_prompt(self, item, party_gold, discount=None):
+    def shopkeeper_buy_confirm_prompt(self, item, party_balance_cp, discount=None):
         self.debug('→ Entering shopkeeper_buy_confirm_prompt')
         base = item.get('base_price', 0)
         cost = discount if discount is not None else base
         saved = base - cost if discount is not None else 0
-        discount_note = f' (you saved {saved} gp!)' if saved > 0 else ''
+        discount_note = f' (you saved {saved} CP!)' if saved > 0 else ''
         name = item.get('item_name', 'Unknown Item')
         cat = item.get('equipment_category', '')
         rar = item.get('rarity', '')
         lines = [f"You're about to buy a *{name}* ({cat}, {rar}).", f' ',
-            f'💰 Price: {cost} gp{discount_note}',
+            f'💰 Price: {cost} cp {discount_note}',
             f"⚖️ Weight: {item.get('weight', 0)} lb", f' ']
         if item.get('desc'):
             lines.append(f"📜 _{item['desc']}_")
@@ -569,7 +569,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             if item.get('stealth_disadvantage'):
                 lines.append('🥷 Disadvantage on Stealth checks')
         lines.extend([f' ',
-            f'Your party balance is *{party_gold}* gp. Would you like to proceed with the purchase?'
+            f'Your party balance is *{party_balance_cp}* cp. Would you like to proceed with the purchase?'
             ])
         self.debug('← Exiting shopkeeper_buy_confirm_prompt')
         return '\n'.join(lines)
@@ -591,15 +591,23 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('→ Entering shopkeeper_deposit_success_prompt')
         self.debug('← Exiting shopkeeper_deposit_success_prompt')
         return (
-            f' You deposited *{amount}* gold! Party balance is now *{new_total}* gold.'
+            f' You deposited *{amount}* CP! Party balance is now *{new_total}* CP.'
             )
 
     def shopkeeper_withdraw_success_prompt(self, amount, new_total):
         self.debug('→ Entering shopkeeper_withdraw_success_prompt')
         self.debug('← Exiting shopkeeper_withdraw_success_prompt')
         return (
-            f'You withdrew *{amount}* gold! Party balance is now *{new_total}* gold.'
-            )
+            f'You withdrew *{amount}* gold! Party balance is now *{new_total}* gold.' )
+
+    def shopkeeper_withdraw_insufficient_balance_cp(self, requested: int, available: int) -> str:
+        self.debug('→ Entering shopkeeper_withdraw_insufficient_balance_cp')
+        message = (
+               f"You tried to withdraw *{requested} CP*, but you only have *{available} CP* available. "
+               "Try a smaller amount or deposit more first!"
+           )
+        self.debug('← Exiting shopkeeper_withdraw_insufficient_balance_cp')
+        return message
 
     def search_items_by_name(self, query, page=1):
         self.debug('→ Entering search_items_by_name')
@@ -645,17 +653,17 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_farewell')
         return 'Safe travels, adventurer! Come back soon. 🌟'
 
-    def shopkeeper_buy_failure_prompt(self, item, message, party_gold):
+    def shopkeeper_buy_failure_prompt(self, item, message, party_balance_cp):
         self.debug('→ Entering shopkeeper_buy_failure_prompt')
         """
         item: the item dict the player tried to buy
         message: a short error message or reason
-        party_gold: the player's current gold total
+        party_balance_cp: the player's current gold total
         """
         item_name = item.get('item_name', 'that item')
         self.debug('← Exiting shopkeeper_buy_failure_prompt')
         return (
-            f"{message} You have {party_gold} gp but the {item_name} costs {item.get('base_price', 0)} gp."
+            f"{message} You have {party_balance_cp} CP but the {item_name} costs {item.get('base_price', 0)} CP."
             )
 
     def shopkeeper_inspect_item_prompt(self, lines: list[str]) ->str:
@@ -677,7 +685,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         name = data.get("player_name", "Unknown Adventurer")
         party_name = data.get("party_name", "Unnamed Party")
-        gold = data.get("party_gold", 0)
+        gold = data.get("party_balance_cp", 0)
         visits = data.get("visit_count", 1)
         members = data.get("party_members") or data.get("members") or []
 
@@ -763,8 +771,8 @@ class BaseShopkeeper(HandlerDebugMixin):
         name = item.get('item_name') or item.get('name') or 'that item'
         future_balance = gold_before + offer_price
         self.debug('← Exiting shopkeeper_sell_offer_prompt')
-        return f"""I’ll give you *{offer_price} gp* for your *{name}*.
-That would bring your purse to *{future_balance} gp*.
+        return f"""I’ll give you *{offer_price} CP* for your *{name}*.
+That would bring your purse to *{future_balance} CP*.
 Deal?"""
 
     def shopkeeper_sell_success_prompt(self, item: dict, price: int,
@@ -775,8 +783,8 @@ Deal?"""
         """
         name = item.get('item_name') or 'item'
         self.debug('← Exiting shopkeeper_sell_success_prompt')
-        return f"""Pleasure doing business!  Here’s *{price} gp* for the *{name}*.
-Your new balance is *{gold_after} gp*."""
+        return f"""Pleasure doing business!  Here’s *{price} CP* for the *{name}*.
+Your new balance is *{gold_after} CP*."""
 
     def shopkeeper_sell_cancel_prompt(self, item: (dict | None)) ->str:
         self.debug('→ Entering shopkeeper_sell_cancel_prompt')

@@ -38,10 +38,10 @@ class HaggleHandler(HandlerDebugMixin):
             self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
             self.convo.save_state()
             return self.agent.shopkeeper_buy_confirm_prompt(item, self.
-                party_data.get('party_gold', 0))
+                party_data.get('party_balance_cp', 0))
         else:
             self.convo.record_haggle_attempt(success=False)
             return self.agent.shopkeeper_generic_say(
-                f"You rolled a {roll} — no luck!  The price stays at {item['base_price']} gold."
+                f"You rolled a {roll} — no luck!  The price stays at {item['base_price']} cp."
                 )
         self.debug('← Exiting attempt_haggle')
