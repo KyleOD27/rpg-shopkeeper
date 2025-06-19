@@ -25,7 +25,7 @@ from app.models.items import (
     get_armour_categories,
     get_gear_categories,
     get_tool_categories,
-    get_weapon_categories,
+    get_weapon_categories, get_treasure_categories,
 )
 from app.keywords import (
     INTENT_KEYWORDS,
@@ -81,6 +81,7 @@ PREFERRED_ORDER: list[PlayerIntent] = [
     PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
     PlayerIntent.VIEW_GEAR_SUBCATEGORY,
     PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+    PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
     PlayerIntent.VIEW_ITEMS,
     PlayerIntent.VIEW_EQUIPMENT_CATEGORY,
     PlayerIntent.VIEW_WEAPON_CATEGORY,
@@ -133,6 +134,7 @@ def get_category_match(player_input: str):
         "gear_category": get_gear_categories(),
         "armour_category": get_armour_categories(),
         "tool_category": get_tool_categories(),
+        "treasure_category": get_treasure_categories()
     }
     for field, names in cats.items():
         normed = [normalize_input(n) for n in names]
@@ -154,6 +156,8 @@ def get_subcategory_match(section: str, player_input: str):
         cats = get_gear_categories()
     elif section == "tool":
         cats = get_tool_categories()
+    elif section == "treasure":
+        cats = get_treasure_categories()
     else:
         return None
     norm_map = {normalize_input(c): c for c in cats}

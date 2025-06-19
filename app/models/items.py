@@ -121,6 +121,17 @@ def get_tool_categories():
     rows = query_db(sql)
     return [row['tool_category'] for row in rows if row['tool_category']]
 
+def get_treasure_categories():
+    sql = """
+    SELECT DISTINCT treasure_category
+    FROM items
+    WHERE treasure_category IS NOT NULL
+      AND TRIM(treasure_category) != ''
+    ORDER BY treasure_category
+    """
+    rows = query_db(sql)
+    return [row['treasure_category'] for row in rows if row['treasure_category']]
+
 
 def get_items_by_armour_category(armour_category, page=1, page_size=10):
     offset = (page - 1) * page_size
@@ -169,6 +180,16 @@ def get_items_by_tool_category(gear_category, page=1, page_size=10):
     """
     return query_db(query, (f'%{gear_category}%', page_size, offset))
 
+def get_items_by_treasure_category(treasure_category, page=1, page_size=10):
+    offset = (page - 1) * page_size
+    query = """
+        SELECT item_id, item_name, base_price
+        FROM items
+        WHERE LOWER(treasure_category) LIKE LOWER(?)
+        ORDER BY item_name
+        LIMIT ? OFFSET ?
+    """
+    return query_db(query, (f'%{treasure_category}%', page_size, offset))
 
 def get_items_by_mount_category(equipment_category, page=1, page_size=10):
     offset = (page - 1) * page_size

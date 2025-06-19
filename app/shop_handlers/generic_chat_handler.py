@@ -74,7 +74,8 @@ class GenericChatHandler(HandlerDebugMixin):
             ) or self.convo.metadata.get('current_weapon_category'
             ) or self.convo.metadata.get('current_armour_category'
             ) or self.convo.metadata.get('current_gear_category'
-            ) or self.convo.metadata.get('current_tool_category')
+            ) or self.convo.metadata.get('current_tool_category'
+            ) or self.convo.metadata.get('current_treasure_category')
         if not category:
             return self.agent.shopkeeper_generic_say(
                 'Next what? I’m not sure what you’re looking at!')
@@ -90,9 +91,9 @@ class GenericChatHandler(HandlerDebugMixin):
         elif section == 'gear':
             return self.agent.shopkeeper_show_items_by_gear_category({
                 'gear_category': category, 'page': next_page})
-        elif section == 'tool':
-            return self.agent.shopkeeper_show_items_by_tool_category({
-                'tool_category': category, 'page': next_page})
+        elif section == 'treasure':
+            return self.agent.shopkeeper_show_items_by_treasure_category({
+                'treasure_category': category, 'page': next_page})
         self.debug('← Exiting handle_next_page')
         return self.agent.shopkeeper_generic_say(
             'Next what? I’m not sure what you’re looking at!')
@@ -117,7 +118,8 @@ class GenericChatHandler(HandlerDebugMixin):
             ) or self.convo.metadata.get('current_weapon_category'
             ) or self.convo.metadata.get('current_armour_category'
             ) or self.convo.metadata.get('current_gear_category'
-            ) or self.convo.metadata.get('current_tool_category')
+            ) or self.convo.metadata.get('current_tool_category'
+            ) or self.convo.metadata.get('current_treasure_category')
         if not category:
             return self.agent.shopkeeper_generic_say(
                 'Previous what? I’m not sure what you’re looking at!')
@@ -136,6 +138,9 @@ class GenericChatHandler(HandlerDebugMixin):
         elif section == 'tool':
             return self.agent.shopkeeper_show_items_by_tool_category({
                 'tool_category': category, 'page': prev_page})
+        elif section == 'treasure':
+            return self.agent.shopkeeper_show_items_by_treasure_category({
+                'treasure_category': category, 'page': prev_page})
         self.debug('← Exiting handle_previous_page')
         return self.agent.shopkeeper_generic_say(
             'Previous what? I’m not sure what you’re looking at!')

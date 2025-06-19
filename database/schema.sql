@@ -60,6 +60,7 @@ CREATE TABLE items (
     weapon_category    TEXT,
     gear_category      TEXT,
     tool_category      TEXT,
+    treasure_category  TEXT,
 
     -- weapon stats
     weapon_range   TEXT,

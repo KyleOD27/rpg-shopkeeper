@@ -1,5 +1,8 @@
 from app.conversation import ConversationState
-from app.models.items import get_all_items, get_all_equipment_categories, get_weapon_categories, get_armour_categories, get_gear_categories, get_tool_categories, get_items_by_armour_category, get_items_by_weapon_category, get_items_by_gear_category, get_items_by_tool_category, get_items_by_mount_category, search_items_by_name_fuzzy, get_items_by_weapon_range
+from app.models.items import get_all_items, get_all_equipment_categories, get_weapon_categories, get_armour_categories, \
+    get_gear_categories, get_tool_categories, get_items_by_armour_category, get_items_by_weapon_category, \
+    get_items_by_gear_category, get_items_by_tool_category, get_items_by_mount_category, search_items_by_name_fuzzy, \
+    get_items_by_weapon_range, get_treasure_categories, get_items_by_treasure_category
 from app.interpreter import normalize_input
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -56,7 +59,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         categories = get_all_equipment_categories()
         items = get_all_items()
         emoji_map = {'Armor': '🛡️', 'Weapons': '🗡️', 'Weapon': '🗡️',
-            'Adventuring Gear': '🎒', 'Tools': '🧰', 'Mounts and Vehicles': '🐎'}
+            'Adventuring Gear': '🎒', 'Tools': '🧰', 'Mounts and Vehicles': '🐎', 'Treasure': '💎'}
         category_counts = {cat: (0) for cat in categories}
         for item in items:
             category = item['equipment_category']
@@ -94,6 +97,12 @@ class BaseShopkeeper(HandlerDebugMixin):
         items = [dict(item) for item in get_all_items()]
         self.debug('← Exiting shopkeeper_list_tool_categories')
         return self.show_tool_category_menu(categories, items)
+
+    def shopkeeper_list_treasure_categories(self, categories):
+        self.debug('→ Entering shopkeeper_list_treasure_categories')
+        items = [dict(item) for item in get_all_items()]
+        self.debug('← Exiting shopkeeper_list_treasure_categories')
+        return self.show_treasure_category_menu(categories, items)
 
     def show_weapon_category_menu(self, categories, items):
         self.debug('→ Entering show_weapon_category_menu')
@@ -158,6 +167,20 @@ class BaseShopkeeper(HandlerDebugMixin):
             lines.append(f'• {cat} ({counts[cat]} items)')
         lines.append('\nPick one to browse.')
         self.debug('← Exiting show_tool_category_menu')
+        return '\n'.join(lines)
+
+    def show_treasure_category_menu(self, categories, items):
+        self.debug('→ Entering show_treasure_category_menu')
+        counts = {cat: 0 for cat in categories}
+        for item in items:
+            cat = item.get('treasure_category')
+            if cat in counts:
+                counts[cat] += 1
+        lines = ['💎 Treasure types available:', '']
+        for cat in categories:
+            lines.append(f'• {cat} ({counts[cat]} items)')
+        lines.append('\nPick one to browse.')
+        self.debug('← Exiting show_treasure_category_menu')
         return '\n'.join(lines)
 
     def _filter_items_by_category(self, field, category_value):
@@ -359,6 +382,37 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_tool_category')
         return '\n'.join(lines)
 
+    def shopkeeper_show_items_by_treasure_category(self, player_input):
+        self.debug('→ Entering shopkeeper_show_items_by_treasure_category')
+        treasure_category = player_input.get('treasure_category')
+        page = player_input.get('page', 1)
+
+        if not treasure_category:
+            return "⚠️ I didn't catch which treasure type you meant. Try that again?"
+
+        rows = get_items_by_treasure_category(treasure_category, page, page_size=5)
+        if not rows:
+            return f"Hmm... looks like we don't have any {treasure_category} treasures in stock right now."
+
+        all_rows = get_items_by_treasure_category(treasure_category, page=1, page_size=9999)
+        total_pages = max(1, (len(all_rows) + 4) // 5)
+
+        lines = [
+            f'💎 {treasure_category.title()} | Treasure (Pg {page} of {total_pages})\n'
+        ]
+        for row in rows:
+            item = dict(row)
+            item_id = item.get('item_id', '?')
+            name = item.get('item_name', 'Unknown Item')
+            price = item.get('base_price', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+
+        lines.append(' ')
+        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
+
+        self.debug('← Exiting shopkeeper_show_items_by_treasure_category')
+        return '\n'.join(lines)
+
     def shopkeeper_show_items_by_mount_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_mount_category')
         page = player_input.get('page', 1)
@@ -511,6 +565,12 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('→ Entering get_tool_categories')
         self.debug('← Exiting get_tool_categories')
         return get_tool_categories()
+
+    def get_treasure_categories(self):
+        self.debug('→ Entering get_treasure_categories')
+        self.debug('← Exiting get_treasure_categories')
+        return get_treasure_categories()
+
 
     def shopkeeper_fallback_prompt(self) ->str:
         self.debug('→ Entering shopkeeper_fallback_prompt')

@@ -35,7 +35,8 @@ class ViewHandler(HandlerDebugMixin):
                 section == 'armor' and intent == PlayerIntent.VIEW_ARMOUR_CATEGORY or
                 section == 'weapon' and intent == PlayerIntent.VIEW_WEAPON_CATEGORY or
                 section == 'gear' and intent == PlayerIntent.VIEW_GEAR_CATEGORY or
-                section == 'tool' and intent == PlayerIntent.VIEW_TOOL_CATEGORY
+                section == 'tool' and intent == PlayerIntent.VIEW_TOOL_CATEGORY or
+                section == 'reasure' and intent == PlayerIntent.VIEW_TREASURE_CATEGORY
         )
         if repeated_section:
             return self._handle_subcategory_selection(section, raw_text)
@@ -50,6 +51,8 @@ class ViewHandler(HandlerDebugMixin):
                                               self.agent.shopkeeper_list_gear_categories),
             PlayerIntent.VIEW_TOOL_CATEGORY: ('tool', self.agent.get_tool_categories,
                                               self.agent.shopkeeper_list_tool_categories),
+            PlayerIntent.VIEW_TREASURE_CATEGORY: ('treasure', self.agent.get_treasure_categories,
+                                              self.agent.shopkeeper_list_treasure_categories),
             PlayerIntent.VIEW_MOUNT_CATEGORY: ('mount', None,
                                                self.agent.shopkeeper_show_items_by_mount_category),
             PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ('equipment', None,
@@ -81,6 +84,8 @@ class ViewHandler(HandlerDebugMixin):
                                                  self.process_view_gear_subcategory),
             PlayerIntent.VIEW_TOOL_SUBCATEGORY: ('tool', 'tool_category',
                                                  self.process_view_tool_subcategory),
+            PlayerIntent.VIEW_TREASURE_SUBCATEGORY: ('treasure', 'treasure_category',
+                                                 self.process_view_treasure_subcategory),
         }
         if intent in subcategory_intents:
             section, payload_key, handler = subcategory_intents[intent]
@@ -190,6 +195,8 @@ class ViewHandler(HandlerDebugMixin):
             return self.agent.shopkeeper_list_gear_categories(categories)
         elif section == 'tool':
             return self.agent.shopkeeper_list_tool_categories(categories)
+        elif section == 'treasure':
+            return self.agent.shopkeeper_list_treasure_categories(categories)
         else:
             return self.agent.shopkeeper_view_items_prompt()
         self.debug('← Exiting _handle_subcategory_selection')
@@ -227,6 +234,14 @@ class ViewHandler(HandlerDebugMixin):
             'tool_category', self.agent.
             shopkeeper_show_items_by_tool_category, self.agent.
             get_tool_categories, self.agent.shopkeeper_list_tool_categories)
+
+    def process_view_treasure_subcategory(self, payload):
+        self.debug('→ Entering process_view_treasure_subcategory')
+        self.debug('← Exiting process_view_treasure_subcategory')
+        return self._handle_view_subcategory(payload, 'treasure',
+            'treasure_category', self.agent.
+            shopkeeper_show_items_by_treasure_category, self.agent.
+            get_treasure_categories, self.agent.shopkeeper_list_treasure_categories)
 
     def _handle_view_subcategory(self, payload, section, key, show_func,
         get_func, list_func):

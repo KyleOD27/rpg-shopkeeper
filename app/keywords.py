@@ -31,6 +31,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.VIEW_GEAR_CATEGORY:      ["gear", "adventuring gear", "supplies", "packs"],
     PlayerIntent.VIEW_TOOL_CATEGORY:      ["tool", "tools"],
     PlayerIntent.VIEW_MOUNT_CATEGORY:     ["mounts and vehicles", "mounts", "mount", "vehicle", "vehicles"],
+    PlayerIntent.VIEW_TREASURE_CATEGORY:  ["treasure"],
 
     # ▸ Sub‑categories
     PlayerIntent.VIEW_ARMOUR_SUBCATEGORY: ["light", "medium", "heavy"],
@@ -44,6 +45,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
         "artisan's tools", "artisans tools",
         "gaming sets", "musical instrument", "other tools",
     ],
+    PlayerIntent.VIEW_TREASURE_SUBCATEGORY: ["gemstones",],
 
     # ▸ Transactions
     PlayerIntent.BUY_ITEM:  ["buy", "purchase", "get", "acquire", "grab", "want"],

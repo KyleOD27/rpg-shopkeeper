@@ -20,12 +20,12 @@ import json
 from json import JSONDecodeError
 
 
-CATEGORY_MAPPING = {PlayerIntent.VIEW_ARMOUR_CATEGORY: ('armour_category',
-    'Armor'), PlayerIntent.VIEW_WEAPON_CATEGORY: ('weapon_category',
-    'Weapon'), PlayerIntent.VIEW_GEAR_CATEGORY: ('gear_category',
-    'Adventuring Gear'), PlayerIntent.VIEW_TOOL_CATEGORY: ('tool_category',
-    'Tools'), PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ('current_section',
-    'equipment')}
+CATEGORY_MAPPING = {    PlayerIntent.VIEW_ARMOUR_CATEGORY: ('armour_category', 'Armor'),
+                        PlayerIntent.VIEW_WEAPON_CATEGORY: ('weapon_category', 'Weapon'),
+                        PlayerIntent.VIEW_GEAR_CATEGORY: ('gear_category', 'Adventuring Gear'),
+                        PlayerIntent.VIEW_TOOL_CATEGORY: ('tool_category', 'Tools'),
+                        PlayerIntent.VIEW_TREASURE_CATEGORY: ('current_section', 'treasure'),
+                        PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ('current_section', 'equipment')}
 
 
 class ConversationService(HandlerDebugMixin):
@@ -250,6 +250,8 @@ class ConversationService(HandlerDebugMixin):
             field, val = CATEGORY_MAPPING[intent]
             metadata[field] = val
 
+        self.convo.metadata.update(metadata)
+
         # final payload for handler
         wrapped: dict = {'text': player_input, 'intent': intent, **metadata}
 
@@ -294,6 +296,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_GEAR_CATEGORY,
             PlayerIntent.VIEW_ARMOUR_CATEGORY,
             PlayerIntent.VIEW_TOOL_CATEGORY,
+            PlayerIntent.VIEW_TREASURE_CATEGORY,
             PlayerIntent.VIEW_MOUNT_CATEGORY,
             PlayerIntent.DEPOSIT_BALANCE,
             PlayerIntent.WITHDRAW_BALANCE,
@@ -304,6 +307,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
             PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+            PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
             PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
             PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT,
         ]
@@ -323,6 +327,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_GEAR_CATEGORY,
             PlayerIntent.VIEW_ARMOUR_CATEGORY,
             PlayerIntent.VIEW_TOOL_CATEGORY,
+            PlayerIntent.VIEW_TREASURE_CATEGORY,
             PlayerIntent.VIEW_MOUNT_CATEGORY,
             PlayerIntent.BUY_ITEM,
             PlayerIntent.BUY_NEEDS_ITEM,
@@ -338,6 +343,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
             PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+            PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
         ]
         for i in action_intents:
             router[ConversationState.AWAITING_ACTION, i] = self._route_intent(i)
@@ -371,12 +377,14 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_ARMOUR_CATEGORY,
             PlayerIntent.VIEW_TOOL_CATEGORY,
             PlayerIntent.VIEW_MOUNT_CATEGORY,
+            PlayerIntent.VIEW_TREASURE_CATEGORY,
         }
         view_subcategory_intents = {
             PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
             PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+            PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
         }  # defined at top
 
         if intent in view_subcategory_intents:

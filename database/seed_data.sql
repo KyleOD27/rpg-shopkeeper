@@ -34,7 +34,11 @@ INSERT INTO characters (user_id, party_id, player_name, character_name, role) VA
 (3, 'group_001', 'Jaz', 'JazzySmash', 'Bard'),
 (4, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
 
--- Insert Shop Items
+--Insert Items
+
+-- Insert Gemstones (See setup.seed)
+
+
 
 -- Grant RPG Shop (shop_id = 1) access to all users
 INSERT INTO user_shop_access (user_id, shop_id) VALUES

@@ -15,6 +15,8 @@ import sqlite3
 import string
 from pathlib import Path
 
+from seed.seed_gemstones import GEM_ROWS
+
 # ─── Optional SRD loader ─────────────────────────────────────────────────────
 try:
     from integrations.dnd5e.srd_item_loader import main as load_srd_items  # type: ignore
@@ -92,6 +94,32 @@ def _insert_items(no_srd_flag: bool) -> None:
         run_sql_script(FALLBACK_SQL)
 
 
+def insert_gemstones(db_path: Path) -> None:
+    """
+    Insert each gemstone row individually.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for srd_index, name, price_gp, description in GEM_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items
+                      (srd_index, item_name,
+                       equipment_category, treasure_category,
+                       base_price, price_unit, weight, desc)
+                    VALUES (?, ?, 'Treasure', 'Gemstones',
+                            ?, 'gp', 0, ?);
+                    """,
+                    (srd_index, name, price_gp, description),
+                )
+                print(f"✅ added → {srd_index:<15}  {name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
+        conn.commit()
+
+    print("💎  Gemstone seeding finished!")
+
 # ─── CLI Entry point ─────────────────────────────────────────────────────────
 
 def main() -> None:  # noqa: C901
@@ -118,6 +146,9 @@ def main() -> None:  # noqa: C901
     if not args.no_seed:
         print("🌱  Seeding user/shop/party data …")
         run_sql_script(SEED_SQL)
+
+        # Add this line right after the above call:
+        insert_gemstones(DB_PATH)  # DB_PATH is whatever you already pass to run_sql_script
 
     print("🔡  Populating normalised_item_name …")
     populate_normalised_names()
