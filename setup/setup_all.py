@@ -15,7 +15,8 @@ import sqlite3
 import string
 from pathlib import Path
 
-from seed.seed_gemstones import GEM_ROWS
+from seed.seed_treasure import GEM_ROWS, TRADEBAR_ROWS, TRADEGOODS_ROWS
+from setup.seed.seed_treasure import ARTOBJECTS_ROWS
 
 # ─── Optional SRD loader ─────────────────────────────────────────────────────
 try:
@@ -100,18 +101,18 @@ def insert_gemstones(db_path: Path) -> None:
     Logs every attempt so you can see exactly what happens.
     """
     with sqlite3.connect(db_path) as conn:
-        for srd_index, name, price_gp, description in GEM_ROWS:
+        for srd_index, name, price_gp, description, rarity in GEM_ROWS:
             try:
                 conn.execute(
                     """
                     INSERT INTO items
                       (srd_index, item_name,
                        equipment_category, treasure_category,
-                       base_price, price_unit, weight, desc)
+                       base_price, price_unit, weight, desc, rarity)
                     VALUES (?, ?, 'Treasure', 'Gemstones',
-                            ?, 'gp', 0, ?);
+                            ?, 'gp', 0, ?, ?);
                     """,
-                    (srd_index, name, price_gp, description),
+                    (srd_index, name, price_gp, description, rarity),
                 )
                 print(f"✅ added → {srd_index:<15}  {name}")
             except sqlite3.IntegrityError:
@@ -119,6 +120,85 @@ def insert_gemstones(db_path: Path) -> None:
         conn.commit()
 
     print("💎  Gemstone seeding finished!")
+
+
+def insert_tradebars(db_path: Path) -> None:
+    """
+    Insert each tradebar row individually.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for srd_index, name, price_gp, description, rarity in TRADEBAR_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items
+                      (srd_index, item_name,
+                       equipment_category, treasure_category,
+                       base_price, price_unit, weight, desc, rarity)
+                    VALUES (?, ?, 'Treasure', 'Trade Bars',
+                            ?, 'gp', 0, ?, ?);
+                    """,
+                    (srd_index, name, price_gp, description, rarity),
+                )
+                print(f"✅ added → {srd_index:<15}  {name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
+        conn.commit()
+
+    print("💰 Trade bar seeding finished!")
+
+def insert_tradegoods(db_path: Path) -> None:
+    """
+    Insert each trade goods row individually.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for srd_index, name, price_cp, description, rarity in TRADEGOODS_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items
+                      (srd_index, item_name,
+                       equipment_category, treasure_category,
+                       base_price, price_unit, weight, desc, rarity)
+                    VALUES (?, ?, 'Treasure', 'Trade Goods',
+                            ?, 'cp', 0, ?, ?);
+                    """,
+                    (srd_index, name, price_cp, description, rarity),
+                )
+                print(f"✅ added → {srd_index:<15}  {name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
+        conn.commit()
+
+    print("📦  Trade goods seeding finished!")
+
+def insert_artobjects(db_path: Path) -> None:
+    """
+    Insert each art object row individually.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for srd_index, name, price_gp, description, rarity in ARTOBJECTS_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items
+                      (srd_index, item_name,
+                       equipment_category, treasure_category,
+                       base_price, price_unit, weight, desc, rarity)
+                    VALUES (?, ?, 'Treasure', 'Art Objects',
+                            ?, 'gp', 0, ?, ?);
+                    """,
+                    (srd_index, name, price_gp, description, rarity),
+                )
+                print(f"✅ added → {srd_index:<15}  {name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
+        conn.commit()
+
+    print("🖼️  Art object seeding finished!")
 
 # ─── CLI Entry point ─────────────────────────────────────────────────────────
 
@@ -149,6 +229,9 @@ def main() -> None:  # noqa: C901
 
         # Add this line right after the above call:
         insert_gemstones(DB_PATH)  # DB_PATH is whatever you already pass to run_sql_script
+        insert_tradebars(DB_PATH)
+        insert_tradegoods(DB_PATH)
+        insert_artobjects(DB_PATH)
 
     print("🔡  Populating normalised_item_name …")
     populate_normalised_names()

@@ -83,7 +83,7 @@ CREATE TABLE items (
     weight         REAL,
     desc           TEXT,
     rarity         TEXT
-        CHECK (rarity IN ('Common','Uncommon','Rare','Very Rare','Legendary'))
+        CHECK (rarity IN ('Common','Uncommon','Rare','Very Rare','Legendary', 'Artifact'))
         DEFAULT 'Common',
 
     -- ↳ FOREIGN KEY folded in

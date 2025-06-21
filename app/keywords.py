@@ -45,7 +45,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
         "artisan's tools", "artisans tools",
         "gaming sets", "musical instrument", "other tools",
     ],
-    PlayerIntent.VIEW_TREASURE_SUBCATEGORY: ["gemstones",],
+    PlayerIntent.VIEW_TREASURE_SUBCATEGORY: ["gemstones", "trade bars", "trade goods", "art objects"],
 
     # ▸ Transactions
     PlayerIntent.BUY_ITEM:  ["buy", "purchase", "get", "acquire", "grab", "want"],

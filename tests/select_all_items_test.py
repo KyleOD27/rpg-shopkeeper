@@ -7,7 +7,7 @@ def test_select_all_items() -> None:          # ← no arg
         rows = conn.execute("SELECT * FROM items").fetchall()
 
     print(f"🔍 Retrieved {len(rows)} items:\n")
-    for row in rows[:300]:                     # 30 is plenty for smoke
+    for row in rows[:3000]:                     # 30 is plenty for smoke
         pprint(dict(row), sort_dicts=False, width=100)
         print()
 
