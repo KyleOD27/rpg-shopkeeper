@@ -15,8 +15,8 @@ import sqlite3
 import string
 from pathlib import Path
 
-from seed.seed_treasure import GEM_ROWS, TRADEBAR_ROWS, TRADEGOODS_ROWS
-from setup.seed.seed_treasure import ARTOBJECTS_ROWS
+from setup.seed.seed_treasure import GEM_ROWS, TRADEBAR_ROWS, TRADEGOODS_ROWS, ARTOBJECTS_ROWS
+from setup.seed.seed_magicitems import ARMOR_ROWS
 
 # ─── Optional SRD loader ─────────────────────────────────────────────────────
 try:
@@ -95,6 +95,8 @@ def _insert_items(no_srd_flag: bool) -> None:
         run_sql_script(FALLBACK_SQL)
 
 
+
+# ---- Insert Treasure Items -----------------------------------------------------
 def insert_gemstones(db_path: Path) -> None:
     """
     Insert each gemstone row individually.
@@ -108,9 +110,9 @@ def insert_gemstones(db_path: Path) -> None:
                     INSERT INTO items
                       (srd_index, item_name,
                        equipment_category, treasure_category,
-                       base_price, price_unit, weight, desc, rarity)
+                       base_price, price_unit, weight, desc, rarity, item_source)
                     VALUES (?, ?, 'Treasure', 'Gemstones',
-                            ?, 'gp', 0, ?, ?);
+                            ?, 'gp', 0, ?, ?, 'DM-GUIDE-2024' );
                     """,
                     (srd_index, name, price_gp, description, rarity),
                 )
@@ -120,7 +122,6 @@ def insert_gemstones(db_path: Path) -> None:
         conn.commit()
 
     print("💎  Gemstone seeding finished!")
-
 
 def insert_tradebars(db_path: Path) -> None:
     """
@@ -135,9 +136,9 @@ def insert_tradebars(db_path: Path) -> None:
                     INSERT INTO items
                       (srd_index, item_name,
                        equipment_category, treasure_category,
-                       base_price, price_unit, weight, desc, rarity)
+                       base_price, price_unit, weight, desc, rarity, item_source)
                     VALUES (?, ?, 'Treasure', 'Trade Bars',
-                            ?, 'gp', 0, ?, ?);
+                            ?, 'gp', 0, ?, ?, 'DM-GUIDE-2024');
                     """,
                     (srd_index, name, price_gp, description, rarity),
                 )
@@ -161,9 +162,9 @@ def insert_tradegoods(db_path: Path) -> None:
                     INSERT INTO items
                       (srd_index, item_name,
                        equipment_category, treasure_category,
-                       base_price, price_unit, weight, desc, rarity)
+                       base_price, price_unit, weight, desc, rarity, item_source)
                     VALUES (?, ?, 'Treasure', 'Trade Goods',
-                            ?, 'cp', 0, ?, ?);
+                            ?, 'cp', 0, ?, ?, 'DM-GUIDE-2024');
                     """,
                     (srd_index, name, price_cp, description, rarity),
                 )
@@ -187,9 +188,9 @@ def insert_artobjects(db_path: Path) -> None:
                     INSERT INTO items
                       (srd_index, item_name,
                        equipment_category, treasure_category,
-                       base_price, price_unit, weight, desc, rarity)
+                       base_price, price_unit, weight, desc, rarity, item_source)
                     VALUES (?, ?, 'Treasure', 'Art Objects',
-                            ?, 'gp', 0, ?, ?);
+                            ?, 'gp', 0, ?, ?, 'DM-GUIDE-2024');
                     """,
                     (srd_index, name, price_gp, description, rarity),
                 )
@@ -199,6 +200,54 @@ def insert_artobjects(db_path: Path) -> None:
         conn.commit()
 
     print("🖼️  Art object seeding finished!")
+
+# ---- Insert Magic Items -----------------------------------------------------
+def insert_armor(db_path: Path) -> None:
+    """
+    Insert each armor row individually.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for (
+            srd_index, item_name, base_price, price_unit, base_ac,
+            dex_bonus, max_dex_bonus, str_minimum, stealth_disadvantage,
+            weight, description, magic_bonus, is_magical, rarity, armour_category
+        ) in ARMOR_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items (
+                        srd_index, item_name, item_source,
+                        equipment_category, armour_category,
+                        base_price, price_unit, weight, desc, rarity,
+                        base_ac, dex_bonus, max_dex_bonus,
+                        str_minimum, stealth_disadvantage,
+                        magic_bonus, is_magical
+                    )
+                    VALUES (?, ?, 'DM-GUIDE-2024',
+                            'Armor', ?,
+                            ?, ?, ?, ?, ?,
+                            ?, ?, ?,
+                            ?, ?,
+                            ?, ?);
+                    """,
+                    (
+                        srd_index, item_name, armour_category,
+                        base_price, price_unit, weight, description, rarity,
+                        base_ac, int(dex_bonus), max_dex_bonus,
+                        str_minimum, int(stealth_disadvantage),
+                        magic_bonus, int(is_magical)
+                    )
+                )
+                print(f"🛡️  added → {srd_index:<30} {item_name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
+        conn.commit()
+
+    print("🧱 Armor seeding finished!")
+
+
+
 
 # ─── CLI Entry point ─────────────────────────────────────────────────────────
 
@@ -232,6 +281,8 @@ def main() -> None:  # noqa: C901
         insert_tradebars(DB_PATH)
         insert_tradegoods(DB_PATH)
         insert_artobjects(DB_PATH)
+        insert_armor(DB_PATH)
+
 
     print("🔡  Populating normalised_item_name …")
     populate_normalised_names()

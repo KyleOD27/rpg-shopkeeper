@@ -52,6 +52,9 @@ DROP TABLE IF EXISTS items;
 CREATE TABLE items (
     item_id        INTEGER PRIMARY KEY AUTOINCREMENT,
     srd_index      TEXT UNIQUE,
+    item_source    TEXT NOT NULL
+    CHECK (item_source IN ('SRD','DM-GUIDE-2024','HOMEBREW'))
+        DEFAULT 'Common',
     item_name      TEXT NOT NULL,
 
     -- categories
@@ -86,10 +89,16 @@ CREATE TABLE items (
         CHECK (rarity IN ('Common','Uncommon','Rare','Very Rare','Legendary', 'Artifact'))
         DEFAULT 'Common',
 
+    -- magic enhancements
+    magic_bonus    INTEGER DEFAULT 0
+        CHECK (magic_bonus BETWEEN 0 AND 3),
+    is_magical     BOOLEAN DEFAULT 0,
+
     -- ↳ FOREIGN KEY folded in
     CONSTRAINT fk_items_unit
         FOREIGN KEY (price_unit) REFERENCES currencies(unit)
 );
+
 
 
 -- Currency mapping

@@ -102,6 +102,7 @@ def map_to_row(item: dict) -> dict:
         "weight":             item.get("weight"),
         "desc":               "\n".join(item.get("desc", [])),
         "rarity":             "Common",
+        "item_source":        "SRD"
     }
 
 
