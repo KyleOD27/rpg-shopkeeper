@@ -16,7 +16,7 @@ import string
 from pathlib import Path
 
 from setup.seed.seed_treasure import GEM_ROWS, TRADEBAR_ROWS, TRADEGOODS_ROWS, ARTOBJECTS_ROWS
-from setup.seed.seed_magicitems import ARMOR_ROWS
+from setup.seed.seed_magicitems import ARMOR_ROWS, WEAPON_ROWS, GEAR_ROWS
 
 # ─── Optional SRD loader ─────────────────────────────────────────────────────
 try:
@@ -93,8 +93,6 @@ def _insert_items(no_srd_flag: bool) -> None:
     except Exception as exc:  # network, missing dep, etc.
         logging.warning("SRD load failed: %s – falling back to local seed", exc)
         run_sql_script(FALLBACK_SQL)
-
-
 
 # ---- Insert Treasure Items -----------------------------------------------------
 def insert_gemstones(db_path: Path) -> None:
@@ -246,7 +244,101 @@ def insert_armor(db_path: Path) -> None:
 
     print("🧱 Armor seeding finished!")
 
+def insert_weapon(db_path: Path) -> None:
+    """
+    Insert each weapon row individually.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for (
+            srd_index, item_name, base_price, price_unit,
+            weapon_range, category_range, damage_dice, damage_type,
+            range_normal, range_long,
+            weight,  # ✅ added weight
+            description, magic_bonus, is_magical, rarity, weapon_category
+        ) in WEAPON_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items (
+                        srd_index, item_name, item_source,
+                        equipment_category, weapon_category,
+                        base_price, price_unit,
+                        weapon_range, category_range,
+                        damage_dice, damage_type,
+                        range_normal, range_long,
+                        weight,
+                        desc, rarity,
+                        magic_bonus, is_magical
+                    )
+                    VALUES (?, ?, 'DM-GUIDE-2024',
+                            'Weapon', ?,
+                            ?, ?,
+                            ?, ?,
+                            ?, ?,
+                            ?, ?,
+                            ?, 
+                            ?, ?,
+                            ?, ?);
+                    """,
+                    (
+                        srd_index, item_name, weapon_category,
+                        base_price, price_unit,
+                        weapon_range, category_range,
+                        damage_dice, damage_type,
+                        range_normal, range_long,
+                        weight,  # ✅ weight
+                        description, rarity,
+                        magic_bonus, int(is_magical)
+                    )
+                )
+                print(f"🗡️  added → {srd_index:<30} {item_name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
+        conn.commit()
 
+    print("⚔️  Weapon seeding finished!")
+
+def insert_gear(db_path: Path) -> None:
+    """
+    Insert each adventuring gear row (e.g. potions, ammunition, misc).
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for (
+            srd_index, item_name, base_price, price_unit,
+            weight, description, magic_bonus, is_magical,
+            rarity, gear_category
+        ) in GEAR_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items (
+                        srd_index, item_name, item_source,
+                        equipment_category, gear_category,
+                        base_price, price_unit, weight,
+                        desc, rarity,
+                        magic_bonus, is_magical
+                    )
+                    VALUES (?, ?, 'DM-GUIDE-2024',
+                            'Adventuring Gear', ?,
+                            ?, ?, ?,
+                            ?, ?,
+                            ?, ?);
+                    """,
+                    (
+                        srd_index, item_name, gear_category,
+                        base_price, price_unit, weight,
+                        description, rarity,
+                        magic_bonus, int(is_magical)
+                    )
+                )
+                print(f"🎒  added → {srd_index:<30} {item_name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
+        conn.commit()
+
+    print("🎒 Adventuring Gear seeding finished!")
 
 
 # ─── CLI Entry point ─────────────────────────────────────────────────────────
@@ -282,6 +374,8 @@ def main() -> None:  # noqa: C901
         insert_tradegoods(DB_PATH)
         insert_artobjects(DB_PATH)
         insert_armor(DB_PATH)
+        insert_weapon(DB_PATH)
+        insert_gear(DB_PATH)
 
 
     print("🔡  Populating normalised_item_name …")
