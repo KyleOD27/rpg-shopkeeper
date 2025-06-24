@@ -311,15 +311,192 @@ WEAPON_ROWS: list[tuple[str, str, int, str, str, str, str, str, int, int, float,
 ]
 
 GEAR_ROWS: list[tuple[str, str, int, str, float, str, int, bool, str, str]] = [
-    ('adamantine-arrow', 'Adamantine Arrow', 100, 'gp', 0.05,
-     'This arrow is made of adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit.', 0, True, 'Uncommon', 'Ammunition'),
 
-    ('adamantine-blowgun-needle', 'Adamantine Blowgun Needle', 100, 'gp', 0.01,
-     'This blowgun made of adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit.', 0, True, 'Uncommon', 'Ammunition'),
+    #ammo
+    ('adamantine-arrow', 'Adamantine Arrow', 400, 'gp', 0.05,
+     'This arrow is made of adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit. This item is consumed on use.', 0, True, 'Uncommon', 'Ammunition'),
 
-    ('adamantine-crossbow-bolt', 'Adamantine Crossbow Bolt', 100, 'gp', 0.1,
-     'This bolt is tipped with adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit.', 0, True, 'Uncommon', 'Ammunition'),
+    ('adamantine-blowgun-needle', 'Adamantine Blowgun Needle', 400, 'gp', 0.01,
+     'This blowgun made of adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit. This item is consumed on use.', 0, True, 'Uncommon', 'Ammunition'),
 
-    ('adamantine-sling-bullet', 'Adamantine Sling Bullet', 100, 'gp', 0.1,
-     'This sling bullet is forged from adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit.', 0, True, 'Uncommon', 'Ammunition'),
+    ('adamantine-crossbow-bolt', 'Adamantine Crossbow Bolt', 400, 'gp', 0.1,
+     'This bolt is tipped with adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit. This item is consumed on use.', 0, True, 'Uncommon', 'Ammunition'),
+
+    ('adamantine-sling-bullet', 'Adamantine Sling Bullet', 400, 'gp', 0.1,
+     'This sling bullet is forged from adamantine, one of the hardest substances in existence. Whenever it hits an object, the hit is a Critical Hit. This item is consumed on use.', 0, True, 'Uncommon', 'Ammunition'),
+
+    # potions
+    ('potion-of-healing', 'Potion of Healing', 100, 'gp', 0.1,
+     'The red liquid glimmers when agitated. You regain 2d4+2 Hit Points when you drink this potion. This item is consumed when used.',
+     0, True, 'Common', 'Potion'),
+
+    ('greater-potion-of-healing', 'Greater Potion of Healing', 400, 'gp', 0.1,
+     'You regain 4d4+4 Hit Points when you drink this potion. The red liquid glimmers when agitated. This item is consumed when used.',
+     0, True, 'Uncommon', 'Potion'),
+
+    ('superior-potion-of-healing', 'Superior Potion of Healing', 4000, 'gp', 0.1,
+     'You regain 8d4+8 Hit Points when you drink this potion. The red liquid glimmers when agitated. This item is consumed when used.',
+     0, True, 'Rare', 'Potion'),
+
+    ('supreme-potion-of-healing', 'Supreme Potion of Healing', 40000, 'gp', 0.1,
+     'You regain 10d4+20 Hit Points when you drink this potion. The red liquid glimmers when agitated. This item is consumed when used.',
+     0, True, 'Very Rare', 'Potion'),
+
+    ('potion-of-animal-friendship', 'Potion of Animal Friendship', 400, 'gp', 0.1,
+     'When you drink this potion, you can cast the level 3 version of the *Animal Friendship* spell (save DC 13). Agitating this potions muddy liquid brings little bits into view; a fish scale, a hummingbird feather, a cat claw or a squirrel hair. This item is consumed when used.',
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-clairvoyance', 'Potion of Animal Friendship', 40000, 'gp', 0.1,
+     'When you drink this potion, you gain the effect of the *Clairvoyance* spell (no Concentration required). An eyeball bobs in this potions yellowish liquid but vanishes when the potion is opened. This item is consumed when used.',
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-climbing', 'Potion of Climbing', 40000, 'gp', 0.1,
+     'When you drink this potion, you gain a Climb Speed equal to your Speed for 1 hour. During this time you have Advantage on Strength (Athletics) checks to climb. This potion is separated into brown, silver and gray layers resembling bands of stone Shaking the bottle fails to mix the colours. This item is consumed when used.',
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-comprehension', 'Potion of Comprehension', 400, 'gp', 0.1,
+     "When you drink this potion, you gain the effect of the *Comprehend Languages* spell for 1 hour. This potion's liquid is a clear concoction with bits of salt and soot swirling in it. This item is consumed when used.",
+     0, True, 'Common', 'Potion'),
+
+    ('potion-of-diminution', 'Potion of Diminution', 40000, 'gp', 0.1,
+     "When you drink this potion, you gain the 'reduce' effect of the *Enlarge/Reduce* spell for 1d4 hours (no Concentration required). The red in the potion's liquid continuously contracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails interrupt the process.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-growth', 'Potion of Growth', 4000, 'gp', 0.1,
+     "When you drink this potion, you gain the 'enlarge' effect of the *Enlarge/Reduce* spell for 1d4 hours (no Concentration required). The red in the potion's liquid continuously expands from a tiny bead and then contracts. Shaking the bottle fails interrupt the process.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-fire-breath', 'Potion of Fire Breath', 4000, 'gp', 0.1,
+     "After drinking this potion, you can take a Bonus Action to exhale fire at a target within 30 feet of yourself. The target makes a DC 13 Dexterity saving throw, taking 4d6 Fire damage on a failed save or half as much damage on a successful one. This potion's orange liquid flickers, and smoke fills the top of the container and wafts out whenever it is opened.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-gaseous-form', 'Potion of Gaseous Form', 4000, 'gp', 0.1,
+     "When you drink this potion, you gain the effect of the *Gaseous Form* spell for 1 hour (no Concentration required) or until you end the effect as a Bonus Action."
+     "This potion's container seems to hold fog that moves and pours like water.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-hill-giant-strength', 'Potion of Hill Giant Strength', 400, 'gp', 0.1,
+     "When you drink this potion, your Strength score increases to 21 for 1 hour. This potion has no effect on you if your Strength is equal to or greater than 21."
+     "This potion's transparent liquid has floating in it a silver light resembling a giant's finger nail.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-frost-giant-strength', 'Potion of Frost Giant Strength', 400, 'gp', 0.1,
+     "When you drink this potion, your Strength score increases to 23 for 1 hour. This potion has no effect on you if your Strength is equal to or greater than 23."
+     "This potion's transparent liquid has floating in it a silver light resembling a giant's finger nail.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-fire-giant-strength', 'Potion of Fire Giant Strength', 4000, 'gp', 0.1,
+     "When you drink this potion, your Strength score increases to 25 for 1 hour. This potion has no effect on you if your Strength is equal to or greater than 25."
+     "This potion's transparent liquid has floating in it a silver light resembling a giant's finger nail.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-cloud-giant-strength', 'Potion of Cloud Giant Strength', 400000, 'gp', 0.1,
+     "When you drink this potion, your Strength score increases to 27 for 1 hour. This potion has no effect on you if your Strength is equal to or greater than 27."
+     "This potion's transparent liquid has floating in it a silver light resembling a giant's finger nail.",
+     0, True, 'Very Rare', 'Potion'),
+
+    ('potion-of-storm-giant-strength', 'Potion of Storm Giant Strength', 200000, 'gp', 0.1,
+     "When you drink this potion, your Strength score increases to 29 for 1 hour. This potion has no effect on you if your Strength is equal to or greater than 29."
+     "This potion's transparent liquid has floating in it a silver light resembling a giant's finger nail.",
+     0, True, 'Legendary', 'Potion'),
+
+    ('potion-of-greater-invisibility', 'Potion of Greater Invisibility', 40000, 'gp', 0.1,
+     "This potion's container looks empty but feels as though it holds liquid."
+     "When you drink this potion you have the Invisible condition for 1 hour.",
+     0, True, 'Very Rare', 'Potion'),
+
+    ('potion-of-heroism', 'Potion of Heroism', 40000, 'gp', 0.1,
+     "When you drink this potion, you gain 10 Temporary Hit Points that last for 1 hour. You are also under the effect of the *Bless* spell for the same duration."
+     "This potion's blue liquid bubbles and streams as if boiling.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-invisibility', 'Potion of Invisibility', 4000, 'gp', 0.1,
+     "This potion's container looks empty but feels as though it holds liquid."
+     "When you drink this potion you have the Invisible condition for 1 hour. The effect ends early if you make an attack roll, deal damage or cast a spell.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-invulnerability', 'Potion of Invulnerability', 4000, 'gp', 0.1,
+     "For 1 minute after you drink this potion, you have Resistance to all damage."
+     "This potion's syrupy liquid looks like liquified iron.",
+     0, True, 'Very Rare', 'Potion'),
+
+    ('potion-of-longevity', 'Potion of Longevity', 40000, 'gp', 0.1,
+     "When you drink this potion, your physical age is reduced by 1d6+ 6 years to a minimum of 13 years. Each time you subsequently drink a *Potion of Longevity* there is a 10 percent cumulative chance that you instead age by 1d6 + 6 years."
+     "Suspended in this amber liquid is a tiny heart that, against all reason, is still beating. These ingredients vanish when the potion is opened.",
+     0, True, 'Very Rare', 'Potion'),
+
+    ('potion-of-mind-reading', 'Potion of Mind Reading', 40000, 'gp', 0.1,
+     "When you drink this potion, you gain the effect of the *Detect Thoughts* spell (save DC13) for 10 minutes (no Concentration required)."
+     "This potion's dense, purple liquid has an ovoid cloud of pink floating in it.",
+     0, True, 'Rare', 'Potion'),
+
+    ('potion-of-pugilism', 'Potion of Pugilism', 400, 'gp', 0.1,
+     "After you drink this potion, each Unarmed Strike you make deals an extra 1d6 Force damage on a hit. This effect lasts 10 minutes."
+     "This potion is a thick green fluid that tastes like spinach.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-acid-resistance', 'Potion of Acid Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to acid damage for 1 hour. "
+     "The liquid is murky green and bubbles slightly, giving off a sharp, tangy odor.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-cold-resistance', 'Potion of Cold Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to cold damage for 1 hour. "
+     "The liquid is icy blue and cold to the touch, with frost clinging to the bottle.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-fire-resistance', 'Potion of Fire Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to fire damage for 1 hour. "
+     "The liquid is a swirling orange and red, warm to the touch and flickering like flame.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-force-resistance', 'Potion of Force Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to force damage for 1 hour. "
+     "The liquid is deep violet with occasional ripples of invisible pressure moving through it.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-lightning-resistance', 'Potion of Lightning Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to lightning damage for 1 hour. "
+     "The liquid crackles faintly and glows with streaks of silver and blue.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-necrotic-resistance', 'Potion of Necrotic Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to necrotic damage for 1 hour. "
+     "The liquid is pitch black with wisps of shadow swirling within.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-poison-resistance', 'Potion of Poison Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to poison damage for 1 hour. "
+     "The liquid is sickly green with a bitter smell and slow-moving swirls.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-psychic-resistance', 'Potion of Psychic Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to psychic damage for 1 hour. "
+     "The liquid pulses with shifting colors and seems to hum faintly in your mind.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-radiant-resistance', 'Potion of Radiant Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to radiant damage for 1 hour. "
+     "The liquid glows with a soft golden light and feels warm and invigorating.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-thunder-resistance', 'Potion of Thunder Resistance', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to thunder damage for 1 hour. "
+     "The liquid rumbles gently and fizzes with deep, resonant vibrations.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-classic-resistance', 'Potion of Resistance (Classic)', 400, 'gp', 0.1,
+     "When you drink this potion, you have resistance to a damage type for 1 hour. The DM chooses the type or determines it randomly by rolling on the following table. "
+     "The liquid inside shimmers with ever-changing colors, cycling through hues and textures that hint at different elemental forces. It feels warm, cold, heavy, and light all at once.",
+     0, True, 'Uncommon', 'Potion'),
+
+    ('potion-of-speed', 'Potion of Speed', 400, 'gp', 0.1,
+     "When you drink this potion, you gain the effect of the *Haste* spell for 1 minute (no Concentration required) without suffering the wave of lethargy that typically occurs when the effect ends."
+     "The potion's yello fluid is streaked with black and swirls on its own.",
+     0, True, 'Very Rare', 'Potion'),
+
+
 ]
+
+# pg 288+
+# 100, 400, 4000, 40000, 200000

@@ -39,7 +39,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.VIEW_GEAR_SUBCATEGORY: [
         "ammunition", "arcane foci", "druidic foci",
         "equipment packs", "holy symbols", "kits",
-        "standard gear", "standard",
+        "standard gear", "standard", "potion"
     ],
     PlayerIntent.VIEW_TOOL_SUBCATEGORY: [
         "artisan's tools", "artisans tools",
