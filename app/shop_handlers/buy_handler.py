@@ -141,13 +141,14 @@ class BuyHandler(HandlerDebugMixin):
             self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
             self.convo.save_state()
             discounted_price = self.convo.discount or item.get('base_price', 0)
+            unit = item.get('price_unit', 0)
             item_name = item['item_name']
             balance = self.party_data['party_balance_cp']
             return f"""Alright, alright, you twisted my arm.
  
-How about *{discounted_price}* gp for the *{item_name}*?
+How about *{discounted_price}* {unit} for the *{item_name}*?
  
-Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
+Your balance is *{balance}* CP. Would you like to proceed with the purchase?"""
         self.convo.set_discount(None)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.set_pending_item(item)
@@ -155,11 +156,12 @@ Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
         self.convo.save_state()
         full_price = item.get('base_price', 0)
         item_name = item['item_name']
+        unit = item.get('price_unit', 0)
         balance = self.party_data['party_balance_cp']
         self.debug('← Exiting handle_haggle')
         return f"""😅 Nice try, but that price is already a bargain.
  
-The *{item_name}* still costs *{full_price}* gp.
+The *{item_name}* still costs *{full_price}* {unit}.
  
 Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
 
@@ -195,19 +197,34 @@ Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
 
     def finalise_purchase(self, item):
         self.debug('→ Entering finalise_purchase')
-        price = (self.convo.discount if self.convo.discount is not None else
-            item['base_price'])
+
+        price = self.convo.discount if self.convo.discount is not None else item['base_price']
+        unit = item.get('price_unit', '?')
+
         if self.party_data['party_balance_cp'] < price:
-            return self.agent.shopkeeper_buy_failure_prompt(item,
-                'Balance too low.', self.party_data['party_balance_cp'])
+            return self.agent.shopkeeper_buy_failure_prompt(
+                item,
+                'Balance too low.',
+                self.party_data['party_balance_cp']
+            )
+
         self.party_data['party_balance_cp'] -= price
         update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
+
         saved = item['base_price'] - price
-        note = f' (you saved {saved}g)' if saved > 0 else ''
-        record_transaction(party_id=self.party_id, character_id=self.
-            player_id, item_name=item['item_name'], amount=-price, action=
-            'BUY', balance_after=self.party_data['party_balance_cp'], details=
-            f'Purchased item{note}')
+        note = f' (you saved {saved}{unit})' if saved > 0 else ''
+
+        record_transaction(
+            party_id=self.party_id,
+            character_id=self.player_id,
+            item_name=item['item_name'],
+            amount=-price,
+            action='BUY',
+            balance_after=self.party_data['party_balance_cp'],
+            details=f'Purchased item{note}'
+        )
+
         self.debug('← Exiting finalise_purchase')
-        return self.agent.shopkeeper_buy_success_prompt(item, price)
+        return self.agent.shopkeeper_buy_success_prompt(item, price, unit)
+
     handle_buy_confirm = handle_confirm_purchase

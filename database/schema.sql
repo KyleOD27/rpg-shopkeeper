@@ -82,6 +82,7 @@ CREATE TABLE items (
 
     -- misc
     base_price     INTEGER DEFAULT 0,
+    base_price_cp  INTEGER DEFAULT 0,
     price_unit     TEXT    DEFAULT 'gp',    -- cp | sp | ep | gp | pp
     weight         REAL,
     desc           TEXT,
@@ -98,8 +99,6 @@ CREATE TABLE items (
     CONSTRAINT fk_items_unit
         FOREIGN KEY (price_unit) REFERENCES currencies(unit)
 );
-
-
 
 -- Currency mapping
 CREATE TABLE currencies (

@@ -84,7 +84,7 @@ TRADEGOODS_ROWS: list[tuple[str, str, int, str, str]] = [
     ("1-lb-saffron", "1 lb of saffron", 1500, "Perfectly coloured saffron", "Rare"),
     ("Ox", "a domestic ox", 1000, "Another perfectly fine bovine", "Rare"),
     ("1lb. of gold", "1 lb of gold", 5000, "1 pound of pure gold", "Rare"),
-    ("1lb. of platinum", "1 lb of gold", 50000, "1 pound of the finest platinum", "Very Rare"),
+    ("1lb. of platinum", "1 lb of platinum", 50000, "1 pound of the finest platinum", "Very Rare"),
 ]
 
 ARTOBJECTS_ROWS: list[tuple[str, str, int, str, str]] = [

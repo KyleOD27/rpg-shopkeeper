@@ -1,3 +1,5 @@
+from locale import currency
+
 from app.conversation import ConversationState
 from app.models.items import get_all_items, get_all_equipment_categories, get_weapon_categories, get_armour_categories, \
     get_gear_categories, get_tool_categories, get_items_by_armour_category, get_items_by_weapon_category, \
@@ -107,79 +109,157 @@ class BaseShopkeeper(HandlerDebugMixin):
     def show_weapon_category_menu(self, categories, items):
         self.debug('→ Entering show_weapon_category_menu')
         """
-        Build the weapon-menu using item['category_range'] instead of
-        item['weapon_category'].
-
-        `categories` should now be the distinct list of category_range
-        strings you pulled from the DB, e.g.:
-            ['simple melee', 'simple ranged', 'martial melee', 'martial ranged']
+        Show weapon types sorted by the cheapest item (by base_price_cp) in each category_range.
         """
-        counts = {cat: (0) for cat in categories}
+
+        # Build a dict of category → list of base_price_cp values
+        category_prices = {cat: [] for cat in categories}
         for itm in items:
             cat = (itm.get('category_range') or '').lower()
-            if cat in counts:
-                counts[cat] += 1
+            if cat in category_prices:
+                try:
+                    price_cp = int(itm.get('base_price_cp', 0))
+                    category_prices[cat].append(price_cp)
+                except (ValueError, TypeError):
+                    pass  # ignore bad data
+
+        # Build a sorted list of categories by min price
+        sorted_categories = sorted(
+            category_prices.items(),
+            key=lambda kv: min(kv[1]) if kv[1] else float('inf')
+        )
+
         lines = ['⚔️ What type of weapon are you looking for?', ' ']
-        for cat in categories:
+        for cat, prices in sorted_categories:
             pretty = cat.title()
-            lines.append(f'• {pretty} ({counts[cat]} items)')
+            count = len(prices)
+            if count > 0:
+                lines.append(f'• {pretty} ({count} items)')
         lines.append('\nJust say one to browse.')
         self.debug('← Exiting show_weapon_category_menu')
         return '\n'.join(lines)
 
     def show_armor_category_menu(self, categories, items):
         self.debug('→ Entering show_armor_category_menu')
-        counts = {cat: (0) for cat in categories}
+
+        # Step 1: Collect price_cp values for each category
+        category_prices = {cat: [] for cat in categories}
         for item in items:
-            cat = item['armour_category']
-            if cat in counts:
-                counts[cat] += 1
+            cat = item.get('armour_category')
+            if cat in category_prices:
+                try:
+                    price_cp = int(item.get('base_price_cp', 0))
+                    category_prices[cat].append(price_cp)
+                except (TypeError, ValueError):
+                    pass
+
+        # Step 2: Sort categories by their minimum price
+        sorted_categories = sorted(
+            category_prices.items(),
+            key=lambda kv: min(kv[1]) if kv[1] else float('inf')
+        )
+
+        # Step 3: Build output lines
         lines = ['🛡️ Protective gear available:', ' ']
-        for cat in categories:
-            lines.append(f'• {cat} ({counts[cat]} items)')
+        for cat, prices in sorted_categories:
+            count = len(prices)
+            if count > 0:
+                lines.append(f'• {cat} ({count} items)')
         lines.append('\nPick one to browse.')
+
         self.debug('← Exiting show_armor_category_menu')
         return '\n'.join(lines)
 
     def show_gear_category_menu(self, categories, items):
         self.debug('→ Entering show_gear_category_menu')
-        counts = {cat: (0) for cat in categories}
+
+        # Step 1: Build a dict of gear_category → list of prices
+        category_prices = {cat: [] for cat in categories}
         for item in items:
-            cat = item['gear_category']
-            if cat in counts:
-                counts[cat] += 1
+            cat = item.get('gear_category')
+            if cat in category_prices:
+                try:
+                    price_cp = int(item.get('base_price_cp', 0))
+                    category_prices[cat].append(price_cp)
+                except (TypeError, ValueError):
+                    pass
+
+        # Step 2: Sort categories by minimum price
+        sorted_categories = sorted(
+            category_prices.items(),
+            key=lambda kv: min(kv[1]) if kv[1] else float('inf')
+        )
+
+        # Step 3: Format output
         lines = ['🎒 Gear types available:', ' ']
-        for cat in categories:
-            lines.append(f'• {cat} ({counts[cat]} items)')
+        for cat, prices in sorted_categories:
+            count = len(prices)
+            if count > 0:
+                lines.append(f'• {cat} ({count} items)')
         lines.append('\nPick one to browse.')
+
         self.debug('← Exiting show_gear_category_menu')
         return '\n'.join(lines)
 
     def show_tool_category_menu(self, categories, items):
         self.debug('→ Entering show_tool_category_menu')
-        counts = {cat: (0) for cat in categories}
+
+        # Step 1: Gather price_cp for each tool category
+        category_prices = {cat: [] for cat in categories}
         for item in items:
-            cat = item['tool_category']
-            if cat in counts:
-                counts[cat] += 1
+            cat = item.get('tool_category')
+            if cat in category_prices:
+                try:
+                    price_cp = int(item.get('base_price_cp', 0))
+                    category_prices[cat].append(price_cp)
+                except (TypeError, ValueError):
+                    pass
+
+        # Step 2: Sort categories by lowest price
+        sorted_categories = sorted(
+            category_prices.items(),
+            key=lambda kv: min(kv[1]) if kv[1] else float('inf')
+        )
+
+        # Step 3: Build output
         lines = ['🧰 Tool types available:', ' ']
-        for cat in categories:
-            lines.append(f'• {cat} ({counts[cat]} items)')
+        for cat, prices in sorted_categories:
+            count = len(prices)
+            if count > 0:
+                lines.append(f'• {cat} ({count} items)')
         lines.append('\nPick one to browse.')
+
         self.debug('← Exiting show_tool_category_menu')
         return '\n'.join(lines)
 
     def show_treasure_category_menu(self, categories, items):
         self.debug('→ Entering show_treasure_category_menu')
-        counts = {cat: 0 for cat in categories}
+
+        # Step 1: Map treasure category → list of prices
+        category_prices = {cat: [] for cat in categories}
         for item in items:
             cat = item.get('treasure_category')
-            if cat in counts:
-                counts[cat] += 1
+            if cat in category_prices:
+                try:
+                    price_cp = int(item.get('base_price_cp', 0))
+                    category_prices[cat].append(price_cp)
+                except (TypeError, ValueError):
+                    pass
+
+        # Step 2: Sort by min price_cp
+        sorted_categories = sorted(
+            category_prices.items(),
+            key=lambda kv: min(kv[1]) if kv[1] else float('inf')
+        )
+
+        # Step 3: Format the menu
         lines = ['💎 Treasure types available:', '']
-        for cat in categories:
-            lines.append(f'• {cat} ({counts[cat]} items)')
+        for cat, prices in sorted_categories:
+            count = len(prices)
+            if count > 0:
+                lines.append(f'• {cat} ({count} items)')
         lines.append('\nPick one to browse.')
+
         self.debug('← Exiting show_treasure_category_menu')
         return '\n'.join(lines)
 
@@ -243,7 +323,9 @@ class BaseShopkeeper(HandlerDebugMixin):
                 for item in matching_items:
                     name = item.get('item_name', 'Unknown Item')
                     price = item.get('base_price', '?')
-                    lines.append(f' • {name} — {price} CP')
+                    price_unit = item.get('price_unit', '?')
+                    price_cp = item.get('base_price_cp', '?')
+                    lines.append(f" • {name} — {price} {price_unit} ({price_cp} CP)")
                 return '\n'.join(lines)
             return (
                 f"Hmm... looks like we don't have anything matching **{category_value}** right now."
@@ -254,7 +336,9 @@ class BaseShopkeeper(HandlerDebugMixin):
         for item in page_items:
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f' • {name} — {price} CP')
+            price_unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f' • {name} — {price} {price_unit} ({price_cp} CP)')
         self._add_navigation_lines(lines, page, total_pages)
         self.debug('← Exiting _show_items')
         return '\n'.join(lines)
@@ -289,7 +373,9 @@ class BaseShopkeeper(HandlerDebugMixin):
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} cp')
+            price_unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {price_unit} _({price_cp} CP)_')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
         self.debug('← Exiting shopkeeper_show_items_by_weapon_category')
         return '\n'.join(lines)
@@ -298,114 +384,149 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('→ Entering shopkeeper_show_items_by_armour_category')
         armour_category = player_input.get('armour_category')
         page = player_input.get('page', 1)
+
         if not armour_category:
-            return (
-                "⚠️ I didn't quite catch which armour type you meant. Try saying it again?"
-                )
-        rows = get_items_by_armour_category(armour_category, page, page_size=5)
-        if not rows:
-            return (
-                f"Hmm... looks like we don't have any **{armour_category}** armour in stock right now."
-                )
-        all_rows = get_items_by_armour_category(armour_category, page=1,
-            page_size=9999)
-        total_pages = max(1, (len(all_rows) + 4) // 5)
-        lines = [
-            f'🛡️ {armour_category.title()} Armour (Page {page} of {total_pages})\n'
-            ]
-        for row in rows:
-            item = dict(row)
+            return "⚠️ I didn't quite catch which armour type you meant. Try saying it again?"
+
+        # Get all matching items, then sort and paginate manually
+        all_rows = get_items_by_armour_category(armour_category, page=1, page_size=9999)
+        all_items = [dict(row) for row in all_rows]
+        all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
+
+        total_pages = max(1, (len(all_items) + 4) // 5)
+        start = (page - 1) * 5
+        end = start + 5
+        page_items = all_items[start:end]
+
+        if not page_items:
+            return f"Hmm... looks like we don't have any **{armour_category}** armour in stock right now."
+
+        lines = [f'🛡️ {armour_category.title()} Armour (Page {page} of {total_pages})\n']
+        for item in page_items:
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} cp')
+            price_unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {price_unit} _({price_cp} CP)_')
         lines.append(' ')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
-        self.debug('← Exiting shopkeeper_show_items_by_armour_category')
+        self.debug("← Exiting shopkeeper_show_items_by_armour_category")
         return '\n'.join(lines)
 
     def shopkeeper_show_items_by_gear_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_gear_category')
+
         gear_category = player_input.get('gear_category')
-        page = player_input.get('page', 1)
+        page = max(int(player_input.get('page', 1)), 1)
+
         if not gear_category:
-            return (
-                "⚠️ I didn't quite catch which gear type you meant. Try saying it again?"
-                )
-        rows = get_items_by_gear_category(gear_category, page, page_size=5)
-        if not rows:
-            return (
-                f"Hmm... looks like we don't have any {gear_category} gear in stock right now."
-                )
-        all_rows = get_items_by_gear_category(gear_category, page=1,
-            page_size=9999)
-        total_pages = max(1, (len(all_rows) + 4) // 5)
-        lines = [
-            f'🎒 {gear_category.title()} Gear (Pg {page} of {total_pages})\n']
-        for row in rows:
-            item = dict(row)
+            return "⚠️ I didn't quite catch which gear type you meant. Try saying it again?"
+
+        # Fetch all items in the category
+        all_rows = get_items_by_gear_category(gear_category, page=1, page_size=9999)
+        all_items = [dict(row) for row in all_rows]
+
+        # Sort by base_price_cp
+        all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
+
+        # Manual pagination
+        total_pages = max(1, (len(all_items) + 4) // 5)
+        start = (page - 1) * 5
+        end = start + 5
+        page_items = all_items[start:end]
+
+        if not page_items:
+            return f"Hmm... looks like we don't have any {gear_category} gear in stock right now."
+
+        lines = [f'🎒 {gear_category.title()} Gear (Pg {page} of {total_pages})\n']
+        for item in page_items:
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} cp')
+            price_unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {price_unit} _({price_cp} CP)_')
+
         lines.append(' ')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
+
         self.debug('← Exiting shopkeeper_show_items_by_gear_category')
         return '\n'.join(lines)
 
     def shopkeeper_show_items_by_tool_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_tool_category')
+
         tool_category = player_input.get('tool_category')
-        page = player_input.get('page', 1)
+        page = max(int(player_input.get('page', 1)), 1)
+
         if not tool_category:
-            return (
-                "⚠️ I didn't catch which tool type you meant. Try that again?")
-        rows = get_items_by_tool_category(tool_category, page, page_size=5)
-        if not rows:
-            return (
-                f"Hmm... looks like we don't have any {tool_category} tools in stock right now."
-                )
-        all_rows = get_items_by_tool_category(tool_category, page=1,
-            page_size=9999)
-        total_pages = max(1, (len(all_rows) + 4) // 5)
-        lines = [
-            f'🧰 {tool_category.title()} | Tools (Pg {page} of {total_pages})\n'
-            ]
-        for row in rows:
-            item = dict(row)
+            return "⚠️ I didn't catch which tool type you meant. Try that again?"
+
+        # Fetch all matching items
+        all_rows = get_items_by_tool_category(tool_category, page=1, page_size=9999)
+        all_items = [dict(row) for row in all_rows]
+
+        # Sort by base_price_cp (ascending)
+        all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
+
+        # Manual pagination
+        total_pages = max(1, (len(all_items) + 4) // 5)
+        start = (page - 1) * 5
+        end = start + 5
+        page_items = all_items[start:end]
+
+        if not page_items:
+            return f"Hmm... looks like we don't have any {tool_category} tools in stock right now."
+
+        lines = [f'🧰 {tool_category.title()} | Tools (Pg {page} of {total_pages})\n']
+        for item in page_items:
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+            price_unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {price_unit} _({price_cp} CP)_')
+
         lines.append(' ')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
+
         self.debug('← Exiting shopkeeper_show_items_by_tool_category')
         return '\n'.join(lines)
 
     def shopkeeper_show_items_by_treasure_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_treasure_category')
+
         treasure_category = player_input.get('treasure_category')
-        page = player_input.get('page', 1)
+        page = max(int(player_input.get('page', 1)), 1)
 
         if not treasure_category:
             return "⚠️ I didn't catch which treasure type you meant. Try that again?"
 
-        rows = get_items_by_treasure_category(treasure_category, page, page_size=5)
-        if not rows:
+        # Get all items
+        all_rows = get_items_by_treasure_category(treasure_category, page=1, page_size=9999)
+        all_items = [dict(row) for row in all_rows]
+
+        # Sort by price_cp ascending
+        all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
+
+        # Manual pagination
+        total_pages = max(1, (len(all_items) + 4) // 5)
+        start = (page - 1) * 5
+        end = start + 5
+        page_items = all_items[start:end]
+
+        if not page_items:
             return f"Hmm... looks like we don't have any {treasure_category} treasures in stock right now."
 
-        all_rows = get_items_by_treasure_category(treasure_category, page=1, page_size=9999)
-        total_pages = max(1, (len(all_rows) + 4) // 5)
-
-        lines = [
-            f'💎 {treasure_category.title()} | Treasure (Pg {page} of {total_pages})\n'
-        ]
-        for row in rows:
-            item = dict(row)
+        lines = [f'💎 {treasure_category.title()} | Treasure (Pg {page} of {total_pages})\n']
+        for item in page_items:
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+            unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {unit} _({price_cp} CP)_')
 
         lines.append(' ')
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
@@ -415,25 +536,37 @@ class BaseShopkeeper(HandlerDebugMixin):
 
     def shopkeeper_show_items_by_mount_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_mount_category')
-        page = player_input.get('page', 1)
-        rows = get_items_by_mount_category('Mounts and Vehicles', page=page,
-            page_size=5)
-        if not rows:
-            return (
-                "Hmm... looks like we don't have any mounts or vehicles in stock right now."
-                )
-        all_rows = get_items_by_mount_category('Mounts and Vehicles', page=
-            1, page_size=9999)
-        total_pages = max(1, (len(all_rows) + 4) // 5)
-        lines = [f'🏇 *Mounts & Vehicles*  _(Page {page} of {total_pages})_', ''
-            ]
-        for row in rows:
-            item = dict(row)
+
+        page = max(int(player_input.get('page', 1)), 1)
+        category = 'Mounts and Vehicles'
+
+        # Fetch all items
+        all_rows = get_items_by_mount_category(category, page=1, page_size=9999)
+        all_items = [dict(row) for row in all_rows]
+
+        # Sort by copper price
+        all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
+
+        # Paginate manually
+        total_pages = max(1, (len(all_items) + 4) // 5)
+        start = (page - 1) * 5
+        end = start + 5
+        page_items = all_items[start:end]
+
+        if not page_items:
+            return "Hmm... looks like we don't have any mounts or vehicles in stock right now."
+
+        lines = [f'🏇 *Mounts & Vehicles*  _(Page {page} of {total_pages})_', '']
+        for item in page_items:
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+            price_unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {price_unit} _({price_cp} CP)_')
+
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
+
         self.debug('← Exiting shopkeeper_show_items_by_mount_category')
         return '\n'.join(lines)
 
@@ -454,12 +587,38 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_withdraw_balance_cp_prompt')
         return 'Taking some coin out? How much would you like to withdraw?'
 
-    def shopkeeper_check_balance_prompt(self, cp_amount: int) ->str:
+    def shopkeeper_check_balance_prompt(self, cp_amount: int) -> str:
         self.debug('→ Entering shopkeeper_check_balance_prompt')
+
+        # Breakdown by currency
+        remaining_cp = cp_amount
+        breakdown = {
+            'pp': remaining_cp // 1000,
+            'gp': (remaining_cp % 1000) // 100,
+            'ep': (remaining_cp % 100) // 50,
+            'cp': remaining_cp % 50,
+        }
+
+        # Helpful summary
+        total_gp = cp_amount / 100
+        total_pp = cp_amount / 1000
+
+        # Format output
+        lines = [
+            '💰 *Party Balance Summary*',
+            '',
+            f"🪙 Platinum: *{breakdown['pp']} PP*",
+            f"🟡 Gold:     *{breakdown['gp']} GP*",
+            f"🔷 Electrum: *{breakdown['ep']} EP*",
+            f"🟤 Copper:   *{breakdown['cp']} CP*",
+            '',
+            f"📏 Total Value: *{total_gp:.2f} GP*  /  *{cp_amount} CP*",
+            '',
+            "_Use 'buy' or 'deposit' to continue shopping._"
+        ]
+
         self.debug('← Exiting shopkeeper_check_balance_prompt')
-        return f'Your party currently holds {cp_amount} cp.'
-    from collections import defaultdict
-    from datetime import datetime, timedelta
+        return '\n'.join(lines)
 
     def shopkeeper_show_ledger(self, ledger_entries: list, page: int=1) ->str:
         self.debug('→ Entering shopkeeper_show_ledger')
@@ -519,17 +678,18 @@ class BaseShopkeeper(HandlerDebugMixin):
             action = (entry.get('action') or '').lower()
             item = entry.get('item_name', '')
             amount = entry.get('amount', 0)
+            currency = entry.get('currency', '')
             if action in {'buy', 'bought'}:
-                verb, what = 'bought', f'{item} for {amount} CP'
+                verb, what = 'bought', f'{item} for {amount} {currency}'
             elif action in {'sell', 'sold'}:
-                verb, what = 'sold', f'{item} for {amount} CP'
+                verb, what = 'sold', f'{item} for {amount} {currency}'
             elif action == 'deposit':
                 verb, what = 'deposited', f'{amount} CP'
             elif action == 'withdraw':
                 verb, what = 'withdrew', f'{amount} CP'
             else:
                 verb = action or 'did something with'
-                what = f'{item} for {amount} CP' if item else f'{amount} CP'
+                what = f'{item} for {amount} {currency}' if item else f'{amount} {currency}'
             grouped[ts_human].append(f'• {player} {verb} {what}')
         lines = [f'📜 Transaction History (Page {page} of {total_pages})', '']
         for ts_human, rows in grouped.items():
@@ -586,22 +746,31 @@ class BaseShopkeeper(HandlerDebugMixin):
 
     def shopkeeper_buy_confirm_prompt(self, item, party_balance_cp, discount=None):
         self.debug('→ Entering shopkeeper_buy_confirm_prompt')
+
         base = item.get('base_price', 0)
+        price_unit = item.get('price_unit', '?')
+        base_cp = item.get('base_price_cp', 0)
         cost = discount if discount is not None else base
         saved = base - cost if discount is not None else 0
-        discount_note = f' (you saved {saved} CP!)' if saved > 0 else ''
+        discount_note = f' (you saved {saved} {price_unit}!)' if saved > 0 else ''
+
         name = item.get('item_name', 'Unknown Item')
         cat = item.get('equipment_category', '')
         rar = item.get('rarity', '')
-        lines = [f"You're about to buy a *{name}* ({cat}, {rar}).", f' ',
-            f'💰 Price: {cost} cp {discount_note}',
-            f"⚖️ Weight: {item.get('weight', 0)} lb", f' ']
+
+        lines = [
+            f"You're about to buy a *{name}* ({cat}, {rar}).",
+            '',
+            f'💰 Price: {cost} {price_unit}{discount_note}',
+            f"⚖️ Weight: {item.get('weight', 0)} lb",
+            ''
+        ]
+
         if item.get('desc'):
             lines.append(f"📜 _{item['desc']}_")
         if item.get('damage_dice'):
             dmg_type = item.get('damage_type', '')
-            lines.append(f"⚔️ Damage: {item['damage_dice']} {dmg_type}".strip()
-                )
+            lines.append(f"⚔️ Damage: {item['damage_dice']} {dmg_type}".strip())
         if item.get('weapon_range'):
             lines.append(f"🎯 Weapon Range: {item['weapon_range']}")
         if item.get('range_normal'):
@@ -628,9 +797,27 @@ class BaseShopkeeper(HandlerDebugMixin):
                 lines.append(f'💪 Requires STR {str_min}')
             if item.get('stealth_disadvantage'):
                 lines.append('🥷 Disadvantage on Stealth checks')
-        lines.extend([f' ',
-            f'Your party balance is *{party_balance_cp}* cp. Would you like to proceed with the purchase?'
-            ])
+
+        # 💰 Add breakdown of balance
+        remaining_cp = party_balance_cp
+        breakdown = {
+            'pp': remaining_cp // 1000,
+            'gp': (remaining_cp % 1000) // 100,
+            'ep': ((remaining_cp % 100) // 50),
+            'cp': remaining_cp % 50,
+            'gp_alone': remaining_cp // 100
+
+        }
+
+        lines.extend([
+            '',
+            f'Your party balance is *{breakdown['gp_alone']}* GP.',
+            f"_That’s 🪙 {breakdown['pp']} Platinum, 🟡 {breakdown['gp']} Gold, ⚪ {breakdown['ep']} Electrum, 🟤 {breakdown['cp']} Copper._"
+
+            '',
+            'Would you like to proceed with the purchase?'
+        ])
+
         self.debug('← Exiting shopkeeper_buy_confirm_prompt')
         return '\n'.join(lines)
 
@@ -639,11 +826,11 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_generic_say')
         return message
 
-    def shopkeeper_buy_success_prompt(self, item, cost):
+    def shopkeeper_buy_success_prompt(self, item, cost, unit):
         self.debug('→ Entering shopkeeper_buy_success_prompt')
         item_name = item.get('item_name', 'the item')
         self.debug('← Exiting shopkeeper_buy_success_prompt')
-        return join_lines(f'💰 That’ll be *{cost}* gold, thanks..', ' ',
+        return join_lines(f'💰 That’ll be *{cost}* {unit}, thanks..', ' ',
             f'Here you go. This *{item_name}* is now yours.', ' ',
             f'_You gained a {item_name}!_')
 
@@ -658,7 +845,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('→ Entering shopkeeper_withdraw_success_prompt')
         self.debug('← Exiting shopkeeper_withdraw_success_prompt')
         return (
-            f'You withdrew *{amount}* gold! Party balance is now *{new_total}* gold.' )
+            f'You withdrew *{amount}* CP! Party balance is now *{new_total}* CP.' )
 
     def shopkeeper_withdraw_insufficient_balance_cp(self, requested: int, available: int) -> str:
         self.debug('→ Entering shopkeeper_withdraw_insufficient_balance_cp')
@@ -697,7 +884,9 @@ class BaseShopkeeper(HandlerDebugMixin):
             item_id = item.get('item_id', '?')
             name = item.get('item_name', 'Unknown Item')
             price = item.get('base_price', '?')
-            lines.append(f' • _{item_id}_ | *{name}* | *{price}* gold')
+            unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f' • _{item_id}_ | *{name}* | *{price}* {unit} _({price_cp} CP)_')
         lines.append(
             '\nJust say the item _number_ or *name* or  to see more details..')
         self.debug('← Exiting shopkeeper_list_matching_items')
@@ -788,36 +977,38 @@ class BaseShopkeeper(HandlerDebugMixin):
 
     def shopkeeper_show_items_by_weapon_range(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_weapon_range')
-        """
-        List weapons for a given category_range (e.g. 'martial melee').
-        Expects player_input = {"category_range": str, "page": int}
-        """
+
         cat_range = (player_input.get('category_range') or '').lower()
         page = max(int(player_input.get('page', 1)), 1)
         if not cat_range:
             return '⚠️ I didn’t catch which weapon group you meant.'
 
-        rows = get_items_by_weapon_range(cat_range, page, page_size=5)
-        if not rows:
-            return (
-                f'Hmm… looks like we don’t have any **{cat_range.title()}** weapons in stock right now.'
-            )
+        # Step 1: Get all matching items
+        all_rows = get_items_by_weapon_range(cat_range, page=1, page_size=9999)
+        all_items = [dict(row) for row in all_rows]
 
-        total_rows = get_items_by_weapon_range(cat_range, 1, 9999)
-        total_pages = max(1, (len(total_rows) + 4) // 5)
+        # Step 2: Sort by base_price_cp
+        all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
 
-        lines = [
-            f'⚔️ *{cat_range.title()} Weapons*  _(Pg {page} of {total_pages})_'
-        ]
-        for r in map(dict, rows):
-            item_id = r.get('item_id', '?')
-            name = r.get('item_name', 'Unknown Item')
-            price = r.get('base_price', '?')
-            lines.append(f'id: *{item_id}* | {name} | {price} gold')
+        # Step 3: Paginate manually
+        total_pages = max(1, (len(all_items) + 4) // 5)
+        start = (page - 1) * 5
+        end = start + 5
+        page_items = all_items[start:end]
 
-        # add the standard navigation + buy-prompt lines
+        if not page_items:
+            return f'Hmm… looks like we don’t have any **{cat_range.title()}** weapons in stock right now.'
+
+        lines = [f'⚔️ *{cat_range.title()} Weapons*  _(Pg {page} of {total_pages})_']
+        for item in page_items:
+            item_id = item.get('item_id', '?')
+            name = item.get('item_name', 'Unknown Item')
+            price = item.get('base_price', '?')
+            unit = item.get('price_unit', '?')
+            price_cp = item.get('base_price_cp', '?')
+            lines.append(f'id: *{item_id}* | {name} | {price} {unit} _({price_cp} CP)_')
+
         self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
-
         self.debug('← Exiting shopkeeper_show_items_by_weapon_range')
         return '\n'.join(lines)
 

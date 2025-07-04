@@ -16,7 +16,8 @@ import string
 from pathlib import Path
 
 from setup.seed.seed_treasure import GEM_ROWS, TRADEBAR_ROWS, TRADEGOODS_ROWS, ARTOBJECTS_ROWS
-from setup.seed.seed_magicitems import ARMOR_ROWS, WEAPON_ROWS, GEAR_ROWS
+from setup.seed.seed_magicitems import ARMOR_ROWS, WEAPON_ROWS, CONSUMABLE_MAGIC_ITEMS_ROWS, RING_ROWS, ROD_ROWS, \
+    EQUIPABLE_MAGIC_ITEMS_ROWS, WEARABLE_MAGIC_ITEMS_ROWS
 
 # ─── Optional SRD loader ─────────────────────────────────────────────────────
 try:
@@ -200,106 +201,88 @@ def insert_artobjects(db_path: Path) -> None:
     print("🖼️  Art object seeding finished!")
 
 # ---- Insert Magic Items -----------------------------------------------------
-def insert_armor(db_path: Path) -> None:
+def insert_wearable_magic_items(db_path: Path) -> None:
     """
-    Insert each armor row individually.
-    Logs every attempt so you can see exactly what happens.
-    """
-    with sqlite3.connect(db_path) as conn:
-        for (
-            srd_index, item_name, base_price, price_unit, base_ac,
-            dex_bonus, max_dex_bonus, str_minimum, stealth_disadvantage,
-            weight, description, magic_bonus, is_magical, rarity, armour_category
-        ) in ARMOR_ROWS:
-            try:
-                conn.execute(
-                    """
-                    INSERT INTO items (
-                        srd_index, item_name, item_source,
-                        equipment_category, armour_category,
-                        base_price, price_unit, weight, desc, rarity,
-                        base_ac, dex_bonus, max_dex_bonus,
-                        str_minimum, stealth_disadvantage,
-                        magic_bonus, is_magical
-                    )
-                    VALUES (?, ?, 'DM-GUIDE-2024',
-                            'Armor', ?,
-                            ?, ?, ?, ?, ?,
-                            ?, ?, ?,
-                            ?, ?,
-                            ?, ?);
-                    """,
-                    (
-                        srd_index, item_name, armour_category,
-                        base_price, price_unit, weight, description, rarity,
-                        base_ac, int(dex_bonus), max_dex_bonus,
-                        str_minimum, int(stealth_disadvantage),
-                        magic_bonus, int(is_magical)
-                    )
-                )
-                print(f"🛡️  added → {srd_index:<30} {item_name}")
-            except sqlite3.IntegrityError:
-                print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
-        conn.commit()
-
-    print("🧱 Armor seeding finished!")
-
-def insert_weapon(db_path: Path) -> None:
-    """
-    Insert each weapon row individually.
-    Logs every attempt so you can see exactly what happens.
+    Insert wearable magic items (weapons and armor) into the items table.
     """
     with sqlite3.connect(db_path) as conn:
         for (
             srd_index, item_name, base_price, price_unit,
-            weapon_range, category_range, damage_dice, damage_type,
-            range_normal, range_long,
-            weight,  # ✅ added weight
-            description, magic_bonus, is_magical, rarity, weapon_category
-        ) in WEAPON_ROWS:
+            weight, description, magic_bonus, is_magical,
+            rarity, wearable_category, subtype_data
+        ) in WEARABLE_MAGIC_ITEMS_ROWS:
             try:
-                conn.execute(
-                    """
-                    INSERT INTO items (
-                        srd_index, item_name, item_source,
-                        equipment_category, weapon_category,
-                        base_price, price_unit,
-                        weapon_range, category_range,
-                        damage_dice, damage_type,
-                        range_normal, range_long,
-                        weight,
-                        desc, rarity,
-                        magic_bonus, is_magical
+                if wearable_category == 'Armor':
+                    conn.execute(
+                        """
+                        INSERT INTO items (
+                            srd_index, item_name, item_source,
+                            equipment_category, armour_category,
+                            base_price, price_unit, weight,
+                            desc, rarity,
+                            base_ac, dex_bonus, max_dex_bonus,
+                            str_minimum, stealth_disadvantage,
+                            magic_bonus, is_magical
+                        ) VALUES (?, ?, 'DM-GUIDE-2024',
+                                  'Armor', ?,
+                                  ?, ?, ?,
+                                  ?, ?,
+                                  ?, ?, ?,
+                                  ?, ?,
+                                  ?, ?);
+                        """,
+                        (
+                            srd_index, item_name, subtype_data['armour_category'],
+                            base_price, price_unit, weight,
+                            description, rarity,
+                            subtype_data['base_ac'], int(subtype_data['dex_bonus']), subtype_data['max_dex_bonus'],
+                            subtype_data['str_minimum'], int(subtype_data['stealth_disadvantage']),
+                            magic_bonus, int(is_magical)
+                        )
                     )
-                    VALUES (?, ?, 'DM-GUIDE-2024',
-                            'Weapon', ?,
-                            ?, ?,
-                            ?, ?,
-                            ?, ?,
-                            ?, ?,
-                            ?, 
-                            ?, ?,
-                            ?, ?);
-                    """,
-                    (
-                        srd_index, item_name, weapon_category,
-                        base_price, price_unit,
-                        weapon_range, category_range,
-                        damage_dice, damage_type,
-                        range_normal, range_long,
-                        weight,  # ✅ weight
-                        description, rarity,
-                        magic_bonus, int(is_magical)
+                elif wearable_category == 'Weapon':
+                    conn.execute(
+                        """
+                        INSERT INTO items (
+                            srd_index, item_name, item_source,
+                            equipment_category, weapon_category,
+                            base_price, price_unit,
+                            weapon_range, category_range,
+                            damage_dice, damage_type,
+                            range_normal, range_long,
+                            weight,
+                            desc, rarity,
+                            magic_bonus, is_magical
+                        ) VALUES (?, ?, 'DM-GUIDE-2024',
+                                  'Weapon', ?,
+                                  ?, ?,
+                                  ?, ?,
+                                  ?, ?,
+                                  ?, ?,
+                                  ?, 
+                                  ?, ?,
+                                  ?, ?);
+                        """,
+                        (
+                            srd_index, item_name, subtype_data['weapon_category'],
+                            base_price, price_unit,
+                            subtype_data['weapon_range'], subtype_data['category_range'],
+                            subtype_data['damage_dice'], subtype_data['damage_type'],
+                            subtype_data['range_normal'], subtype_data['range_long'],
+                            weight,
+                            description, rarity,
+                            magic_bonus, int(is_magical)
+                        )
                     )
-                )
-                print(f"🗡️  added → {srd_index:<30} {item_name}")
+
+                print(f"🧤  added → {srd_index:<30} {item_name}")
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
         conn.commit()
 
-    print("⚔️  Weapon seeding finished!")
+    print("🪖 Wearable magic item seeding finished!")
 
-def insert_gear(db_path: Path) -> None:
+def insert_consumable_magic_items(db_path: Path) -> None:
     """
     Insert each adventuring gear row (e.g. potions, ammunition, misc).
     Logs every attempt so you can see exactly what happens.
@@ -309,7 +292,7 @@ def insert_gear(db_path: Path) -> None:
             srd_index, item_name, base_price, price_unit,
             weight, description, magic_bonus, is_magical,
             rarity, gear_category
-        ) in GEAR_ROWS:
+        ) in CONSUMABLE_MAGIC_ITEMS_ROWS:
             try:
                 conn.execute(
                     """
@@ -339,6 +322,65 @@ def insert_gear(db_path: Path) -> None:
         conn.commit()
 
     print("🎒 Adventuring Gear seeding finished!")
+
+def insert_equipable_magic_items(db_path: Path) -> None:
+    """
+    Insert each equipable magic item (rods, staffs, wands, etc.) into the Treasure category.
+    Logs every attempt so you can see exactly what happens.
+    """
+    with sqlite3.connect(db_path) as conn:
+        for (
+            srd_index, item_name, base_price, price_unit,
+            weight, description, magic_bonus, is_magical,
+            rarity, treasure_category
+        ) in EQUIPABLE_MAGIC_ITEMS_ROWS:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO items (
+                        srd_index, item_name, item_source,
+                        equipment_category, treasure_category,
+                        base_price, price_unit, weight,
+                        desc, rarity,
+                        magic_bonus, is_magical
+                    )
+                    VALUES (?, ?, 'DM-GUIDE-2024',
+                            'Treasure', ?,
+                            ?, ?, ?,
+                            ?, ?,
+                            ?, ?);
+                    """,
+                    (
+                        srd_index, item_name, treasure_category,
+                        base_price, price_unit, weight,
+                        description, rarity,
+                        magic_bonus, int(is_magical)
+                    )
+                )
+                print(f"🪄  added → {srd_index:<30} {item_name}")
+            except sqlite3.IntegrityError:
+                print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
+        conn.commit()
+
+    print("✨ Equipable magic item seeding finished!")
+
+def update_base_price_cp(db_path: Path) -> None:
+    """
+    Calculates and updates the base_price_cp column based on price_unit conversion.
+    """
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""
+            UPDATE items
+            SET base_price_cp = base_price * (
+                SELECT value_in_cp
+                FROM currencies
+                WHERE currencies.unit = items.price_unit
+            )
+            WHERE base_price IS NOT NULL AND price_unit IS NOT NULL;
+        """)
+        conn.commit()
+    print("🧮 base_price_cp column updated!")
+
 
 
 # ─── CLI Entry point ─────────────────────────────────────────────────────────
@@ -373,11 +415,10 @@ def main() -> None:  # noqa: C901
         insert_tradebars(DB_PATH)
         insert_tradegoods(DB_PATH)
         insert_artobjects(DB_PATH)
-        insert_armor(DB_PATH)
-        insert_weapon(DB_PATH)
-        insert_gear(DB_PATH)
-
-
+        insert_wearable_magic_items(DB_PATH)
+        insert_consumable_magic_items(DB_PATH)
+        insert_equipable_magic_items(DB_PATH)
+        update_base_price_cp(DB_PATH)
     print("🔡  Populating normalised_item_name …")
     populate_normalised_names()
 

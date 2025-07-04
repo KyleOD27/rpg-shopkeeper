@@ -36,7 +36,7 @@ INSERT INTO characters (user_id, party_id, player_name, character_name, role) VA
 
 --Insert Items
 
--- Insert Gemstones (See setup.seed)
+-- (See setup.seed)
 
 
 
