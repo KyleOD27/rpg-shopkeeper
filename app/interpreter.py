@@ -1,10 +1,4 @@
-# app/interpreter.py – banking intent & confirmation fix
-# -----------------------------------------------------------------------------
-# Detects “deposit …” / “withdraw …” *even while a confirmation prompt is open*.
-# We do that by handling banking keywords inside `_confirmation_overrides` *before*
-# the numeric‑ID → INSPECT fallback. Everything else remains as in the previous
-# version you reviewed.
-# -----------------------------------------------------------------------------
+# app/interpreter.py – enhanced for plural/synonym and n-gram matching
 
 from __future__ import annotations
 
@@ -14,6 +8,9 @@ import os
 import re
 from difflib import get_close_matches
 from typing import Any, Dict, Tuple
+
+import inflect
+p = inflect.engine()
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -43,27 +40,43 @@ from app.keywords import (
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
+# Optionally add category or item aliases here (e.g. "heals" -> "Potion")
+CATEGORY_ALIASES = {
+    "potions": "potion",
+    "heals": "potion",
+    "scrolls": "scroll",
+    # Extend as needed!
+}
+
 # ─── Normalisation helpers ──────────────────────────────────────────────
+
+def singularize(word):
+    return p.singular_noun(word) or word
 
 def normalize_input(text: str, convo: Conversation | None = None) -> str:
     norm = re.sub(r"[^a-z0-9\s]", "", text.lower()).strip()
     norm = re.sub(r"\s+", " ", norm)
+    # Singularize each word, strip stopwords
+    norm = " ".join(singularize(w) for w in norm.split() if w not in STOP_WORDS)
+    # Apply category alias (only for single-word queries)
+    if norm in CATEGORY_ALIASES:
+        norm = CATEGORY_ALIASES[norm]
     if convo is not None:
         convo.normalized_input = norm
     return norm
 
-
 def sanitize(text: str) -> str:
     txt = re.sub(r"[^a-z0-9\s]", " ", text.lower())
-    tokens = [t for t in txt.split() if t not in STOP_WORDS]
+    tokens = [singularize(t) for t in txt.split() if t not in STOP_WORDS]
+    # Apply alias at token level if needed
+    tokens = [CATEGORY_ALIASES.get(tok, tok) for tok in tokens]
     return " ".join(tokens)
-
 
 def preprocess(player_input: str) -> str:
     t = re.sub(r"\s+", " ", player_input.strip().lower())
-    for p in sorted(INTENT_PREFIXES, key=len, reverse=True):
-        if t.startswith(p + " "):
-            t = t[len(p) + 1 :]
+    for pfx in sorted(INTENT_PREFIXES, key=len, reverse=True):
+        if t.startswith(pfx + " "):
+            t = t[len(pfx) + 1:]
             break
     return sanitize(t)
 
@@ -94,26 +107,21 @@ PREFERRED_ORDER: list[PlayerIntent] = [
     PlayerIntent.PREVIOUS,
 ]
 
-
 def _pref_index(intent: PlayerIntent) -> int:
     try:
         return PREFERRED_ORDER.index(intent)
     except ValueError:
         return len(PREFERRED_ORDER)
 
-
-def rank_intent_kw(user_input: str,
-                   convo: Conversation | None = None   # ← new argument
-                   ) -> tuple[PlayerIntent, float]:
+def rank_intent_kw(user_input: str, convo: Conversation | None = None) -> tuple[PlayerIntent, float]:
     raw = normalize_input(user_input)
     scores = {
         intent: sum(1 for kw in kws if kw in raw)
         for intent, kws in INTENT_KEYWORDS.items()
     }
     best_intent = max(scores, key=lambda i: (scores[i], -_pref_index(i)))
-    confidence  = scores[best_intent] / max(len(INTENT_KEYWORDS[best_intent]), 1)
+    confidence = scores[best_intent] / max(len(INTENT_KEYWORDS[best_intent]), 1)
 
-    # Log to the CSV if a Conversation was supplied, else fall back to console.
     if convo is not None:
         convo.debug(f"[RANK] {best_intent.name} {confidence:.2f} {scores}")
     else:
@@ -121,13 +129,15 @@ def rank_intent_kw(user_input: str,
             "[rank_intent_kw] %r → %s %.2f %s",
             user_input, best_intent.name, confidence, scores,
         )
-
     return best_intent, confidence
 
-# ─── Category helpers (unchanged) ───────────────────────────────────────
+# ─── Category helpers (improved) ───────────────────────────────────────
 
 def get_category_match(player_input: str):
     lowered = normalize_input(player_input)
+    # Alias correction
+    if lowered in CATEGORY_ALIASES:
+        lowered = CATEGORY_ALIASES[lowered]
     cats = {
         "equipment_category": get_all_equipment_categories(),
         "weapon_category": get_weapon_categories(),
@@ -136,15 +146,17 @@ def get_category_match(player_input: str):
         "tool_category": get_tool_categories(),
         "treasure_category": get_treasure_categories()
     }
+    # Try n-gram match first
     for field, names in cats.items():
         normed = [normalize_input(n) for n in names]
+        # Exact or alias match
         if lowered in normed:
             return field, names[normed.index(lowered)]
+        # Try close match with fuzzy
         close = get_close_matches(lowered, normed, n=1, cutoff=0.8)
         if close:
             return field, names[normed.index(close[0])]
     return None, None
-
 
 def get_subcategory_match(section: str, player_input: str):
     lowered = normalize_input(player_input)
@@ -161,6 +173,7 @@ def get_subcategory_match(section: str, player_input: str):
     else:
         return None
     norm_map = {normalize_input(c): c for c in cats}
+    # Direct or alias match
     if lowered in norm_map:
         return norm_map[lowered]
     for norm in sorted(norm_map.keys(), key=len, reverse=True):
@@ -169,29 +182,24 @@ def get_subcategory_match(section: str, player_input: str):
     close = get_close_matches(lowered, norm_map.keys(), n=1, cutoff=0.7)
     return norm_map.get(close[0]) if close else None
 
-# ─── Item matcher (trimmed) ─────────────────────────────────────────────
+# ─── Item matcher (improved for n-grams) ─────────────────────────────
+
+from difflib import SequenceMatcher, get_close_matches
+
+def tokenize(text):
+    # Lowercase, remove punctuation, singularize, strip stopwords
+    words = [singularize(w) for w in re.sub(r"[^a-z0-9\s]", " ", text.lower()).split()]
+    return set(w for w in words if w and w not in STOP_WORDS)
 
 def find_item_in_input(
     player_input: str,
     convo=None,
     *,
-    fuzzy_cutoff: float = 0.75,   # ← caller can loosen/tighten match here
-    max_suggestions: int = 3      #   …and control list length if desired
+    fuzzy_cutoff: float = 0.75,
+    max_suggestions: int = 3
 ):
-    """
-    Return ([matched_items], None) or (None, None).
-
-    • Skips any token in EXCEPTION_WORDS so UI words ('next', 'back', …)
-      can’t become false item hits.
-    • `fuzzy_cutoff` lets callers decide how "loose" the fuzzy search is.
-      – strict flows: 0.75-0.85
-      – suggestion lists: 0.5-0.6
-    """
-
-    raw      = preprocess(player_input)
+    raw = preprocess(player_input)
     norm_raw = normalize_input(raw)
-
-    # ── quick exits ────────────────────────────────────────────────
     if (
         norm_raw in EXCEPTION_WORDS
         or norm_raw in SHOP_ACTION_WORDS
@@ -199,47 +207,49 @@ def find_item_in_input(
     ):
         return None, None
 
-    words  = raw.split()
-    items  = [dict(json.loads(r) if isinstance(r, str) else r)
-              for r in get_all_items()]
+    words = norm_raw.split()
+    items = [dict(json.loads(r) if isinstance(r, str) else r) for r in get_all_items()]
+    name_map = {normalize_input(i["item_name"]): i for i in items}
+    input_tokens = tokenize(player_input)
 
-    # ── numeric ID match ───────────────────────────────────────────
-    if digit := next((w for w in words if w.isdigit()), None):
+    # 1. N-gram exact
+    for n in range(len(words), 0, -1):
+        for i in range(len(words) - n + 1):
+            ngram = " ".join(words[i:i + n])
+            if ngram in name_map:
+                return [name_map[ngram]], None
+
+    # 2. Numeric ID
+    digit = next((w for w in words if w.isdigit()), None)
+    if digit:
         matches = [i for i in items if str(i.get("item_id")) == digit]
         if matches:
             return matches, None
 
-    # ── exact / fuzzy name match ───────────────────────────────────
-    name_map = {normalize_input(i["item_name"]): i for i in items}
+    # 3. Improved Fuzzy/Token Overlap
+    scored = []
+    for item in items:
+        item_name = item["item_name"]
+        item_tokens = tokenize(item_name)
+        # Token overlap score (proportion of query tokens found in item)
+        overlap = len(input_tokens & item_tokens) / max(1, len(input_tokens))
+        # SequenceMatcher ratio for fallback
+        seq_score = SequenceMatcher(None, norm_raw, normalize_input(item_name)).ratio()
+        # Composite: prioritize overlap, then seq_score as tiebreaker
+        score = (overlap, seq_score)
+        if overlap > 0 or seq_score > fuzzy_cutoff:
+            scored.append((score, item))
+    # Sort by overlap, then sequence match
+    scored.sort(key=lambda t: t[0], reverse=True)
+    matches = [item for (_, item) in scored[:max_suggestions]]
+    if matches:
+        return matches, None
 
-    # exact substring first
-    for norm, itm in name_map.items():
-        if norm in norm_raw:
-            return [itm], None
-
-    # fuzzy – skip exception tokens
-    matches: list[dict] = []
-    for w in words:
-        lw = w.lower()
-        if lw in EXCEPTION_WORDS:
-            continue
-        for nm in get_close_matches(
-            normalize_input(w),
-            name_map.keys(),
-            n=max_suggestions,
-            cutoff=fuzzy_cutoff
-        ):
-            itm = name_map[nm]
-            if itm not in matches:
-                matches.append(itm)
-
-    return (matches or None), None
-# ─── Banking helpers ────────────────────────────────────────────────────
+    return None, None
 
 def _num_in(text: str) -> int | None:
     m = re.search(r"\b(\d+)\b", normalize_input(text))
     return int(m.group()) if m else None
-
 
 def detect_deposit_intent(text: str):
     amt = _num_in(text)
@@ -247,7 +257,6 @@ def detect_deposit_intent(text: str):
         PlayerIntent.DEPOSIT_BALANCE if amt is not None else PlayerIntent.DEPOSIT_NEEDS_AMOUNT,
         amt,
     )
-
 
 def detect_withdraw_intent(text: str):
     amt = _num_in(text)
@@ -259,49 +268,33 @@ def detect_withdraw_intent(text: str):
 # ─── Confirmation‑state overrides ───────────────────────────────────────
 
 def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation | None):
-    """Special‑case parsing while waiting for yes/no."""
     if not (convo and convo.state == ConversationState.AWAITING_CONFIRMATION):
         return None
-
-    # Banking keywords should *break us out* of confirmation mode ------------
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]):
         intent, amt = detect_deposit_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
-
-    # bare number → inspect that item ----------------------------------------
     if re.search(r"\b\d+\b", lowered):
         return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {}}
-
-    # explicit "inspect …"
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
         return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {}}
-
     return None
 
-# ─── Interpreter entry point ────────────────────────────────────────────
-
-# ─── Interpreter entry point ────────────────────────────────────────────
+# ─── Interpreter entry point (unchanged except for normalization flow) ─
 
 def interpret_input(player_input, convo=None):
     lowered = normalize_input(player_input)
-
-    # 0️⃣ confirmation overrides -----------------------------------------
     early = _confirmation_overrides(player_input, lowered, convo)
     if early:
         return early
-
-    # 1️⃣ early banking detection ---------------------------------------
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]):
         intent, amt = detect_deposit_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
-
-    # 2️⃣ item-first (strict cutoff) ------------------------------------
     items, _ = find_item_in_input(player_input, convo)   # cutoff 0.75
     if items:
         if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
@@ -309,36 +302,24 @@ def interpret_input(player_input, convo=None):
         if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
             return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
         return {"intent": PlayerIntent.BUY_ITEM,  "metadata": {"item": items}}
-
-    # 3️⃣ keyword ranker -------------------------------------------------
     intent_r, conf = rank_intent_kw(player_input, convo)
     if (conf >= INTENT_CONF_THRESHOLD and
             intent_r not in (PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.WITHDRAW_BALANCE)):
         return {"intent": intent_r, "metadata": {}}
-
-    # 4️⃣ polite words ---------------------------------------------------
     words = lowered.split()
     if any(w in words for w in GRATITUDE_KEYWORDS):
         return {"intent": PlayerIntent.SHOW_GRATITUDE, "metadata": {}}
     if any(w in words for w in GOODBYE_KEYWORDS):
         return {"intent": PlayerIntent.GOODBYE, "metadata": {}}
-
-    # 5️⃣ last-chance: maybe it's an item name (loose cutoff) ------------
-    loose_items, _ = find_item_in_input(player_input, convo,
-                                        fuzzy_cutoff=0.55)   # looser
+    loose_items, _ = find_item_in_input(player_input, convo, fuzzy_cutoff=0.55)
     if loose_items:
-        return {"intent": PlayerIntent.INSPECT_ITEM,
-                "metadata": {"item": loose_items}}
-
-    # fallback -----------------------------------------------------------
+        return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": loose_items}}
     return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
-
 
 # ─── GPT confirm fallback (unchanged) ───────────────────────────────────
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 
 def check_confirmation_via_gpt(user_input: str):
     try:
@@ -365,18 +346,14 @@ def check_confirmation_via_gpt(user_input: str):
 def get_equipment_category_from_input(text: str):
     return get_category_match(text)[1]
 
-
 def get_weapon_category_from_input(text: str):
     return get_category_match(text)[1]
-
 
 def get_gear_category_from_input(text: str):
     return get_category_match(text)[1]
 
-
 def get_armour_category_from_input(text: str):
     return get_category_match(text)[1]
-
 
 def get_tool_category_from_input(text: str):
     return get_category_match(text)[1]

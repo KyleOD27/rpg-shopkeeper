@@ -312,10 +312,25 @@ class BaseShopkeeper(HandlerDebugMixin):
         item_id = item.get('item_id', '?')
         name = item.get('item_name', 'Unknown Item')
         price_cp = item.get('base_price_cp', 0)
-        price_gp = price_cp / 100
+
+        # Split into gold and leftover copper
+        gp = price_cp // 100
+        cp = price_cp % 100
+
+        # Build the price string
+        if gp == 0:
+            # under 1 GP, show only copper
+            price_str = f"{cp} CP"
+        else:
+            # 1 GP or more
+            if cp == 0:
+                price_str = f"{gp} GP"  # e.g. "3 GP"
+            else:
+                price_str = f"{gp} GP {cp} CP"  # e.g. "3 GP 27 CP"
+
         return [
             f"*#{item_id}* – *{name}*",
-            f"🟡{price_gp:,.2f}"
+            f"Price: {price_str}"
         ]
 
     def _format_armour_item(self, item: dict) -> list[str]:
@@ -800,11 +815,9 @@ class BaseShopkeeper(HandlerDebugMixin):
             f"⚖️ *Weight:* {weight} lb"
         ]
 
-        # --- Description block ---
         if desc:
             lines.extend(['', f"📜 _{desc}_"])
 
-        # --- Weapon-specific stats ---
         if item.get('damage_dice'):
             dmg_type = item.get('damage_type', '')
             lines.append(f"⚔️ *Damage:* {item['damage_dice']} {dmg_type}")
@@ -818,7 +831,6 @@ class BaseShopkeeper(HandlerDebugMixin):
                 span += f" / {item['range_long']} ft"
             lines.append(f"📏 *Range:* {span}")
 
-        # --- Armor-specific stats ---
         if cat.lower() == 'armor' or item.get('armour_category'):
             armour_cat = item.get('armour_category', 'Unknown')
             lines.append(f'🛡️ *Armor Type:* {armour_cat}')
@@ -829,10 +841,7 @@ class BaseShopkeeper(HandlerDebugMixin):
                 max_bonus = item.get('max_dex_bonus')
                 ac_line = f'🎲️ *Base AC:* {ac}'
                 if dex_bonus:
-                    if max_bonus:
-                        ac_line += f' + Dex mod (max {max_bonus})'
-                    else:
-                        ac_line += ' + Dex mod'
+                    ac_line += f' + Dex mod' + (f' (max {max_bonus})' if max_bonus else '')
                 lines.append(ac_line)
 
             str_min = item.get('str_minimum')
@@ -842,24 +851,22 @@ class BaseShopkeeper(HandlerDebugMixin):
             if item.get('stealth_disadvantage'):
                 lines.append('🥷 *Disadvantage on Stealth checks*')
 
-        # --- Party Balance Summary ---
-        breakdown = {
-            'pp': party_balance_cp // 1000,
-            'gp': (party_balance_cp % 1000) // 100,
-            'ep': (party_balance_cp % 100) // 50,
-            'cp': party_balance_cp % 50
-        }
-
-        total_gp = party_balance_cp / 100  # exact float
-
-        lines.extend([
-            '',
-            '*Party Balance:* ' +
-            f"🪙 {breakdown['pp']}  🟡 {breakdown['gp']}  🔷 {breakdown['ep']}  🟤 {breakdown['cp']}",
-            f"That's a total of {total_gp:,.2f} 🟡 or {party_balance_cp:,} 🟤",
-            '',
-            'Would you like to BUY?'
-        ])
+        # --- Party Balance Summary (GP & CP only) ---
+        gp, cp = divmod(party_balance_cp, 100)
+        if gp == 0:
+            lines.extend([
+                '',
+                f"You have {cp} copper available to spend.",
+                '',
+                'Would you like to buy?'
+            ])
+        else:
+            lines.extend([
+                '',
+                f"You have {gp} gold and {cp} copper available to spend.",
+                '',
+                'Would you like to buy?'
+            ])
 
         self.debug('← Exiting shopkeeper_buy_confirm_prompt')
         return '\n'.join(lines)
@@ -908,32 +915,24 @@ class BaseShopkeeper(HandlerDebugMixin):
 
     def shopkeeper_list_matching_items(self, matching_items):
         self.debug('→ Entering shopkeeper_list_matching_items')
-        """
-        Build a WhatsApp‑friendly list of matching items with richer emoji and clearer formatting.
 
-        Example output:
-
-        🔎 Here's what I have like that:
-
-         • 🆔 _42_ | 🏷️ *Longsword* | 💰 *150* gold
-         • 🆔 _17_ | 🏷️ *Healing Potion* | 💰 *50* gold
-
-        Just say the item *name* or _number_ to see more details..
-        """
         if isinstance(matching_items, dict):
             matching_items = [matching_items]
-        lines = ["🔎 Here's what I have like that:", '']
+        if not matching_items:
+            return "😕 Sorry, I couldn't find anything that matches."
+
+        lines = ["🔎 Here's what I have like that:\n"]
+
         for item in matching_items:
-            item_id = item.get('item_id', '?')
-            name = item.get('item_name', 'Unknown Item')
-            price = item.get('base_price', '?')
-            unit = item.get('price_unit', '?')
-            price_cp = item.get('base_price_cp', '?')
-            lines.append(f' • _{item_id}_ | *{name}* | *{price}* {unit} _({price_cp} CP)_')
+            item_lines = self._format_shop_item(item)  # returns a 2-line list
+            # Use bullet on first line only, indent second line for WhatsApp clarity
+            lines.append(f"• {item_lines[0]}\n   {item_lines[1]}")
+
         lines.append(
-            '\nJust say the item _number_ or *name* or  to see more details..')
+            "\nJust say the item *name* or _number_ to see more details."
+        )
         self.debug('← Exiting shopkeeper_list_matching_items')
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def shopkeeper_say(self, text):
         self.debug('→ Entering shopkeeper_say')
