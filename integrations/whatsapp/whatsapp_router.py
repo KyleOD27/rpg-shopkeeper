@@ -24,6 +24,7 @@ def _load_agent(shop_row, conversation):
     return AgentClass(conversation)
 
 
+#below contains user setup and login consider refactoring
 def handle_whatsapp_command(sender: str, text: str) -> str:
     """Main entrypoint for every incoming WhatsApp message."""
     try:
