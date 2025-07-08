@@ -26,7 +26,7 @@ class GenericChatHandler(HandlerDebugMixin):
         self.debug('← Exiting handle_reply_to_greeting')
         return self.agent.shopkeeper_greeting(party_name=self.party_data[
             'party_name'], visit_count=self.party_data['visit_count'],
-            player_name=self.party_data['player_name'])
+            player_name=self.party_data['player_name'], character_name=self.party_data['character_name'],)
 
     def handle_fallback(self, player_input):
         self.debug('→ Entering handle_fallback')

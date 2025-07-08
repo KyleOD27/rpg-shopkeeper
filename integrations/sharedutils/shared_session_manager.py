@@ -12,6 +12,7 @@ class SessionManager:
         party,
         player_name,
         character_id,
+        character_name,
         visit_count=None,
         shop_id=None
     ):
@@ -21,6 +22,7 @@ class SessionManager:
             'party': party,
             'player_name': player_name,
             'character_id': character_id,
+            'character_name': character_name,
             'visit_count': visit_count,
             'shop_id': shop_id
         }

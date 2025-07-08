@@ -1,7 +1,6 @@
 from app.conversation import ConversationState, PlayerIntent
 from app.interpreter import normalize_input, get_subcategory_match
 from app.interpreter import INTENT_KEYWORDS
-from app.agents.shopkeeper_agent import BaseShopkeeper
 from app.utils.debug import HandlerDebugMixin
 
 class ViewHandler(HandlerDebugMixin):

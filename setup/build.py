@@ -99,6 +99,8 @@ def _ensure_database(skip_srd: bool) -> None:
 # ───────────────────────── main build ────────────────────────────
 
 def main() -> None:                      # noqa: C901 – single-file convenience
+    env = os.environ.copy()
+    env["PYTHONPATH"] = f"{ROOT}{os.pathsep}{env.get('PYTHONPATH', '')}"
     parser = argparse.ArgumentParser(description="Freeze rpg-shopkeeper")
     parser.add_argument(
         "mode",
@@ -159,7 +161,7 @@ def main() -> None:                      # noqa: C901 – single-file convenienc
     cmd.append(str(entry))
 
     print("🛠 Running:", " ".join(map(str, cmd)))
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, env=env, check=True)
 
 
 if __name__ == "__main__":

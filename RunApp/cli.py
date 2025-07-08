@@ -67,7 +67,14 @@ def manual_login_or_register():
             print("\nAvailable Parties:")
             for i, party in enumerate(parties, 1):
                 print(f"{i}. {party['party_name']} (ID: {party['party_id']})")
-            selection = int(input("Choose a party by number: ").strip()) - 1
+
+            prompt = (
+                "Ah, you’re new here! 👋\n"
+                "If you’re with an existing party, enter its number.\n"
+                "If not, type 'new' and press Enter: "
+            )
+            selection = int(input(prompt).strip()) - 1
+
             party_id = parties[selection]["party_id"]
         elif party_choice == "2":
             party_id = register_new_party()
@@ -173,6 +180,7 @@ def main():
         return
 
     character_id = character["character_id"]
+    character_name = character["character_name"]
     player_name = character["player_name"]
     party_id = character["party_id"]
 
@@ -194,7 +202,7 @@ def main():
     print(f"Party: {party['party_name']}")
     print(f"Balance: {party['party_balance_cp']}\n")
 
-    greeting = agent.shopkeeper_greeting(party["party_name"], visit_count, player_name)
+    greeting = agent.shopkeeper_greeting(party["party_name"], visit_count, player_name, character_name)
     print(greeting)
 
     # 7) Spin up the ConversationService --------------------------------------
@@ -202,15 +210,25 @@ def main():
         convo,
         agent,
         party_id,
-        character_id,
+        user_id,
         player_name,
+        character_id,
+        character_name,
         party,
-        visit_count,
+        visit_count
     )
 
     # 8) Main input loop -------------------------------------------------------
     while True:
-        player_input = input(">> ").strip()
+        try:
+            player_input = input(">> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n[INFO] Interrupted. Leaving the shop...")
+            break
+
+        if not player_input:
+            continue  # Ignore empty input
+
         if player_input.lower() in {"exit", "quit"}:
             print("Leaving the shop...")
             break
@@ -221,6 +239,7 @@ def main():
         response = service.handle(player_input)
         convo.debug("AFTER HANDLE")
         print(response)
+
 
 
 if __name__ == "__main__":

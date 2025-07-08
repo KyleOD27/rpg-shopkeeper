@@ -1,14 +1,14 @@
+# tests/select_all_users_test.py
 import csv
 from pprint import pprint
 from pathlib import Path
 from app import db as app_db
 
-
-def test_select_all_weapons() -> None:
+def test_select_users() -> None:
     with app_db.get_connection() as conn:
-        rows = conn.execute("SELECT * FROM items WHERE equipment_category = 'Weapon'").fetchall()
+        rows = conn.execute("SELECT * FROM users").fetchall()
 
-    print(f"🔍 Retrieved {len(rows)} items:\n")
+    print(f"🔍 Retrieved {len(rows)} users:\n")
     for row in rows[:30]:  # 30 is plenty for smoke
         pprint(dict(row), sort_dicts=False, width=100)
         print()
@@ -18,7 +18,7 @@ def test_select_all_weapons() -> None:
         keys = rows[0].keys()
         results_dir = Path("results")
         results_dir.mkdir(exist_ok=True)
-        output_path = results_dir / "weapon_items_export.csv"
+        output_path = results_dir / "full_users_export.csv"
 
         with open(output_path, "w", newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=keys)
@@ -26,4 +26,4 @@ def test_select_all_weapons() -> None:
             for row in rows:
                 writer.writerow(dict(row))
 
-    assert len(rows) > 0, "items table has no Weapon items!"
+    assert len(rows) > 0, "users table has no users!"

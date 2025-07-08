@@ -15,7 +15,7 @@ def test_select_gear_items() -> None:
     # Export to CSV
     if rows:
         keys = rows[0].keys()
-        results_dir = Path("../results")
+        results_dir = Path("results")
         results_dir.mkdir(exist_ok=True)
         output_path = results_dir / "gear_items_export.csv"
 

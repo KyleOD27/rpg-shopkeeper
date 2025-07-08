@@ -29,36 +29,92 @@ CATEGORY_MAPPING = {    PlayerIntent.VIEW_ARMOUR_CATEGORY: ('armour_category', '
 
 
 class ConversationService(HandlerDebugMixin):
-
-    def __init__(self, convo, agent, party_id, player_id, player_name,
-                 party_data, visit_count):
+    def __init__(self,
+                 convo,
+                 agent,
+                 party_id,
+                 player_id,
+                 player_name,
+                 character_id,
+                 character_name,
+                 party_data,
+                 visit_count):
         # wire up debug proxy
         self.conversation = convo
         self.debug('→ Entering __init__')
         # also keep the old reference if you use it elsewhere
         self.convo = convo
 
+        # assign core identifiers
         self.agent = agent
         self.party_id = party_id
         self.player_id = player_id
+        self.character_id = character_id
+        self.character_name = character_name
+
+        # build party_data context
         self.party_data = dict(party_data)
         self.party_data['player_name'] = player_name
+        self.party_data['character_id'] = character_id
+        self.party_data['character_name'] = character_name
         self.party_data['visit_count'] = visit_count
-        self.buy_handler = BuyHandler(convo, agent, party_id, player_id,
-                                      player_name, self.party_data)
-        self.sell_handler = SellHandler(convo, agent, party_id, player_id,
-                                        player_name, self.party_data)
-        self.deposit_handler = DepositHandler(convo, agent, party_id,
-                                              player_id, player_name, self.party_data)
-        self.withdraw_handler = WithdrawHandler(convo, agent, party_id,
-                                                player_id, player_name, self.party_data)
-        self.generic_handler = GenericChatHandler(agent, self.party_data,
-                                                  convo, party_id, player_id)
-        self.inspect_handler = InspectHandler(agent, self.party_data, convo,
-                                              party_id)
-        self.view_handler = ViewHandler(convo, agent, self.buy_handler)
+
+        # initialize handlers with updated context
+        self.buy_handler = BuyHandler(
+            convo,
+            agent,
+            party_id,
+            player_id,
+            player_name,
+            self.party_data
+        )
+        self.sell_handler = SellHandler(
+            convo,
+            agent,
+            party_id,
+            player_id,
+            player_name,
+            self.party_data
+        )
+        self.deposit_handler = DepositHandler(
+            convo,
+            agent,
+            party_id,
+            player_id,
+            player_name,
+            self.party_data
+        )
+        self.withdraw_handler = WithdrawHandler(
+            convo,
+            agent,
+            party_id,
+            player_id,
+            player_name,
+            self.party_data
+        )
+        self.generic_handler = GenericChatHandler(
+            agent,
+            self.party_data,
+            convo,
+            party_id,
+            player_id
+        )
+        self.inspect_handler = InspectHandler(
+            agent,
+            self.party_data,
+            convo,
+            party_id
+        )
+        self.view_handler = ViewHandler(
+            convo,
+            agent,
+            self.buy_handler
+        )
+
+        # build intent router
         self.intent_router = self._build_router()
         self.debug('← Exiting __init__')
+
 
 
     def _handle_confirmation_flow(self, wrapped_input):

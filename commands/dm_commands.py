@@ -223,7 +223,10 @@ class DMCommandHandler:
         users = query_db("SELECT * FROM users")
         if not users:
             return "No users found."
-        user_list = "\n".join(f"{u['user_name']} ({u['phone_number']})" for u in users)
+        user_list = "\n".join(
+            f"ID {u['user_id']}: {u['user_name']} ({u['phone_number']})"
+            for u in users
+        )
         return f"[DM] Users:\n{user_list}"
 
     def _see_chars(self, _party_id, _player_id, _args, _party_data):
@@ -231,7 +234,8 @@ class DMCommandHandler:
         if not characters:
             return "No characters found."
         char_list = "\n".join(
-            f"{c['character_name']} ({c['role']}) - Player: {c['player_name']}" for c in characters
+            f"ID {c['character_id']}: {c['character_name']} ({c['role']}) – Player: {c['player_name']}"
+            for c in characters
         )
         return f"[DM] Characters:\n{char_list}"
 

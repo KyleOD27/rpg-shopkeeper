@@ -137,7 +137,7 @@ def get_treasure_categories():
 def get_items_by_armour_category(armour_category, page=1, page_size=10):
     offset = (page - 1) * page_size
     query = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(armour_category) LIKE LOWER(?)
         ORDER BY item_name
@@ -149,7 +149,7 @@ def get_items_by_armour_category(armour_category, page=1, page_size=10):
 def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
     offset = (page - 1) * page_size
     query = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(weapon_category) LIKE LOWER(?)
         ORDER BY item_name
@@ -161,7 +161,7 @@ def get_items_by_weapon_category(weapon_category, page=1, page_size=10):
 def get_items_by_gear_category(gear_category, page=1, page_size=10):
     offset = (page - 1) * page_size
     query = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(gear_category) LIKE LOWER(?)
         ORDER BY item_name
@@ -173,7 +173,7 @@ def get_items_by_gear_category(gear_category, page=1, page_size=10):
 def get_items_by_tool_category(gear_category, page=1, page_size=10):
     offset = (page - 1) * page_size
     query = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(tool_category) LIKE LOWER(?)
         ORDER BY item_name
@@ -184,7 +184,7 @@ def get_items_by_tool_category(gear_category, page=1, page_size=10):
 def get_items_by_treasure_category(treasure_category, page=1, page_size=10):
     offset = (page - 1) * page_size
     query = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(treasure_category) LIKE LOWER(?)
         ORDER BY item_name
@@ -195,7 +195,7 @@ def get_items_by_treasure_category(treasure_category, page=1, page_size=10):
 def get_items_by_mount_category(equipment_category, page=1, page_size=10):
     offset = (page - 1) * page_size
     query = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(equipment_category) LIKE LOWER(?)
         ORDER BY item_name
@@ -207,7 +207,7 @@ def get_items_by_mount_category(equipment_category, page=1, page_size=10):
 def search_items_by_name_fuzzy(item_name, page=1, page_size=10):
     offset = (page - 1) * page_size
     sql = """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(item_name) LIKE LOWER(?)
         ORDER BY item_name
@@ -220,7 +220,7 @@ def get_items_by_weapon_range(cat_range: str, page=1, page_size=10):
     offset = (page - 1) * page_size
     return query_db(
         """
-        SELECT item_id, item_name, base_price, price_unit, base_price_cp
+        SELECT item_id, item_name, base_price, price_unit, base_price_cp, rarity
         FROM items
         WHERE LOWER(category_range) = LOWER(?)
         ORDER BY item_name

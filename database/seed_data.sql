@@ -9,8 +9,11 @@ INSERT INTO shops (shop_name, agent_name, location) VALUES
 INSERT INTO users (phone_number, user_name, subscription_tier) VALUES
 ('+447000', 'Admin', 'ADMIN'),                      -- user_id = 1
 ('+447971548666', 'Kyle', 'DM'),                    -- user_id = 2
-('+447851681361', 'Jaz', 'Adventurer'),             -- user_id = 3
-('+447940133344', 'Will', 'Adventurer');            -- user_id = 4
+('+447851681361', 'Jaz', 'DM'),             -- user_id = 3
+('+447700170625', 'Graham', 'Adventurer'),            -- user_id = 4
+('+447969192329', 'Rachel', 'Adventurer'),            -- user_id = 5
+('+447411559242', 'Matt', 'Adventurer'),            -- user_id = 6
+('+447804975236', 'Andy', 'Adventurer');            -- user_id = 7
 
 -- Insert Party
 INSERT INTO parties (party_id, party_name, party_balance_cp, reputation_score) VALUES
