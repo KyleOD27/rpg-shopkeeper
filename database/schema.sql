@@ -158,14 +158,20 @@ CREATE TABLE shops (
 
 -- SHOP VISITS
 CREATE TABLE shop_visits (
-    party_id TEXT NOT NULL,
     shop_id INTEGER NOT NULL,
+    party_id TEXT,
+    user_id INTEGER,
+    character_id INTEGER,
     visit_count INTEGER NOT NULL DEFAULT 1,
     last_activity_utc DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (party_id, shop_id),
+    PRIMARY KEY (shop_id, party_id, user_id, character_id),
     FOREIGN KEY(party_id) REFERENCES parties(party_id),
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(character_id) REFERENCES characters(character_id),
     FOREIGN KEY(shop_id) REFERENCES shops(shop_id)
 );
+
+
 
 -- CHARACTER SESSION STATE
 CREATE TABLE character_sessions (

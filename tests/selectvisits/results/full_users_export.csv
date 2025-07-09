@@ -1,0 +1,9 @@
+user_id,phone_number,user_name,subscription_tier,lifetime_access,created_at
+1,+447000,Admin,ADMIN,0,2025-07-05 16:12:38
+2,+447971548666,Kyle,DM,0,2025-07-05 16:12:38
+3,+447851681361,Jaz,DM,0,2025-07-05 16:12:38
+4,+447700170625,Graham,Adventurer,0,2025-07-05 16:12:38
+5,+447969192329,Rachel,Adventurer,0,2025-07-05 16:12:38
+6,+447411559242,Matt,Adventurer,0,2025-07-05 16:12:38
+7,+447804975236,Andy,Adventurer,0,2025-07-05 16:12:38
+8,+447001,Lord of Tetris,Free,0,2025-07-06 18:00:16

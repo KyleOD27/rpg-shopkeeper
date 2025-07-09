@@ -283,6 +283,22 @@ def get_party_member_names(party_id: str) -> list[str]:
     )
     return [r["member_name"] for r in rows]
 
+def get_character_from_id(character_id: int | str) -> dict | None:
+    """
+    Fetch the full character record by character_id.
+    Returns a dict with keys: character_id, character_name, player_name, party_id, etc.
+    """
+    row = query_db(
+        """
+        SELECT character_id, character_name, player_name, party_id
+        FROM characters
+        WHERE character_id = ?
+        """,
+        (character_id,),
+        one=True,
+    )
+    return dict(row) if row else None
+
 
 
 # ───────────────────── CLI utility (dev) ───────────────────

@@ -4,7 +4,7 @@ from app.db import query_db, update_convo_state, log_convo_state
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
 from app.models.parties import get_party_by_id, get_all_parties, add_new_party
-from app.models.visits import touch_visit  # NEW – rolling 60-min visits
+from app.models.visits import touch_visit  # Only character-level visits now!
 from app.models.shops import get_all_shops
 from app.config import SHOP_NAME
 from integrations.sharedutils.shared_session_manager import SessionManager
@@ -12,9 +12,7 @@ from app.auth.user_login import get_user_by_phone, register_user, create_charact
 
 session_manager = SessionManager()
 
-# Temp state: tracks multi-step setup for registration, party and character creation
 user_setup_state: dict[str, dict] = {}
-
 
 def _load_agent(shop_row, conversation):
     mod = importlib.import_module(
@@ -23,8 +21,6 @@ def _load_agent(shop_row, conversation):
     AgentClass = getattr(mod, shop_row['agent_name'])
     return AgentClass(conversation)
 
-
-#below contains user setup and login consider refactoring
 def handle_whatsapp_command(sender: str, text: str) -> str:
     """Main entrypoint for every incoming WhatsApp message."""
     try:
@@ -123,7 +119,15 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
                 (s for s in all_shops if s['shop_name'].lower() == SHOP_NAME.lower()),
                 all_shops[0]
             )
-            visit_count = touch_visit(party['party_id'], shop['shop_id'])
+
+            # 💡 Correct: visit tracked at character level, with all IDs
+            visit_count = touch_visit(
+                shop['shop_id'],
+                character['character_id'],
+                user['user_id'],
+                party['party_id']
+            )
+
             conversation = Conversation(character['character_id'])
             agent = _load_agent(shop, conversation)
             session_manager.start_session(
@@ -141,14 +145,25 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
 
         # ── Existing session logic ─────────────────────────────────────────
         party = session['party']
-        visit_count = touch_visit(party['party_id'], session['shop_id'])
+        character_id = session['character_id']
+        shop_id = session['shop_id']
+        player_name = session['player_name']
+        character_name = session['character_name']
+
+        # Defensive: user could be reloaded or None, but should not be!
+        if not (user and party and character_id and shop_id):
+            return "Session error: missing data (user, party, char, or shop). Try 'reset'."
+
+        visit_count = touch_visit(
+            shop_id,
+            character_id,
+            user['user_id'],
+            party['party_id']
+        )
         session['visit_count'] = visit_count
 
         convo = session['conversation']
         agent = session['agent']
-        player_name = session['player_name']
-        character_id = session['character_id']
-        character_name = session['character_name']
 
         # 2️⃣ Special commands
         if text.strip().lower() == 'reset':

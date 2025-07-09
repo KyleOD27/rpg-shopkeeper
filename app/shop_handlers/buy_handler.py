@@ -198,33 +198,33 @@ Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
     def finalise_purchase(self, item):
         self.debug('→ Entering finalise_purchase')
 
-        price = self.convo.discount if self.convo.discount is not None else item['base_price']
-        unit = item.get('price_unit', '?')
+        # Always calculate in cp
+        cost_cp = self.convo.discount if self.convo.discount is not None else item['base_price_cp']
 
-        if self.party_data['party_balance_cp'] < price:
+        if self.party_data['party_balance_cp'] < cost_cp:
             return self.agent.shopkeeper_buy_failure_prompt(
                 item,
                 'Balance too low.',
                 self.party_data['party_balance_cp']
             )
 
-        self.party_data['party_balance_cp'] -= price
+        self.party_data['party_balance_cp'] -= cost_cp
         update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
 
-        saved = item['base_price'] - price
-        note = f' (you saved {saved}{unit})' if saved > 0 else ''
+        saved_cp = item['base_price_cp'] - cost_cp
+        note = f' (you saved {self.agent.format_gp_cp(saved_cp)})' if saved_cp > 0 else ''
 
         record_transaction(
             party_id=self.party_id,
             character_id=self.player_id,
             item_name=item['item_name'],
-            amount=-price,
+            amount=-cost_cp,
             action='BUY',
             balance_after=self.party_data['party_balance_cp'],
             details=f'Purchased item{note}'
         )
 
         self.debug('← Exiting finalise_purchase')
-        return self.agent.shopkeeper_buy_success_prompt(item, price, unit)
+        return self.agent.shopkeeper_buy_success_prompt(item, cost_cp)
 
     handle_buy_confirm = handle_confirm_purchase

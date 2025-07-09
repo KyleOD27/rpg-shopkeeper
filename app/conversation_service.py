@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable, Dict, Tuple, Any
 from app.interpreter import interpret_input, normalize_input, find_item_in_input
 from app.models.parties import get_party_balance_cp
+from app.models.visits import touch_visit
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
 from app.shop_handlers.deposit_handler import DepositHandler

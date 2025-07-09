@@ -194,7 +194,8 @@ def main():
         return
 
     # 5) Track visits (60‑minute rolling window) ------------------------------
-    visit_count = touch_visit(party_id, shop_id)
+    visit_count = touch_visit(shop_id, party_id=party_id, user_id=user_id, character_id=character_id)
+
     party = get_party_by_id(party_id)
 
     # 6) Greet the player ------------------------------------------------------
@@ -234,7 +235,7 @@ def main():
             break
 
         # Refresh visit timestamp BEFORE heavy processing so gaps are accurate
-        visit_count = touch_visit(party_id, shop_id)
+        visit_count = touch_visit(shop_id, party_id=party_id, user_id=user_id, character_id=character_id)
 
         response = service.handle(player_input)
         convo.debug("AFTER HANDLE")

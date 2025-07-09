@@ -13,6 +13,8 @@ TWILIO_AUTH = os.getenv("TWILIO_AUTH_TOKEN")
 def _log_crash(exc: Exception, tb: str) -> None:
     ts = datetime.datetime.now().isoformat(timespec="seconds")
     new_file = not LOG_PATH.exists()
+
+
     with LOG_PATH.open("a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if new_file:

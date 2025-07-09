@@ -647,9 +647,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             'cp': remaining_cp % 50,
         }
 
-        # Helpful summary
         total_gp = cp_amount / 100
-        total_pp = cp_amount / 1000
 
         # Format output
         lines = [
@@ -668,26 +666,15 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_check_balance_prompt')
         return '\n'.join(lines)
 
-    def shopkeeper_show_ledger(self, ledger_entries: list, page: int=1) ->str:
+    def shopkeeper_show_ledger(self, ledger_entries: list, page: int = 1) -> str:
+        from app.db import get_character_from_id
+        from datetime import datetime, timedelta
+
         self.debug('→ Entering shopkeeper_show_ledger')
-        """
-        Same pagination as before (5 records/page) but the output is grouped by the
-        human-readable timestamp, e.g.
-
-          📜 Transaction History (Page 1 of 2)
-
-          **6 hours ago**
-          • Kyle withdrew 10 CP
-          • Kyle deposited 1 000 CP
-          • Kyle sold Plate Armor for 900 CP
-          …
-
-        The helper `humanize` is unchanged.
-        """
         if not ledger_entries:
             return 'Your ledger is empty—no purchases, sales, or deposits yet!'
 
-        def humanize(ts_str: str) ->str:
+        def humanize_group(ts_str: str) -> str:
             try:
                 ts_utc = datetime.fromisoformat(ts_str)
             except Exception:
@@ -696,52 +683,62 @@ class BaseShopkeeper(HandlerDebugMixin):
             offset = now_local - datetime.utcnow()
             ts_local = ts_utc + offset
             delta = now_local - ts_local
-            if delta < timedelta(seconds=60):
-                return 'just now'
-            if delta < timedelta(hours=1):
-                mins = int(delta.total_seconds() // 60)
-                return f"{mins} minute{'s' if mins != 1 else ''} ago"
-            if delta < timedelta(hours=24):
-                hrs = int(delta.total_seconds() // 3600)
-                return f"{hrs} hour{'s' if hrs != 1 else ''} ago"
 
-            def ordinal(n: int) ->str:
-                if 10 <= n % 100 <= 20:
-                    suf = 'th'
-                else:
-                    suf = {(1): 'st', (2): 'nd', (3): 'rd'}.get(n % 10, 'th')
-                return f'{n}{suf}'
-            weekday = ts_local.strftime('%a')
-            day = ordinal(ts_local.day)
-            time = ts_local.strftime('%I:%M %p').lstrip('0').lower()
-            return f'{weekday} {day} at {time}'
+            if delta < timedelta(hours=1):
+                return "In the last hour"
+            elif ts_local.date() == now_local.date():
+                return "Earlier today"
+            else:
+                def ordinal(n: int) -> str:
+                    if 10 <= n % 100 <= 20:
+                        suf = 'th'
+                    else:
+                        suf = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+                    return f'{n}{suf}'
+
+                weekday = ts_local.strftime('%a')
+                day = ordinal(ts_local.day)
+                month = ts_local.strftime('%B')
+                return f"{weekday} {day} {month}"
+
         entries_sorted = sorted((dict(e) for e in ledger_entries), key=lambda
             e: e.get('timestamp', ''), reverse=True)
-        page_items, page, total_pages = self._paginate(entries_sorted, page,
-            page_size=5)
+        page_items, page, total_pages = self._paginate(entries_sorted, page, page_size=5)
         grouped: dict[str, list[str]] = defaultdict(list)
+
         for entry in page_items:
-            ts_human = humanize(entry.get('timestamp', ''))
-            player = entry.get('player_name', 'Someone')
+            group_label = humanize_group(entry.get('timestamp', ''))
+            character_id = entry.get('character_id')
+            character_name = None
+            if character_id:
+                char = get_character_from_id(character_id)
+                if char and char.get('character_name'):
+                    character_name = char['character_name']
+            if not character_name:
+                character_name = entry.get('player_name', 'Someone')
+
             action = (entry.get('action') or '').lower()
             item = entry.get('item_name', '')
-            amount = entry.get('amount', 0)
-            currency = entry.get('currency', '')
+            amount = int(entry.get('amount', 0))
+            amount_abs = abs(amount)
+
             if action in {'buy', 'bought'}:
-                verb, what = 'bought', f'{item} for {amount} {currency}'
+                verb, what = 'bought', f'{item} for {self.format_gp_cp(amount_abs)}'
             elif action in {'sell', 'sold'}:
-                verb, what = 'sold', f'{item} for {amount} {currency}'
+                verb, what = 'sold', f'{item} for {self.format_gp_cp(amount_abs)}'
             elif action == 'deposit':
-                verb, what = 'deposited', f'{amount} CP'
+                verb, what = 'deposited', f'{self.format_gp_cp(amount_abs)}'
             elif action == 'withdraw':
-                verb, what = 'withdrew', f'{amount} CP'
+                verb, what = 'withdrew', f'{self.format_gp_cp(amount_abs)}'
             else:
                 verb = action or 'did something with'
-                what = f'{item} for {amount} {currency}' if item else f'{amount} {currency}'
-            grouped[ts_human].append(f'• {player} {verb} {what}')
+                what = f'{item} for {self.format_gp_cp(amount_abs)}' if item else f'{self.format_gp_cp(amount_abs)}'
+
+            grouped[group_label].append(f'• {character_name} {verb} {what}')
+
         lines = [f'📜 Transaction History (Page {page} of {total_pages})', '']
-        for ts_human, rows in grouped.items():
-            lines.append(f'*{ts_human}*')
+        for group_label, rows in grouped.items():
+            lines.append(f'*{group_label}*')
             lines.append(' ')
             lines.extend(rows)
             lines.append(' ')
@@ -792,6 +789,16 @@ class BaseShopkeeper(HandlerDebugMixin):
             '• *WITHDRAW* take out of the fund',
             '• *LEDGER*  view our trade history', ' ', 'Just let me know! ')
 
+    def format_gp_cp(self, cp: int) -> str:
+        """Formats a copper-piece (cp) value as a string in GP/CP for display."""
+        gp, cp = divmod(cp, 100)
+        if gp and cp:
+            return f"{gp} gold and {cp} copper"
+        elif gp:
+            return f"{gp} gold"
+        else:
+            return f"{cp} copper"
+
     def shopkeeper_buy_confirm_prompt(self, item, party_balance_cp, discount=None):
         self.debug('→ Entering shopkeeper_buy_confirm_prompt')
 
@@ -801,17 +808,16 @@ class BaseShopkeeper(HandlerDebugMixin):
         desc = item.get('desc')
         weight = item.get('weight', 0)
 
-        base = item.get('base_price', 0)
-        price_unit = item.get('price_unit', '?')
+        # Always use CP for calculations and display
         base_cp = item.get('base_price_cp', 0)
-        cost = discount if discount is not None else base
-        saved = base - cost if discount is not None else 0
-        discount_note = f' _(You save {saved} {price_unit}!)_' if saved > 0 else ''
+        cost_cp = discount if discount is not None else base_cp
+        saved_cp = base_cp - cost_cp if discount is not None else 0
+        discount_note = f' _(You save {self.format_gp_cp(saved_cp)})_' if saved_cp > 0 else ''
 
         lines = [
             f"🛍️ *{name}*  ({cat}, {rar})",
             '',
-            f"💰 *Price:* {cost} {price_unit}{discount_note}",
+            f"💰 *Price:* {self.format_gp_cp(cost_cp)}{discount_note}",
             f"⚖️ *Weight:* {weight} lb"
         ]
 
@@ -851,22 +857,13 @@ class BaseShopkeeper(HandlerDebugMixin):
             if item.get('stealth_disadvantage'):
                 lines.append('🥷 *Disadvantage on Stealth checks*')
 
-        # --- Party Balance Summary (GP & CP only) ---
-        gp, cp = divmod(party_balance_cp, 100)
-        if gp == 0:
-            lines.extend([
-                '',
-                f"You have {cp} copper available to spend.",
-                '',
-                'Would you like to buy?'
-            ])
-        else:
-            lines.extend([
-                '',
-                f"You have {gp} gold and {cp} copper available to spend.",
-                '',
-                'Would you like to buy?'
-            ])
+        # --- Party Balance Summary (consistent) ---
+        lines.extend([
+            '',
+            f"You have {self.format_gp_cp(party_balance_cp)} available to spend.",
+            '',
+            'Would you like to buy?'
+        ])
 
         self.debug('← Exiting shopkeeper_buy_confirm_prompt')
         return '\n'.join(lines)
@@ -876,13 +873,16 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_generic_say')
         return message
 
-    def shopkeeper_buy_success_prompt(self, item, cost, unit):
+    def shopkeeper_buy_success_prompt(self, item, cost_cp):
         self.debug('→ Entering shopkeeper_buy_success_prompt')
         item_name = item.get('item_name', 'the item')
         self.debug('← Exiting shopkeeper_buy_success_prompt')
-        return join_lines(f'💰 That’ll be *{cost}* {unit}, thanks..', ' ',
+        return join_lines(
+            f'💰 That’ll be *{self.format_gp_cp(cost_cp)}*, thanks..',
+            ' ',
             f'Here you go. This *{item_name}* is now yours.', ' ',
-            f'_You gained a {item_name}!_')
+            f'_You gained a {item_name} !_'
+        )
 
     def shopkeeper_deposit_success_prompt(self, amount, new_total):
         self.debug('→ Entering shopkeeper_deposit_success_prompt')
@@ -949,13 +949,15 @@ class BaseShopkeeper(HandlerDebugMixin):
         """
         item: the item dict the player tried to buy
         message: a short error message or reason
-        party_balance_cp: the player's current gold total
+        party_balance_cp: the player's current copper total
         """
         item_name = item.get('item_name', 'that item')
+        item_price_cp = item.get('base_price_cp', 0)
         self.debug('← Exiting shopkeeper_buy_failure_prompt')
         return (
-            f"{message} You have {party_balance_cp} CP but the {item_name} costs {item.get('base_price', 0)} CP."
-            )
+            f"{message} You have {self.format_gp_cp(party_balance_cp)}, "
+            f"but the {item_name} costs {self.format_gp_cp(item_price_cp)}."
+        )
 
     def shopkeeper_inspect_item_prompt(self, lines: list[str]) ->str:
         self.debug('→ Entering shopkeeper_inspect_item_prompt')
@@ -994,7 +996,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             f"🛡️ Party: {party_name}",
             f"👑 Owner: {owner_name}",
             f"👥 Members: {', '.join(members) if members else 'Just you so far'}",
-            f"💰 Gold on hand: {gold}",
+            f"💰 Funds on hand: {self.format_gp_cp(gold)}",
             f"🏪 Visits to this shop: {visits}",
         ]
         if level is not None:
@@ -1017,7 +1019,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug("← Exiting shopkeeper_show_profile")
         return "\n".join(lines)
 
-    def shopkeeper_show_items_by_weapon_range(self, player_input, RARITY_EMOJI=RARITY_EMOJI):
+    def shopkeeper_show_items_by_weapon_range(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_weapon_range')
 
         cat_range = (player_input.get('category_range') or '').lower()
