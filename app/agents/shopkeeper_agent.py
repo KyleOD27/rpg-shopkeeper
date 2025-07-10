@@ -1059,8 +1059,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_weapon_range')
         return '\n'.join(lines)
 
-    def shopkeeper_sell_offer_prompt(self, item: dict, offer_price: int,
-        gold_before: int) ->str:
+    def shopkeeper_sell_offer_prompt(self, item: dict, offer_price: int, gold_before: int) -> str:
         self.debug('→ Entering shopkeeper_sell_offer_prompt')
         """
         First message when the player chooses an item to sell.
@@ -1069,30 +1068,34 @@ class BaseShopkeeper(HandlerDebugMixin):
         name = item.get('item_name') or item.get('name') or 'that item'
         future_balance = gold_before + offer_price
         self.debug('← Exiting shopkeeper_sell_offer_prompt')
-        return f"""I’ll give you *{offer_price} CP* for your *{name}*.
-That would bring your purse to *{future_balance} CP*.
-Deal?"""
+        return (
+            f"I’ll give you *{self.format_gp_cp(offer_price)}* for your *{name}*.\n"
+            f"That would bring your purse to *{self.format_gp_cp(future_balance)}*.\n"
+            f"Deal?"
+        )
 
-    def shopkeeper_sell_success_prompt(self, item: dict, price: int,
-        gold_after: int) ->str:
+    def shopkeeper_sell_success_prompt(self, item: dict, price: int, gold_after: int) -> str:
         self.debug('→ Entering shopkeeper_sell_success_prompt')
         """
         Confirmation after the sale has been booked.
         """
         name = item.get('item_name') or 'item'
         self.debug('← Exiting shopkeeper_sell_success_prompt')
-        return f"""Pleasure doing business!  Here’s *{price} CP* for the *{name}*.
-Your new balance is *{gold_after} CP*."""
+        return (
+            f"Pleasure doing business!  Here’s *{self.format_gp_cp(price)}* for the *{name}*.\n"
+            f"Your new balance is *{self.format_gp_cp(gold_after)}*."
+        )
 
-    def shopkeeper_sell_cancel_prompt(self, item: (dict | None)) ->str:
+    def shopkeeper_sell_cancel_prompt(self, item: (dict | None)) -> str:
         self.debug('→ Entering shopkeeper_sell_cancel_prompt')
         """Used when the player declines the offer."""
         name = (item or {}).get('item_name') or 'that item'
         self.debug('← Exiting shopkeeper_sell_cancel_prompt')
         return f'All right, we’ll keep the *{name}* off the counter then.'
+
     shopkeeper_sell_confirm_prompt = shopkeeper_sell_offer_prompt
 
-    def shopkeeper_sell_enquire_item(self) ->str:
+    def shopkeeper_sell_enquire_item(self) -> str:
         self.debug('→ Entering shopkeeper_sell_enquire_item')
         """
         Called when the player says just 'sell' (or the matcher found nothing)
@@ -1101,4 +1104,5 @@ Your new balance is *{gold_after} CP*."""
         self.debug('← Exiting shopkeeper_sell_enquire_item')
         return (
             'Sure thing! What are you looking to sell?\n• Say the item’s *name* or *ID number*.'
-            )
+        )
+

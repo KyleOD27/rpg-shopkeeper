@@ -303,7 +303,7 @@ def interpret_input(player_input, convo=None):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
 
-    # --- Generalized category and subcategory detection ---
+    # --- Category detection ---
     CATEGORY_INTENTS = [
         PlayerIntent.VIEW_TOOL_CATEGORY,
         PlayerIntent.VIEW_GEAR_CATEGORY,
@@ -319,11 +319,9 @@ def interpret_input(player_input, convo=None):
         PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
         PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
     ]
-    # Check for category intent
     for intent in CATEGORY_INTENTS:
         if lowered in NORMALIZED_INTENT_KEYWORDS[intent]:
             return {"intent": intent, "metadata": {}}
-    # Check for subcategory intent (as before)
     for intent in SUBCATEGORY_INTENTS:
         if lowered in NORMALIZED_INTENT_KEYWORDS[intent]:
             meta_key = None
@@ -339,7 +337,18 @@ def interpret_input(player_input, convo=None):
                 meta_key = "treasure_category"
             if meta_key:
                 return {"intent": intent, "metadata": {meta_key: lowered}}
-    # --- End generalized check ---
+
+    # --- HAGGLE and other special keyword-based intents ---
+    for special_intent in [
+        PlayerIntent.HAGGLE,
+        PlayerIntent.SHOW_GRATITUDE,
+        PlayerIntent.GREETING,
+        PlayerIntent.NEXT,
+        PlayerIntent.PREVIOUS
+    ]:
+        if any(kw in lowered for kw in NORMALIZED_INTENT_KEYWORDS[special_intent]):
+            return {"intent": special_intent, "metadata": {}}
+    # --- End special intents ---
 
     # Fuzzy item search as fallback
     items, _ = find_item_in_input(player_input, convo)  # cutoff 0.75
@@ -349,7 +358,20 @@ def interpret_input(player_input, convo=None):
         if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
             return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
         return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
-    # ...rest of your function unchanged...
+    # (rest unchanged...)
+    intent_r, conf = rank_intent_kw(player_input, convo)
+    if (conf >= INTENT_CONF_THRESHOLD and
+            intent_r not in (PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.WITHDRAW_BALANCE)):
+        return {"intent": intent_r, "metadata": {}}
+    words = lowered.split()
+    if any(w in words for w in GRATITUDE_KEYWORDS):
+        return {"intent": PlayerIntent.SHOW_GRATITUDE, "metadata": {}}
+    if any(w in words for w in GOODBYE_KEYWORDS):
+        return {"intent": PlayerIntent.GOODBYE, "metadata": {}}
+    loose_items, _ = find_item_in_input(player_input, convo, fuzzy_cutoff=0.55)
+    if loose_items:
+        return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": loose_items}}
+    return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
 
 
 # ─── GPT confirm fallback (unchanged) ───────────────────────────────────
