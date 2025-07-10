@@ -299,6 +299,36 @@ def get_character_from_id(character_id: int | str) -> dict | None:
     )
     return dict(row) if row else None
 
+def record_haggle_attempt(character_id: int, item_name: str, die_roll: int, result: str):
+    """
+    Save a haggle attempt in the database.
+    """
+    from datetime import datetime
+    execute_db(
+        "INSERT INTO haggle_attempts (character_id, item_name, die_roll, result, timestamp) VALUES (?, ?, ?, ?, ?)",
+        (character_id, item_name, die_roll, result, datetime.now()),
+    )
+
+def get_last_haggle_attempt_time(character_id: int, item_name: str):
+    """
+    Returns the timestamp (as a string) of the most recent haggle attempt today, or None.
+    """
+    row = query_db(
+        """
+        SELECT timestamp
+        FROM haggle_attempts
+        WHERE character_id = ?
+          AND item_name = ?
+          AND DATE(timestamp) = DATE('now', 'localtime')
+        ORDER BY timestamp DESC
+        LIMIT 1
+        """,
+        (character_id, item_name),
+        one=True
+    )
+    return row["timestamp"] if row else None
+
+
 
 
 # ───────────────────── CLI utility (dev) ───────────────────

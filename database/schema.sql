@@ -204,6 +204,19 @@ CREATE TABLE user_shop_access (
     FOREIGN KEY(shop_id) REFERENCES shops(shop_id)
 );
 
+-- HAGGLE ATTEMPTS
+CREATE TABLE haggle_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    character_id INTEGER,
+    item_name TEXT NOT NULL,
+    die_roll INTEGER NOT NULL,
+    result TEXT NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_character
+        FOREIGN KEY (character_id) REFERENCES characters(character_id)
+);
+
 CREATE TABLE system_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,

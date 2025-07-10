@@ -140,30 +140,29 @@ class BuyHandler(HandlerDebugMixin):
             self.convo.set_pending_item(item)
             self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
             self.convo.save_state()
-            discounted_price = self.convo.discount or item.get('base_price', 0)
-            unit = item.get('price_unit', 0)
+            discounted_price_cp = self.convo.discount or item.get('base_price_cp', 0)
             item_name = item['item_name']
-            balance = self.party_data['party_balance_cp']
+            balance_cp = self.party_data['party_balance_cp']
             return f"""Alright, alright, you twisted my arm.
- 
-How about *{discounted_price}* {unit} for the *{item_name}*?
- 
-Your balance is *{balance}* CP. Would you like to proceed with the purchase?"""
+
+        How about *{self.agent.format_gp_cp(discounted_price_cp)}* for the *{item_name}*?
+
+        Your balance is *{self.agent.format_gp_cp(balance_cp)}*. Would you like to proceed with the purchase?"""
+
         self.convo.set_discount(None)
         self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
         self.convo.set_pending_item(item)
         self.convo.set_pending_action(PlayerIntent.BUY_CONFIRM)
         self.convo.save_state()
-        full_price = item.get('base_price', 0)
+        full_price_cp = item.get('base_price_cp', 0)
         item_name = item['item_name']
-        unit = item.get('price_unit', 0)
-        balance = self.party_data['party_balance_cp']
+        balance_cp = self.party_data['party_balance_cp']
         self.debug('← Exiting handle_haggle')
         return f"""😅 Nice try, but that price is already a bargain.
- 
-The *{item_name}* still costs *{full_price}* {unit}.
- 
-Your balance is *{balance}* gp. Would you like to proceed with the purchase?"""
+
+        The *{item_name}* still costs *{self.agent.format_gp_cp(full_price_cp)}*.
+
+        Your balance is *{self.agent.format_gp_cp(balance_cp)}*. Would you like to proceed with the purchase?"""
 
     def handle_confirm_purchase(self, player_input):
         self.debug('→ Entering handle_confirm_purchase')

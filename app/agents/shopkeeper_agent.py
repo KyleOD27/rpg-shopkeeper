@@ -38,16 +38,16 @@ class BaseShopkeeper(HandlerDebugMixin):
                 f'Ah, {character_name} of {party_name}.',
                 'First time at this shop? Nice to meet you.',
                 '',
-                'To get started, just say "menu"'
+                "There's a few things you can do here, to see what just say: *menu* "
             )
         elif visit_count < 5:
             msg = join_lines(
-                f'{party_name} again?',
-                f'I think you might like it here, {character_name}.'
+                f"It's great to see you back, {character_name}! This is visit number {visit_count}.",
+                'What would you like?'
             )
         else:
             msg = join_lines(
-                f"Back already, {character_name}? I'm flattered, this is visit {visit_count}!",
+                f"Back again, {character_name}? I'm flattered, this is visit {visit_count}!",
                 '',
                 'What can I do for you today?'
             )

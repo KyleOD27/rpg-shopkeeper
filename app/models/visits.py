@@ -8,7 +8,7 @@ from app.db import query_db, execute_db
 #     • A new visit starts only when the player has been silent for ≥ timeout
 # ────────────────────────────────────────────────────────────────────────────────
 
-VISIT_TIMEOUT_MINUTES = int(os.environ.get("VISIT_TIMEOUT_MINUTES", 1))
+VISIT_TIMEOUT_MINUTES = int(os.environ.get("VISIT_TIMEOUT_MINUTES", 60))
 _VISIT_TIMEOUT = timedelta(minutes=VISIT_TIMEOUT_MINUTES)
 
 __all__ = [
