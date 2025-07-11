@@ -627,8 +627,20 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('→ Entering shopkeeper_deposit_balance_cp_prompt')
         self.debug('← Exiting shopkeeper_deposit_balance_cp_prompt')
         return (
-            'Stashing away some savings? How much CP shall I deposit for you?'
+            'Stashing away some savings? How much shall I deposit for you?'
             )
+
+    def shopkeeper_deposit_currency_prompt(self) -> str:
+        self.debug('→ Entering shopkeeper_deposit_currency_prompt')
+        self.debug('← Exiting shopkeeper_deposit_currency_prompt')
+        return (
+            "Which currency shall I deposit for you? Here’s a quick guide:\n"
+            "• 1 GP = 100 CP\n"
+            "• 1 PP = 1,000 CP\n"
+            "• 1 EP = 50 CP\n"
+            "• 1 SP = 10 CP\n"  
+            "Just reply with CP, SP, EP, GP, or PP."
+        )
 
     def shopkeeper_withdraw_balance_cp_prompt(self) ->str:
         self.debug('→ Entering shopkeeper_withdraw_balance_cp_prompt')
@@ -884,12 +896,15 @@ class BaseShopkeeper(HandlerDebugMixin):
             f'_You gained a {item_name} !_'
         )
 
-    def shopkeeper_deposit_success_prompt(self, amount, new_total):
+    def shopkeeper_deposit_success_prompt(self, amount_cp, new_total_cp):
         self.debug('→ Entering shopkeeper_deposit_success_prompt')
         self.debug('← Exiting shopkeeper_deposit_success_prompt')
+        deposited_str = self.format_gp_cp(amount_cp)
+        balance_str = self.format_gp_cp(new_total_cp)
         return (
-            f' You deposited *{amount}* CP! Party balance is now *{new_total}* CP.'
-            )
+            f"You deposited *{deposited_str}!* "
+            f"Party balance is now *{balance_str}*."
+        )
 
     def shopkeeper_withdraw_success_prompt(self, amount, new_total):
         self.debug('→ Entering shopkeeper_withdraw_success_prompt')
