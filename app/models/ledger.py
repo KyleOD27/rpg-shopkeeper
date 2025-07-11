@@ -49,4 +49,14 @@ def get_previous_balance_for_party(party_id, before_timestamp):
     rows = query_db(sql, (party_id, before_timestamp))
     return rows[0]['balance_after'] if rows else None
 
-
+def get_last_transaction_for_character(party_id, character_id):
+    sql = """
+        SELECT l.*
+        FROM transaction_ledger l
+        WHERE l.party_id = ?
+          AND l.character_id = ?
+        ORDER BY l.timestamp DESC, l.id DESC
+        LIMIT 1
+    """
+    rows = query_db(sql, (party_id, character_id))
+    return rows[0] if rows else None

@@ -191,15 +191,16 @@ class GenericChatHandler(HandlerDebugMixin):
 
     def handle_undo_last_transaction(self, player_input=None):
         self.debug('→ Entering handle_undo_last_transaction')
-        from app.models.ledger import get_last_transaction_for_party, get_previous_balance_for_party, record_transaction
+        from app.models.ledger import get_last_transaction_for_character, get_previous_balance_for_party, \
+            record_transaction
         from app.models.parties import update_party_balance_cp
 
-        last_tx = get_last_transaction_for_party(self.party_id)
+        character_id = self.party_data.get('character_id')
+        last_tx = get_last_transaction_for_character(self.party_id, character_id)
         if not last_tx:
-            return self.agent.shopkeeper_generic_say("There's nothing to undo!")
+            return self.agent.shopkeeper_generic_say("You have no recent transactions to undo!")
         last_tx = dict(last_tx)
 
-        # If last action is already an UNDO, do not allow
         if last_tx['action'] == 'UNDO':
             return self.agent.shopkeeper_generic_say("You've already undone your last action. Nothing more to undo!")
 
@@ -211,7 +212,7 @@ class GenericChatHandler(HandlerDebugMixin):
 
         record_transaction(
             party_id=self.party_id,
-            character_id=last_tx['character_id'],
+            character_id=character_id,
             item_name=last_tx.get('item_name'),
             amount=-last_tx['amount'] if last_tx['amount'] else None,
             action='UNDO',
@@ -223,6 +224,7 @@ class GenericChatHandler(HandlerDebugMixin):
         return self.agent.shopkeeper_generic_say(
             f"Undid your last transaction: {last_tx['action']} {last_tx.get('item_name', '') or ''}. Your balance has been restored."
         )
+
 
 
 
