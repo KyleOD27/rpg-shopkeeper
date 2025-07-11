@@ -344,7 +344,8 @@ def interpret_input(player_input, convo=None):
         PlayerIntent.SHOW_GRATITUDE,
         PlayerIntent.GREETING,
         PlayerIntent.NEXT,
-        PlayerIntent.PREVIOUS
+        PlayerIntent.PREVIOUS,
+        PlayerIntent.UNDO,
     ]:
         if any(kw in lowered for kw in NORMALIZED_INTENT_KEYWORDS[special_intent]):
             return {"intent": special_intent, "metadata": {}}

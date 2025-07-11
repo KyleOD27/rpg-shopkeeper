@@ -5,11 +5,11 @@ from pathlib import Path
 from app import db as app_db
 
 
-def test_select_visits() -> None:
+def test_select_ledger() -> None:
     with app_db.get_connection() as conn:
-        rows = conn.execute("SELECT * FROM shop_visits").fetchall()
+        rows = conn.execute("SELECT * FROM transaction_ledger").fetchall()
 
-    print(f"🔍 Retrieved {len(rows)} shop_visits:\n")
+    print(f"🔍 Retrieved {len(rows)} transaction_ledger:\n")
     for row in rows[:30]:  # 30 is plenty for smoke
         pprint(dict(row), sort_dicts=False, width=100)
         print()
@@ -19,7 +19,7 @@ def test_select_visits() -> None:
         keys = rows[0].keys()
         results_dir = Path("results")
         results_dir.mkdir(exist_ok=True)
-        output_path = results_dir / "full_visits_export.csv"
+        output_path = results_dir / "full_ledger_export.csv"
 
         with open(output_path, "w", newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=keys)
@@ -27,7 +27,7 @@ def test_select_visits() -> None:
             for row in rows:
                 writer.writerow(dict(row))
 
-    assert len(rows) > 0, "visits table has no rows!"
+    assert len(rows) > 0, "ledger table has no rows!"
 
 
 

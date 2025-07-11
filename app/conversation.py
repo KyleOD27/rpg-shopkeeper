@@ -59,6 +59,7 @@ class PlayerIntent(Enum):
     PREVIOUS = auto()
     GOODBYE = auto()
     INSPECT_ITEM = auto()
+    UNDO = auto()
 
 
 class ConversationState(Enum):

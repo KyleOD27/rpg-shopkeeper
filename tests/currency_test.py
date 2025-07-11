@@ -9,7 +9,7 @@ from pprint import pprint
 
 import pytest
 
-from app import db as app_db   # same pattern as select_all_visits_test.py
+from app import db as app_db   # same pattern as select_all_ledger_test.py
 
 
 # ---------------------------------------------------------------------------

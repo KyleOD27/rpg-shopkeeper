@@ -9,6 +9,8 @@ Keeping them here means:
 
 from __future__ import annotations
 
+from enum import auto
+
 from app.conversation import PlayerIntent
 
 # ──────────────────────────────────────────────
@@ -17,12 +19,7 @@ from app.conversation import PlayerIntent
 
 INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     # ▸ General browsing
-    PlayerIntent.VIEW_ITEMS: [
-        "items", "inventory", "stock",
-        "what do you have", "show me",
-        "what do you sell", "what do you buy",
-        "browse",
-    ],
+    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me",  "what do you sell", "what do you buy", "browse"],
 
     # ▸ Top‑level equipment categories
     PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["items", "inventory", "item", "shop"],
@@ -56,6 +53,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.GREETING:       ["hello", "hi", "greetings", "hallo", "hey", "ey"],
     PlayerIntent.NEXT:           ["next", "more", "show more", "continue", "another"],
     PlayerIntent.PREVIOUS:       ["previous", "back",  "last", "prev", "last"],
+    PlayerIntent.UNDO:           ["undo"],
     PlayerIntent.INSPECT_ITEM: [
         "inspect", "details", "tell"
         "info", "explain", "describe", "much",

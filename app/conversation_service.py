@@ -479,11 +479,11 @@ class ConversationService(HandlerDebugMixin):
         if intent == PlayerIntent.VIEW_PROFILE:
             return self.generic_handler.handle_view_profile
         if intent == PlayerIntent.HAGGLE:
-            return self.buy_handler.handle_haggle  # ← NEW
+            return self.buy_handler.handle_haggle
         if intent == PlayerIntent.SHOW_GRATITUDE:
-            return self.generic_handler.handle_accept_thanks  # ← NEW
-
-
+            return self.generic_handler.handle_accept_thanks
+        if intent == PlayerIntent.UNDO:
+            return self.generic_handler.handle_undo_last_transaction
 
         self.debug('← Exiting _route_intent')
         return self.generic_handler.handle_fallback

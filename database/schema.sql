@@ -122,7 +122,7 @@ CREATE TABLE transaction_ledger (
 
     action        TEXT     NOT NULL
                  CHECK (action IN ('BUY','SELL','HAGGLE','ADJUST',
-                                   'DEPOSIT','WITHDRAW')),
+                                   'DEPOSIT','WITHDRAW', 'UNDO')),
     item_name     TEXT,
     amount        INTEGER,
     currency      TEXT     DEFAULT 'gp',      -- cp | sp | ep | gp | pp
@@ -170,8 +170,6 @@ CREATE TABLE shop_visits (
     FOREIGN KEY(character_id) REFERENCES characters(character_id),
     FOREIGN KEY(shop_id) REFERENCES shops(shop_id)
 );
-
-
 
 -- CHARACTER SESSION STATE
 CREATE TABLE character_sessions (
