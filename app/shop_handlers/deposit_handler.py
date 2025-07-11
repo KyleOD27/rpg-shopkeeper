@@ -52,13 +52,6 @@ class DepositHandler(HandlerDebugMixin):
             self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
             return self.agent.shopkeeper_deposit_balance_cp_prompt()
 
-        # Check for valid currency
-        if currency not in self.CURRENCY_CP:
-            self.convo.debug('Deposit currency missing or invalid — asking for it.')
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
-            self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_CURRENCY)
-            return self.agent.shopkeeper_deposit_currency_prompt()
-
         # Convert to cp
         amount_cp = amount * self.CURRENCY_CP[currency]
 
@@ -89,14 +82,19 @@ class DepositHandler(HandlerDebugMixin):
         return None
 
     def _extract_amount_and_currency(self, lowered):
-        # Capture both abbreviations and full words
         m = re.search(r'(\d+)\s*(cp|copper|sp|silver|ep|electrum|gp|gold|pp|platinum)?', lowered)
         if not m:
             return None, None
         amount = int(m.group(1))
         currency_raw = m.group(2)
-        # Default to cp if missing
-        currency = self.CURRENCY_ALIASES.get(currency_raw, "cp") if currency_raw else "cp"
+        if not currency_raw:
+            # No currency specified: default to cp, or handle as you wish
+            return amount, "cp"
+        # Now check if it's a recognized currency
+        currency = self.CURRENCY_ALIASES.get(currency_raw)
+        if not currency:
+            # Currency was given, but not recognized!
+            return amount, None
         return amount, currency
 
     def handle_confirm_deposit(self, player_input):
@@ -123,26 +121,3 @@ class DepositHandler(HandlerDebugMixin):
         self.convo.reset_state()
         self.debug('← Exiting handle_confirm_deposit')
         return self.agent.shopkeeper_deposit_success_prompt(amount_cp, new_total)
-
-    def handle_confirm_withdraw(self, player_input):
-        self.debug('→ Entering handle_confirm_withdraw')
-        text = player_input['text'] if isinstance(player_input, dict) else str(
-            player_input)
-        match = re.search('\\d+', text)
-        if not match:
-            return self.agent.shopkeeper_withdraw_balance_cp_prompt()
-        amount = int(match.group())
-        current_balance_cp = self.party_data.get('party_balance_cp', 0)
-        if amount > current_balance_cp:
-            return self.agent.shopkeeper_withdraw_insufficient_funds_prompt(
-                amount, current_balance_cp)
-        self.party_data['party_balance_cp'] -= amount
-        update_party_balance_cp(self.party_id, self.party_data['party_balance_cp'])
-        record_transaction(party_id=self.party_id, character_id=self.
-            character_id, item_name=None, amount=amount, action='WITHDRAW',
-            balance_after=self.party_data['party_balance_cp'], details=
-            f'{self.player_name} withdrew balance_cp')
-        self.convo.reset_state()
-        self.debug('← Exiting handle_confirm_withdraw')
-        return self.agent.shopkeeper_withdraw_success_prompt(amount, self.
-            party_data['party_balance_cp'])

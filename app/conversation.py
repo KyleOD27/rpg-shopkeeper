@@ -43,7 +43,6 @@ class PlayerIntent(Enum):
     SELL_CANCEL = auto()
     SELL_NEEDS_ITEM = auto()
     DEPOSIT_NEEDS_AMOUNT = auto()
-    DEPOSIT_NEEDS_CURRENCY = auto()
     DEPOSIT_CONFIRM = auto()
     WITHDRAW_NEEDS_AMOUNT = auto()
     WITHDRAW_CONFIRM = auto()

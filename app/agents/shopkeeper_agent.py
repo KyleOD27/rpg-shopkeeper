@@ -388,21 +388,13 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting _show_items')
         return '\n'.join(lines)
 
-    RARITY_EMOJI = {
-        'common': '⚪️',
-        'uncommon': '✨',
-        'rare': '💎',
-        'very rare': '🔮',
-        'legendary': '🧬',
-    }
-
     def shopkeeper_show_items_by_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_category')
         self.debug('← Exiting shopkeeper_show_items_by_category')
         return self._show_items(player_input, field='equipment_category',
             emoji='📦', label='Items')
 
-    def shopkeeper_show_items_by_weapon_category(self, player_input, RARITY_EMOJI=RARITY_EMOJI):
+    def shopkeeper_show_items_by_weapon_category(self, player_input,):
         self.debug('→ Entering shopkeeper_show_items_by_weapon_category')
 
         weapon_category = player_input.get('weapon_category')
@@ -442,7 +434,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_weapon_category')
         return '\n'.join(lines)
 
-    def shopkeeper_show_items_by_armour_category(self, player_input, RARITY_EMOJI=RARITY_EMOJI):
+    def shopkeeper_show_items_by_armour_category(self, player_input,):
         self.debug('→ Entering shopkeeper_show_items_by_armour_category')
 
         armour_category = player_input.get('armour_category')
@@ -471,7 +463,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         return '\n'.join(lines)
 
-    def shopkeeper_show_items_by_gear_category(self, player_input, RARITY_EMOJI=RARITY_EMOJI):
+    def shopkeeper_show_items_by_gear_category(self, player_input,):
         self.debug('→ Entering shopkeeper_show_items_by_gear_category')
 
         gear_category = player_input.get('gear_category')
@@ -510,7 +502,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_gear_category')
         return '\n'.join(lines)
 
-    def shopkeeper_show_items_by_tool_category(self, player_input, RARITY_EMOJI=RARITY_EMOJI):
+    def shopkeeper_show_items_by_tool_category(self, player_input,):
         self.debug('→ Entering shopkeeper_show_items_by_tool_category')
 
         tool_category = player_input.get('tool_category')
@@ -550,7 +542,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_tool_category')
         return '\n'.join(lines)
 
-    def shopkeeper_show_items_by_treasure_category(self, player_input, RARITY_EMOJI=RARITY_EMOJI):
+    def shopkeeper_show_items_by_treasure_category(self, player_input,):
         self.debug('→ Entering shopkeeper_show_items_by_treasure_category')
 
         treasure_category = player_input.get('treasure_category')
@@ -906,11 +898,16 @@ class BaseShopkeeper(HandlerDebugMixin):
             f"Party balance is now *{balance_str}*."
         )
 
-    def shopkeeper_withdraw_success_prompt(self, amount, new_total):
+    def shopkeeper_withdraw_success_prompt(self, amount_cp, new_total_cp):
         self.debug('→ Entering shopkeeper_withdraw_success_prompt')
         self.debug('← Exiting shopkeeper_withdraw_success_prompt')
+        gp, cp = divmod(new_total_cp, 100)
+        balance_str = f"{gp} GP {cp} CP" if gp else f"{cp} CP"
+        withdrawn_str = self.format_gp_cp(amount_cp)
         return (
-            f'You withdrew *{amount}* CP! Party balance is now *{new_total}* CP.' )
+            f"You withdrew *{withdrawn_str}!* "
+            f"Party balance is now *{balance_str}*."
+        )
 
     def shopkeeper_withdraw_insufficient_balance_cp(self, requested: int, available: int) -> str:
         self.debug('→ Entering shopkeeper_withdraw_insufficient_balance_cp')
