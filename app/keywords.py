@@ -42,9 +42,14 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.SELL_ITEM: ["sell", "offload", "trade in"],
 
     # ▸ Bank actions
-    PlayerIntent.DEPOSIT_BALANCE:  ["deposit", "store", "stash"],
-    PlayerIntent.WITHDRAW_BALANCE: ["withdraw", "take", "collect"],
+    PlayerIntent.DEPOSIT_BALANCE:  ["deposit", "add gold"],
+    PlayerIntent.WITHDRAW_BALANCE: ["withdraw", "collect" ],
     PlayerIntent.CHECK_BALANCE: ["balance", "amount", "funds"],
+
+    # Stash actions
+    PlayerIntent.STASH_ADD: ["stash", "store", "add"],
+    PlayerIntent.STASH_REMOVE: ["unstash", "remove", "take", "retrieve"],
+    PlayerIntent.VIEW_STASH: ["view", "see stash", "view stash", "party stash"],
 
     # ▸ Miscellaneous
     PlayerIntent.VIEW_LEDGER:    ["ledger", "transactions", "history"],

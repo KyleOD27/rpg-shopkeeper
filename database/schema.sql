@@ -234,3 +234,16 @@ CREATE TABLE audit_log (
     FOREIGN KEY(changed_by) REFERENCES users(user_id)
 );
 
+CREATE TABLE party_stash (
+    stash_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    party_id TEXT NOT NULL,
+    character_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    item_name TEXT NOT NULL,
+    quantity INTEGER DEFAULT 1,
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY(party_id) REFERENCES parties(party_id),
+    FOREIGN KEY(character_id) REFERENCES characters(character_id),
+    FOREIGN KEY(item_id) REFERENCES items(item_id)
+);

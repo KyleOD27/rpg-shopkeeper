@@ -60,6 +60,9 @@ class PlayerIntent(Enum):
     GOODBYE = auto()
     INSPECT_ITEM = auto()
     UNDO = auto()
+    STASH_ADD = auto()
+    STASH_REMOVE = auto()
+    VIEW_STASH = auto()
 
 
 class ConversationState(Enum):

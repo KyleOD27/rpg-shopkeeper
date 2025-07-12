@@ -16,6 +16,7 @@ from commands.admin_commands import handle_admin_command
 from app.conversation import ConversationState, PlayerIntent
 from app.utils.debug import HandlerDebugMixin
 from app.keywords import CONFIRMATION_WORDS, CANCELLATION_WORDS
+from app.shop_handlers.stash_handler import StashHandler
 
 import json
 from json import JSONDecodeError
@@ -112,6 +113,10 @@ class ConversationService(HandlerDebugMixin):
             self.buy_handler
         )
 
+        self.stash_handler = StashHandler(
+            agent, self.party_data, convo, party_id, character_id
+        )
+
         # build intent router
         self.intent_router = self._build_router()
         self.debug('← Exiting __init__')
@@ -130,6 +135,11 @@ class ConversationService(HandlerDebugMixin):
             return self.buy_handler.handle_confirm_purchase(wrapped_input)
         if pending in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_CONFIRM}:
             return self.sell_handler.handle_confirm_sale(wrapped_input)
+        if pending == PlayerIntent.STASH_REMOVE:
+            return self.stash_handler.handle_confirm_stash_remove(wrapped_input)
+        if pending == PlayerIntent.STASH_ADD:
+            return self.stash_handler.handle_confirm_stash_add(wrapped_input)
+
         self.debug('← Exiting _handle_confirmation_flow')
         return self.generic_handler.handle_confirm(wrapped_input)
 
@@ -288,6 +298,10 @@ class ConversationService(HandlerDebugMixin):
                     return self.buy_handler.handle_confirm_purchase({'text': text})
                 if pending == PlayerIntent.SELL_ITEM:
                     return self.sell_handler.handle_confirm_sale({'text': text})
+                if pending == PlayerIntent.STASH_ADD:
+                    return self.stash_handler.handle_confirm_stash_add({'text': text})
+                if pending == PlayerIntent.STASH_REMOVE:
+                    return self.stash_handler.handle_confirm_stash_remove({'text': text})
             if low in CANCELLATION_WORDS:
                 return self._handle_cancellation_flow({'text': text})
 
@@ -424,6 +438,25 @@ class ConversationService(HandlerDebugMixin):
             return lambda w: self._list_or_detail(PlayerIntent.BUY_ITEM, w)
         if intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
             return self.sell_handler.process_sell_item_flow
+
+        # --- Stash handler routing (all in one block) ---
+        if intent in {PlayerIntent.VIEW_STASH, PlayerIntent.STASH_ADD} or \
+                self.convo.pending_action == PlayerIntent.STASH_ADD:
+            if intent == PlayerIntent.VIEW_STASH:
+                return self.stash_handler.handle_view_stash
+            if intent == PlayerIntent.STASH_ADD:
+                return self.stash_handler.process_stash_add_flow
+            if self.convo.state == ConversationState.AWAITING_ITEM_SELECTION:
+                return self.stash_handler.process_stash_item_selection
+            if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
+                return self.stash_handler.handle_confirm_stash_add
+        if intent == PlayerIntent.STASH_REMOVE:
+            return self.stash_handler.process_stash_remove_flow
+        if self.convo.pending_action == PlayerIntent.STASH_REMOVE:
+            if self.convo.state == ConversationState.AWAITING_ITEM_SELECTION:
+                return self.stash_handler.process_stash_remove_item_selection
+            if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
+                return self.stash_handler.handle_confirm_stash_remove
 
         # ---------- view-intents ----------
         view_category_intents = {

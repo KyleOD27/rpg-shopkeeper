@@ -303,6 +303,14 @@ def interpret_input(player_input, convo=None):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
 
+    # --- VIEW_STASH direct keyword detection (must come before fuzzy!) ---
+    view_stash_keywords = INTENT_KEYWORDS[PlayerIntent.VIEW_STASH]
+    if any(normalize_input(player_input) == normalize_input(kw) for kw in view_stash_keywords):
+        return {"intent": PlayerIntent.VIEW_STASH, "metadata": {}}
+
+    # --- Category detection ---
+    # ... (rest unchanged)
+
     # --- Category detection ---
     CATEGORY_INTENTS = [
         PlayerIntent.VIEW_TOOL_CATEGORY,
@@ -358,7 +366,12 @@ def interpret_input(player_input, convo=None):
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
         if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
             return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
+        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
+            return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
+        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
+            return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
         return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
+
     # (rest unchanged...)
     intent_r, conf = rank_intent_kw(player_input, convo)
     if (conf >= INTENT_CONF_THRESHOLD and
