@@ -292,6 +292,14 @@ def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation
 # ─── Interpreter entry point (unchanged except for normalization flow) ─
 
 def interpret_input(player_input, convo=None):
+    # --- State-aware handling for deposit/withdraw amount ---
+    if convo is not None:
+        if convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
+            intent, amt = detect_deposit_intent(player_input)
+            return {"intent": intent, "metadata": {"amount": amt}}
+        if convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
+            intent, amt = detect_withdraw_intent(player_input)
+            return {"intent": intent, "metadata": {"amount": amt}}
     lowered = normalize_input(player_input)
     early = _confirmation_overrides(player_input, lowered, convo)
     if early:
