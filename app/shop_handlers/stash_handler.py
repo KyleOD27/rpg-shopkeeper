@@ -1,23 +1,24 @@
 from app.interpreter import find_item_in_input, normalize_input
 from app.models.party_stash import add_item_to_stash, get_party_stash, remove_item_from_stash
+from app.models.ledger import record_transaction
 from app.conversation import PlayerIntent, ConversationState
 from app.utils.debug import HandlerDebugMixin
 
 class StashHandler(HandlerDebugMixin):
     def __init__(self, agent, party_data, convo, party_id, character_id):
-        self.conversation = convo  # For debug logging
-        self.convo = convo         # For state & pending
+        self.conversation = convo
+        self.convo = convo
         self.agent = agent
         self.party_data = party_data
         self.party_id = party_id
         self.character_id = character_id
+        self.character_name = self.party_data.get('character_name', 'Someone')
 
     def process_stash_add_flow(self, player_input):
         self.debug('→ Entering process_stash_add_flow')
         raw = player_input.get('text', '') if isinstance(player_input, dict) else player_input
         item_name = player_input.get('item') if isinstance(player_input, dict) else None
         self.convo.clear_pending()
-        # No item yet: Try to find matches from text
         if not item_name:
             matches, _ = find_item_in_input(raw, self.convo)
             if matches:
@@ -26,7 +27,6 @@ class StashHandler(HandlerDebugMixin):
                     self._stash_and_confirm(item)
                     return self.agent.shopkeeper_generic_say(
                         f"Add *{item['item_name']}* to the party stash? (yes/no)")
-                # Multiple matches: let user pick
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.STASH_ADD)
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
@@ -37,15 +37,12 @@ class StashHandler(HandlerDebugMixin):
                 self.convo.save_state()
                 return self.agent.shopkeeper_generic_say(
                     "What item would you like to add to the stash?")
-        # Item provided directly (from metadata or ID)
         item = item_name
         if isinstance(item, list):
             if len(item) == 1:
                 item = item[0]
             elif len(item) > 1:
-                # Should not happen, but just in case, pick first or handle differently
                 item = item[0]
-
         self._stash_and_confirm(item)
         return self.agent.shopkeeper_generic_say(
             f"Add *{item['item_name']}* to the party stash? (yes/no)")
@@ -90,6 +87,16 @@ class StashHandler(HandlerDebugMixin):
             return self.agent.shopkeeper_generic_say(
                 "Something went wrong—no item selected for stashing.")
         add_item_to_stash(self.party_id, self.character_id, item['item_id'], item['item_name'])
+        # === Ledger: record stash add ===
+        record_transaction(
+            party_id=self.party_id,
+            character_id=self.character_id,
+            item_name=item['item_name'],
+            amount=None,
+            action='STASH_ADD',
+            balance_after=None,
+            details=f"{self.character_name} added to party stash"
+        )
         self.convo.reset_state()
         self.convo.set_pending_item(None)
         self.convo.set_state(ConversationState.AWAITING_ACTION)
@@ -116,7 +123,6 @@ class StashHandler(HandlerDebugMixin):
         raw = player_input.get('text', '') if isinstance(player_input, dict) else player_input
         item_name = player_input.get('item') if isinstance(player_input, dict) else None
         self.convo.clear_pending()
-        # No item yet: Try to find matches from text
         if not item_name:
             matches, _ = find_item_in_input(raw, self.convo)
             if matches:
@@ -125,7 +131,6 @@ class StashHandler(HandlerDebugMixin):
                     self._unstash_and_confirm(item)
                     return self.agent.shopkeeper_generic_say(
                         f"Remove *{item['item_name']}* from the party stash? (yes/no)")
-                # Multiple matches: let user pick
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.STASH_REMOVE)
                 self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
@@ -136,7 +141,6 @@ class StashHandler(HandlerDebugMixin):
                 self.convo.save_state()
                 return self.agent.shopkeeper_generic_say(
                     "What item would you like to remove from the stash?")
-        # Item provided directly (from metadata or ID)
         item = item_name
         if isinstance(item, list) and len(item) > 0:
             item = item[0]
@@ -184,6 +188,16 @@ class StashHandler(HandlerDebugMixin):
             return self.agent.shopkeeper_generic_say(
                 "Something went wrong—no item selected for removal.")
         success = remove_item_from_stash(self.party_id, item['item_id'])
+        if success:
+            record_transaction(
+                party_id=self.party_id,
+                character_id=self.character_id,
+                item_name=item['item_name'],
+                amount=None,
+                action='STASH_REMOVE',
+                balance_after=None,
+                details=f"{self.character_name} removed from party stash"
+            )
         self.convo.reset_state()
         self.convo.set_pending_item(None)
         self.convo.set_state(ConversationState.AWAITING_ACTION)

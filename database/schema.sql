@@ -122,7 +122,7 @@ CREATE TABLE transaction_ledger (
 
     action        TEXT     NOT NULL
                  CHECK (action IN ('BUY','SELL','HAGGLE','ADJUST',
-                                   'DEPOSIT','WITHDRAW', 'UNDO')),
+                                   'DEPOSIT','WITHDRAW', 'UNDO', 'STASH_ADD', 'STASH_REMOVE')),
     item_name     TEXT,
     amount        INTEGER,
     currency      TEXT     DEFAULT 'gp',      -- cp | sp | ep | gp | pp

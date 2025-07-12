@@ -757,7 +757,11 @@ class BaseShopkeeper(HandlerDebugMixin):
 
             action = (entry.get('action') or '').lower()
             item = entry.get('item_name', '')
-            amount = int(entry.get('amount', 0))
+            raw_amt = entry.get('amount', 0)
+            try:
+                amount = int(raw_amt) if raw_amt is not None else 0
+            except (TypeError, ValueError):
+                amount = 0
             amount_abs = abs(amount)
 
             if action in {'buy', 'bought'}:
@@ -768,6 +772,10 @@ class BaseShopkeeper(HandlerDebugMixin):
                 verb, what = 'deposited', f'{self.format_gp_cp(amount_abs)}'
             elif action == 'withdraw':
                 verb, what = 'withdrew', f'{self.format_gp_cp(amount_abs)}'
+            elif action == 'stash_add':
+                verb, what = 'added', f'{item} to the stash'
+            elif action == 'stash_remove':
+                verb, what = 'removed', f'{item} from the stash'
             else:
                 verb = action or 'did something with'
                 what = f'{item} for {self.format_gp_cp(amount_abs)}' if item else f'{self.format_gp_cp(amount_abs)}'
@@ -825,7 +833,8 @@ class BaseShopkeeper(HandlerDebugMixin):
             '• *BALANCE*  check party balance',
             '• *DEPOSIT*  add to the fund',
             '• *WITHDRAW* take out of the fund',
-            '• *LEDGER*  view our trade history', ' ', 'Just let me know! ')
+            '• *LEDGER*  view our trade history',
+            '• *STASH*  store items in a shared space,', ' ', 'Just let me know! ')
 
     def format_gp_cp(self, cp: int) -> str:
         """Formats a copper-piece (cp) value as a string in GP/CP for display."""
