@@ -445,7 +445,7 @@ class ConversationService(HandlerDebugMixin):
     def _route_intent(self, intent: PlayerIntent, state=None) -> Callable:
         self.debug('→ Entering _route_intent')
 
-        # ---------- unchanged BUY / SELL / INSPECT branches ----------
+        # ---------- 1. BUY / SELL / INSPECT branches ----------
         if intent == PlayerIntent.INSPECT_ITEM:
             return lambda w: self._list_or_detail(PlayerIntent.INSPECT_ITEM, w)
         if intent in {PlayerIntent.BUY_ITEM, PlayerIntent.BUY_NEEDS_ITEM}:
@@ -453,8 +453,31 @@ class ConversationService(HandlerDebugMixin):
         if intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
             return self.sell_handler.process_sell_item_flow
 
-        # --- Stash handler routing (all in one block) ---
-        # --- Stash handler routing: STATE-FIRST, not intent! ---
+        # ---------- 2. TOP-LEVEL INTENT ROUTING: always do this BEFORE stash/unstash state checks! ----------
+        if intent == PlayerIntent.VIEW_LEDGER:
+            return self.generic_handler.handle_view_ledger
+        if intent == PlayerIntent.CHECK_BALANCE:
+            return self.generic_handler.handle_check_balance
+        if intent == PlayerIntent.VIEW_PROFILE:
+            return self.generic_handler.handle_view_profile
+        if intent == PlayerIntent.NEXT:
+            return self.generic_handler.handle_next_page
+        if intent == PlayerIntent.PREVIOUS:
+            return self.generic_handler.handle_previous_page
+        if intent == PlayerIntent.GREETING:
+            return self.generic_handler.handle_reply_to_greeting
+        if intent in {PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
+            return self.deposit_handler.process_deposit_balance_cp_flow
+        if intent in {PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
+            return self.withdraw_handler.process_withdraw_balance_cp_flow
+        if intent == PlayerIntent.HAGGLE:
+            return self.buy_handler.handle_haggle
+        if intent == PlayerIntent.SHOW_GRATITUDE:
+            return self.generic_handler.handle_accept_thanks
+        if intent == PlayerIntent.UNDO:
+            return self.generic_handler.handle_undo_last_transaction
+
+        # ---------- 3. Stash/Unstash stateful routing (do this AFTER the intent-based top-level checks) ----------
 
         # 1. Add handler for viewing stash (intent only)
         if intent == PlayerIntent.VIEW_STASH:
@@ -476,7 +499,7 @@ class ConversationService(HandlerDebugMixin):
         if intent == PlayerIntent.STASH_REMOVE:
             return self.stash_handler.process_stash_remove_flow
 
-        # ---------- view-intents ----------
+        # ---------- 4. view-intents ----------
         view_category_intents = {
             PlayerIntent.VIEW_ITEMS,
             PlayerIntent.VIEW_EQUIPMENT_CATEGORY,
@@ -496,15 +519,14 @@ class ConversationService(HandlerDebugMixin):
         }  # defined at top
 
         if intent in view_subcategory_intents:
-                def _subcat(wrapped):
-                    self.convo.set_state(ConversationState.VIEWING_ITEMS)
-                    self.convo.save_state()
-                    return self.view_handler.process_view_items_flow(wrapped)
+            def _subcat(wrapped):
+                self.convo.set_state(ConversationState.VIEWING_ITEMS)
+                self.convo.save_state()
+                return self.view_handler.process_view_items_flow(wrapped)
 
-                return _subcat
+            return _subcat
 
         if intent in view_category_intents:
-            # ✦ NEW: top-level categories → VIEWING_CATEGORIES
             def _cat(wrapped):
                 self.convo.set_state(ConversationState.VIEWING_CATEGORIES)
                 self.convo.save_state()
@@ -512,30 +534,7 @@ class ConversationService(HandlerDebugMixin):
 
             return _cat
 
-        # ---------- the rest (next / previous / greeting …) stay the same ----------
-        if intent == PlayerIntent.NEXT:
-            return self.generic_handler.handle_next_page
-        if intent == PlayerIntent.PREVIOUS:
-            return self.generic_handler.handle_previous_page
-        if intent == PlayerIntent.GREETING:
-            return self.generic_handler.handle_reply_to_greeting
-        if intent in {PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
-            return self.deposit_handler.process_deposit_balance_cp_flow
-        if intent in {PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
-            return self.withdraw_handler.process_withdraw_balance_cp_flow
-        if intent == PlayerIntent.CHECK_BALANCE:
-            return self.generic_handler.handle_check_balance
-        if intent == PlayerIntent.VIEW_LEDGER:
-            return self.generic_handler.handle_view_ledger
-        if intent == PlayerIntent.VIEW_PROFILE:
-            return self.generic_handler.handle_view_profile
-        if intent == PlayerIntent.HAGGLE:
-            return self.buy_handler.handle_haggle
-        if intent == PlayerIntent.SHOW_GRATITUDE:
-            return self.generic_handler.handle_accept_thanks
-        if intent == PlayerIntent.UNDO:
-            return self.generic_handler.handle_undo_last_transaction
-
         self.debug('← Exiting _route_intent')
         return self.generic_handler.handle_fallback
+
 
