@@ -87,6 +87,8 @@ PREFERRED_ORDER: list[PlayerIntent] = [
     PlayerIntent.WITHDRAW_BALANCE,
     PlayerIntent.CHECK_BALANCE,
     PlayerIntent.VIEW_LEDGER,
+    PlayerIntent.STASH_ADD,
+    PlayerIntent.STASH_REMOVE,
     PlayerIntent.BUY_ITEM,
     PlayerIntent.SELL_ITEM,
     PlayerIntent.INSPECT_ITEM,
@@ -272,6 +274,7 @@ def detect_withdraw_intent(text: str):
         amt,
     )
 
+
 # ─── Confirmation‑state overrides ───────────────────────────────────────
 
 def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation | None):
@@ -292,14 +295,31 @@ def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation
 # ─── Interpreter entry point (unchanged except for normalization flow) ─
 
 def interpret_input(player_input, convo=None):
-    # --- State-aware handling for deposit/withdraw amount ---
+    # --- State-aware handling for special input modes ---
     if convo is not None:
+        # Deposit amount input
         if convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
             intent, amt = detect_deposit_intent(player_input)
             return {"intent": intent, "metadata": {"amount": amt}}
+        # Withdraw amount input
         if convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
             intent, amt = detect_withdraw_intent(player_input)
             return {"intent": intent, "metadata": {"amount": amt}}
+        # Stash add selection
+        if convo.state == ConversationState.AWAITING_STASH_ITEM_SELECTION:
+            items, _ = find_item_in_input(player_input, convo)
+            if items:
+                return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
+            return {"intent": PlayerIntent.STASH_ADD, "metadata": {}}
+        # Stash remove selection
+        if convo.state == ConversationState.AWAITING_UNSTASH_ITEM_SELECTION:
+            items, _ = find_item_in_input(player_input, convo)
+            if items:
+                return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
+            return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {}}
+        # If in AWAITING_ITEM_SELECTION but not stash, fall through to buy/sell/inspect logic
+
+    # --- Standard intent detection below (unchanged) ---
     lowered = normalize_input(player_input)
     early = _confirmation_overrides(player_input, lowered, convo)
     if early:
@@ -310,6 +330,12 @@ def interpret_input(player_input, convo=None):
     if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
+
+    # ...rest of your normal logic (category browsing, fallback, etc) ...
+
+
+
+
 
     # --- VIEW_STASH direct keyword detection (must come before fuzzy!) ---
     view_stash_keywords = INTENT_KEYWORDS[PlayerIntent.VIEW_STASH]

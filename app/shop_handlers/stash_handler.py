@@ -3,6 +3,7 @@ from app.models.party_stash import add_item_to_stash, get_party_stash, remove_it
 from app.models.ledger import record_transaction
 from app.conversation import PlayerIntent, ConversationState
 from app.utils.debug import HandlerDebugMixin
+import json
 
 class StashHandler(HandlerDebugMixin):
     def __init__(self, agent, party_data, convo, party_id, character_id):
@@ -18,7 +19,7 @@ class StashHandler(HandlerDebugMixin):
         self.debug('→ Entering process_stash_add_flow')
         raw = player_input.get('text', '') if isinstance(player_input, dict) else player_input
         item_name = player_input.get('item') if isinstance(player_input, dict) else None
-        self.convo.clear_pending()
+
         if not item_name:
             matches, _ = find_item_in_input(raw, self.convo)
             if matches:
@@ -29,20 +30,21 @@ class StashHandler(HandlerDebugMixin):
                         f"Add *{item['item_name']}* to the party stash? (yes/no)")
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.STASH_ADD)
-                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.set_state(ConversationState.AWAITING_STASH_ITEM_SELECTION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_list_matching_items(matches)
             else:
-                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.set_state(ConversationState.AWAITING_STASH_ITEM_SELECTION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_generic_say(
                     "What item would you like to add to the stash?")
         item = item_name
         if isinstance(item, list):
-            if len(item) == 1:
-                item = item[0]
-            elif len(item) > 1:
-                item = item[0]
+            item = item[0] if item else None
+        if not isinstance(item, dict):
+            return self.agent.shopkeeper_generic_say(
+                "Sorry, I couldn't identify that item."
+            )
         self._stash_and_confirm(item)
         return self.agent.shopkeeper_generic_say(
             f"Add *{item['item_name']}* to the party stash? (yes/no)")
@@ -54,23 +56,62 @@ class StashHandler(HandlerDebugMixin):
             if choice.lower().startswith(p):
                 choice = choice[len(p):].lstrip()
                 break
+
         pending = self.convo.pending_item
-        if not pending:
-            return self.agent.shopkeeper_generic_say(
-                'I’m not sure which item you mean. Try the full name or its ID number.')
-        norm = normalize_input(choice)
+
+        # Defensive: parse JSON string if necessary
+        import json
+        if isinstance(pending, str):
+            try:
+                pending = json.loads(pending)
+            except Exception:
+                pending = None
+
+        # --- Always check user input for item(s) ---
+        detected_items, _ = find_item_in_input(choice, self.convo)
         item = None
-        if isinstance(pending, list):
-            item = next((i for i in pending if str(i['item_id']) == norm or
-                         normalize_input(i['item_name']) == norm), None)
-        else:
-            item = pending
-        if not item:
+
+        if detected_items:
+            if len(detected_items) == 1:
+                item = detected_items[0]
+            else:
+                # Multiple matches found
+                self.convo.set_pending_item(detected_items)
+                self.convo.set_pending_action(PlayerIntent.STASH_ADD)
+                self.convo.set_state(ConversationState.AWAITING_STASH_ITEM_SELECTION)
+                self.convo.save_state()
+                return self.agent.shopkeeper_list_matching_items(detected_items)
+
+        # Fallback: try from pending (if it was a list from before)
+        if not item and isinstance(pending, list):
+            norm = normalize_input(choice)
+            item = next(
+                (i for i in pending if
+                 (str(i.get('item_id', '')) == norm or normalize_input(i.get('item_name', '')) == norm)),
+                None
+            )
+            if not item:
+                item = next(
+                    (i for i in pending if norm in normalize_input(i.get('item_name', ''))),
+                    None
+                )
+
+        if not pending and not item:
+            self.convo.reset_state()
+            self.convo.set_pending_item(None)
+            self.convo.set_state(ConversationState.AWAITING_ACTION)
+            self.convo.save_state()
+            return self.agent.shopkeeper_fallback_prompt()
+
+        if not item or not isinstance(item, dict):
             return self.agent.shopkeeper_generic_say(
-                "I couldn't find that item in the options. Please say the full name or ID.")
+                "Sorry, I couldn't find that item. Please try again, or say 'cancel' to exit."
+            )
+
         self._stash_and_confirm(item)
         return self.agent.shopkeeper_generic_say(
-            f"Add *{item['item_name']}* to the party stash? (yes/no)")
+            f"Add *{item['item_name']}* to the party stash? (yes/no)"
+        )
 
     def _stash_and_confirm(self, item):
         self.debug('→ Entering _stash_and_confirm')
@@ -87,7 +128,6 @@ class StashHandler(HandlerDebugMixin):
             return self.agent.shopkeeper_generic_say(
                 "Something went wrong—no item selected for stashing.")
         add_item_to_stash(self.party_id, self.character_id, item['item_id'], item['item_name'])
-        # === Ledger: record stash add ===
         record_transaction(
             party_id=self.party_id,
             character_id=self.character_id,
@@ -103,7 +143,8 @@ class StashHandler(HandlerDebugMixin):
         self.convo.save_state()
         self.debug('← Exiting handle_confirm_stash_add')
         return self.agent.shopkeeper_generic_say(
-            f"Added *{item['item_name']}* to the party stash!")
+            f"Added *{item['item_name']}* to the party stash!"
+        )
 
     def handle_view_stash(self, player_input):
         self.debug('→ Entering handle_view_stash')
@@ -133,17 +174,21 @@ class StashHandler(HandlerDebugMixin):
                         f"Remove *{item['item_name']}* from the party stash? (yes/no)")
                 self.convo.set_pending_item(matches)
                 self.convo.set_pending_action(PlayerIntent.STASH_REMOVE)
-                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.set_state(ConversationState.AWAITING_UNSTASH_ITEM_SELECTION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_list_matching_items(matches)
             else:
-                self.convo.set_state(ConversationState.AWAITING_ITEM_SELECTION)
+                self.convo.set_state(ConversationState.AWAITING_UNSTASH_ITEM_SELECTION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_generic_say(
                     "What item would you like to remove from the stash?")
         item = item_name
-        if isinstance(item, list) and len(item) > 0:
+        if isinstance(item, list) and item:
             item = item[0]
+        if not isinstance(item, dict):
+            return self.agent.shopkeeper_generic_say(
+                "Sorry, I couldn't identify that item."
+            )
         self._unstash_and_confirm(item)
         return self.agent.shopkeeper_generic_say(
             f"Remove *{item['item_name']}* from the party stash? (yes/no)")
@@ -156,22 +201,49 @@ class StashHandler(HandlerDebugMixin):
                 choice = choice[len(p):].lstrip()
                 break
         pending = self.convo.pending_item
+
+        # Defensive: parse JSON string if necessary
+        if isinstance(pending, str):
+            try:
+                pending = json.loads(pending)
+            except Exception:
+                pending = None
+
+        # Option 2: If no pending, reset and fallback
         if not pending:
+            self.convo.reset_state()
+            self.convo.set_pending_item(None)
+            self.convo.set_state(ConversationState.AWAITING_ACTION)
+            self.convo.save_state()
             return self.agent.shopkeeper_generic_say(
-                'I’m not sure which item you mean. Try the full name or its ID number.')
+                "No unstash selection in progress. Returning to main menu.\n\nSay *menu* to see your options."
+            )
+
         norm = normalize_input(choice)
         item = None
+
         if isinstance(pending, list):
-            item = next((i for i in pending if str(i['item_id']) == norm or
-                         normalize_input(i['item_name']) == norm), None)
-        else:
+            item = next(
+                (i for i in pending if (str(i.get('item_id', '')) == norm or normalize_input(i.get('item_name', '')) == norm)),
+                None
+            )
+            if not item:
+                item = next(
+                    (i for i in pending if norm in normalize_input(i.get('item_name', ''))),
+                    None
+                )
+        elif isinstance(pending, dict):
             item = pending
-        if not item:
+
+        if not item or not isinstance(item, dict):
             return self.agent.shopkeeper_generic_say(
-                "I couldn't find that item in the options. Please say the full name or ID.")
+                "Sorry, I couldn't find that item. Please say the full name or ID."
+            )
+
         self._unstash_and_confirm(item)
         return self.agent.shopkeeper_generic_say(
-            f"Remove *{item['item_name']}* from the party stash? (yes/no)")
+            f"Remove *{item['item_name']}* from the party stash? (yes/no)"
+        )
 
     def _unstash_and_confirm(self, item):
         self.debug('→ Entering _unstash_and_confirm')

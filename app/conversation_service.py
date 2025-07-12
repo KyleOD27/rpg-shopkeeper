@@ -236,12 +236,12 @@ class ConversationService(HandlerDebugMixin):
         self.debug('→ Entering handle')
 
         text = player_input.strip()
-        low  = text.lower()
+        low = text.lower()
 
         # refresh party balance every turn
         self.party_data['party_balance_cp'] = get_party_balance_cp(self.party_id)
 
-        # ── out-of-band commands ───────────────────
+        # out-of-band commands
         if low.startswith('dm '):
             return handle_dm_command(
                 self.party_id, self.player_id, player_input,
@@ -257,17 +257,23 @@ class ConversationService(HandlerDebugMixin):
                 self.convo.save_state()
             return resp
 
+        # --- SPECIAL CASE: Awaiting item selection for stash add/remove ---
+        if self.convo.state == ConversationState.AWAITING_STASH_ITEM_SELECTION:
+            return self.stash_handler.process_stash_item_selection({'text': text})
+        if self.convo.state == ConversationState.AWAITING_UNSTASH_ITEM_SELECTION:
+            return self.stash_handler.process_stash_remove_item_selection({'text': text})
+
         # store raw + normalised input on the convo
         self.convo.set_input(player_input)
         normalised = normalize_input(player_input) if isinstance(player_input, str) else 'N/A'
         self.convo.normalized_input = normalised
         self.convo.debug(f'[HANDLE] raw={player_input!r}, normalised={normalised!r}')
 
-        #check if numeric input is deposit or withdraw amount
-        if low.isdigit() and self.convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
+        # SPECIAL CASES: Awaiting deposit/withdraw amount (numeric or not)
+        if self.convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
             return self.deposit_handler.process_deposit_balance_cp_flow({'text': text})
 
-        if low.isdigit() and self.convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
+        if self.convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
             return self.withdraw_handler.process_withdraw_balance_cp_flow({'text': text})
 
         # ── numeric selection while browsing ───────
@@ -448,23 +454,27 @@ class ConversationService(HandlerDebugMixin):
             return self.sell_handler.process_sell_item_flow
 
         # --- Stash handler routing (all in one block) ---
-        if intent in {PlayerIntent.VIEW_STASH, PlayerIntent.STASH_ADD} or \
-                self.convo.pending_action == PlayerIntent.STASH_ADD:
-            if intent == PlayerIntent.VIEW_STASH:
-                return self.stash_handler.handle_view_stash
-            if intent == PlayerIntent.STASH_ADD:
-                return self.stash_handler.process_stash_add_flow
-            if self.convo.state == ConversationState.AWAITING_ITEM_SELECTION:
-                return self.stash_handler.process_stash_item_selection
-            if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
-                return self.stash_handler.handle_confirm_stash_add
+        # --- Stash handler routing: STATE-FIRST, not intent! ---
+
+        # 1. Add handler for viewing stash (intent only)
+        if intent == PlayerIntent.VIEW_STASH:
+            return self.stash_handler.handle_view_stash
+
+        # 2. Stash add flow: Use state, NOT intent or pending_action!
+        if self.convo.state == ConversationState.AWAITING_STASH_ITEM_SELECTION:
+            return self.stash_handler.process_stash_item_selection
+        if self.convo.state == ConversationState.AWAITING_CONFIRMATION and self.convo.pending_action == PlayerIntent.STASH_ADD:
+            return self.stash_handler.handle_confirm_stash_add
+        if intent == PlayerIntent.STASH_ADD:
+            return self.stash_handler.process_stash_add_flow
+
+        # 3. Stash remove flow: Use state, NOT intent or pending_action!
+        if self.convo.state == ConversationState.AWAITING_UNSTASH_ITEM_SELECTION:
+            return self.stash_handler.process_stash_remove_item_selection
+        if self.convo.state == ConversationState.AWAITING_CONFIRMATION and self.convo.pending_action == PlayerIntent.STASH_REMOVE:
+            return self.stash_handler.handle_confirm_stash_remove
         if intent == PlayerIntent.STASH_REMOVE:
             return self.stash_handler.process_stash_remove_flow
-        if self.convo.pending_action == PlayerIntent.STASH_REMOVE:
-            if self.convo.state == ConversationState.AWAITING_ITEM_SELECTION:
-                return self.stash_handler.process_stash_remove_item_selection
-            if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
-                return self.stash_handler.handle_confirm_stash_remove
 
         # ---------- view-intents ----------
         view_category_intents = {
