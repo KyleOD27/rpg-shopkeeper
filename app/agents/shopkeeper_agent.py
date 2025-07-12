@@ -20,39 +20,56 @@ def safe_normalized_field(item, field_name):
     return ''
 
 
-def join_lines(*parts: str) ->str:
-    return '\n'.join(p.strip() for p in parts if p).rstrip()
+def join_lines(*parts: str) -> str:
+    return '\n'.join(p.strip() for p in parts).rstrip()
 
+def ordinal(n: int) -> str:
+    """Return the ordinal string of a number, e.g., 1 -> '1st'."""
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return f"{n}{suffix}"
 
 class BaseShopkeeper(HandlerDebugMixin):
     def __init__(self, conversation: Conversation):
         self.conversation = conversation
 
     def shopkeeper_greeting(self, party_name: str, visit_count: int, player_name: str, character_name: str) -> str:
-        # entry trace
         self.debug('→ Entering shopkeeper_greeting')
 
-        # pick the correct message
+        visit_ordinal = ordinal(visit_count)
+
         if visit_count == 1:
             msg = join_lines(
                 f'Ah, {character_name} of {party_name}.',
-                'First time at this shop? Nice to meet you.',
                 '',
-                "There's a few things you can do here, to see what just say: *menu* "
+                f"Your {visit_ordinal} time at this shop? Nice to meet you.",
+                '',
+                "There's a few things you can do here, to see what just say *menu* "
             )
         elif visit_count < 5:
             msg = join_lines(
-                f"It's great to see you back, {character_name}! This is visit number {visit_count}.",
+                f"It's great to see you back, {character_name}! This is your {visit_ordinal} visit.",
+                '',
                 'What would you like?'
             )
         else:
             msg = join_lines(
-                f"Back again, {character_name}? I'm flattered, this is visit {visit_count}!",
+                f"Back again, {character_name}? I'm flattered, this is your {visit_ordinal} visit!",
                 '',
                 'What can I do for you today?'
             )
 
-        # exit trace
+        # CLEAR STATE/ACTION/INTENT AFTER GREETING!
+        if hasattr(self, 'convo'):
+            if hasattr(self.convo, 'set_state'):
+                self.convo.set_state('AWAITING_COMMAND')  # Or your actual constant
+            if hasattr(self.convo, 'set_action'):
+                self.convo.set_action(None)
+            if hasattr(self.convo, 'set_intent'):
+                self.convo.set_intent(None)
+
         self.debug('← Exiting shopkeeper_greeting')
         return msg
 
@@ -305,7 +322,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             lines.append('Say _previous_ to go back.')
 
         if include_buy_prompt:
-            lines.append('Pass me the item *id* for more details.')
+            lines.append('Pass me the item *id* or *name* for more details.')
 
     def _format_shop_item(self, item: dict) -> list[str]:
         """Return 2-line display for a shop item (ID, name, price only)."""
@@ -329,8 +346,8 @@ class BaseShopkeeper(HandlerDebugMixin):
                 price_str = f"{gp} GP {cp} CP"  # e.g. "3 GP 27 CP"
 
         return [
-            f"*#{item_id}* – *{name}*",
-            f"Price: {price_str}"
+            f"*#{item_id}* | *{name}*",
+            f"💰{price_str}"
         ]
 
     def _format_armour_item(self, item: dict) -> list[str]:
@@ -434,7 +451,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_weapon_category')
         return '\n'.join(lines)
 
-    def shopkeeper_show_items_by_armour_category(self, player_input,):
+    def shopkeeper_show_items_by_armour_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_armour_category')
 
         armour_category = player_input.get('armour_category')
@@ -447,8 +464,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         all_items = [dict(row) for row in all_rows]
         all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
 
-        total_pages = max(1, (len(all_items) + 4) // 5)
-        page_items = all_items[(page - 1) * 5: page * 5]
+        page_items, page, total_pages = self._paginate(all_items, page)
 
         if not page_items:
             return f"😕 Looks like we don't have any *{armour_category.title()}* armour in stock right now."
@@ -459,8 +475,20 @@ class BaseShopkeeper(HandlerDebugMixin):
         ]
 
         for item in page_items:
-            lines.extend(self._format_armour_item(item))
+            lines.extend(self._format_shop_item(item))
 
+        nav_lines = []
+        self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
+
+        # "Next" always at the end for WhatsApp clarity
+        if any("next" in line.lower() for line in nav_lines):
+            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
+            next_lines = [l for l in nav_lines if "next" in l.lower()]
+            lines.extend(buy_lines + next_lines)
+        else:
+            lines.extend(nav_lines)
+
+        self.debug('← Exiting shopkeeper_show_items_by_armour_category')
         return '\n'.join(lines)
 
     def shopkeeper_show_items_by_gear_category(self, player_input,):
@@ -592,10 +620,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         all_items = [dict(row) for row in all_rows]
         all_items.sort(key=lambda x: x.get('base_price_cp') or 0)
 
-        total_pages = max(1, (len(all_items) + 4) // 5)
-        start = (page - 1) * 5
-        end = start + 5
-        page_items = all_items[start:end]
+        page_items, page, total_pages = self._paginate(all_items, page)
 
         if not page_items:
             return "😕 Looks like we don't have any mounts or vehicles in stock right now."
@@ -603,9 +628,18 @@ class BaseShopkeeper(HandlerDebugMixin):
         lines = [f'🏇 *Mounts & Vehicles* _(Page {page} of {total_pages})_', '']
 
         for item in page_items:
-            lines.extend(self._format_mount_item(item))
+            lines.extend(self._format_shop_item(item))
 
-        self._add_navigation_lines(lines, page, total_pages, include_buy_prompt=True)
+        nav_lines = []
+        self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
+
+        # Keep “next” at the end (for WhatsApp clarity)
+        if any("next" in line.lower() for line in nav_lines):
+            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
+            next_lines = [l for l in nav_lines if "next" in l.lower()]
+            lines.extend(buy_lines + next_lines)
+        else:
+            lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_mount_category')
         return '\n'.join(lines)
@@ -826,7 +860,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         ]
 
         if desc:
-            lines.extend(['', f"📜 _{desc}_"])
+            lines.extend(['', f"📜 {desc}"])
 
         if item.get('damage_dice'):
             dmg_type = item.get('damage_type', '')

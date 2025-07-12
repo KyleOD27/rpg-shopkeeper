@@ -8,12 +8,12 @@ INSERT INTO shops (shop_name, agent_name, location) VALUES
 -- Insert Users
 INSERT INTO users (phone_number, user_name, subscription_tier) VALUES
 ('+447000', 'Admin', 'ADMIN'),                      -- user_id = 1
-('+447971548666', 'Kyle', 'DM'),                    -- user_id = 2
-('+447851681361', 'Jaz', 'DM'),             -- user_id = 3
-('+447700170625', 'Graham', 'Adventurer'),            -- user_id = 4
-('+447969192329', 'Rachel', 'Adventurer'),            -- user_id = 5
-('+447411559242', 'Matt', 'Adventurer'),            -- user_id = 6
-('+447804975236', 'Andy', 'Adventurer');            -- user_id = 7
+('+447971548666', 'Kyle', 'ADMIN'),                    -- user_id = 2
+('+447851681361', 'Jaz', 'DM');             -- user_id = 3
+--('+447700170625', 'Graham', 'Adventurer'),            -- user_id = 4
+--('+447969192329', 'Rachel', 'Adventurer'),            -- user_id = 5
+--('+447411559242', 'Matt', 'Adventurer'),            -- user_id = 6
+--('+447804975236', 'Andy', 'Adventurer');            -- user_id = 7
 
 -- Insert Party
 INSERT INTO parties (party_id, party_name, party_balance_cp, reputation_score) VALUES
@@ -21,21 +21,21 @@ INSERT INTO parties (party_id, party_name, party_balance_cp, reputation_score) V
 
 -- Insert Party Owner (Kyle is the DM)
 INSERT INTO party_owners (party_id, user_id) VALUES
-('group_001', 1);
+('group_001', 2);
 
 -- Add Users to Party Membership
 INSERT INTO party_membership (party_id, user_id) VALUES
 ('group_001', 1),  -- Admin
-('group_001', 2),  -- Kyle
-('group_001', 3),  -- Jaz
-('group_001', 4);  -- Will (DM)
+('group_001', 2);  -- Kyle
+--('group_001', 3),  -- Jaz
+--('group_001', 4);  -- Will (DM)
 
 -- Insert Characters
 INSERT INTO characters (user_id, party_id, player_name, character_name, role) VALUES
-(1, 'group_001', 'Admin', 'Jurgel', 'God'),
-(2, 'group_001', 'Kyle', 'Kookyko', 'Wizard'),
-(3, 'group_001', 'Jaz', 'JazzySmash', 'Bard'),
-(4, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
+(1, 'group_001', 'Admin', 'Jurgel', 'God');
+--(2, 'group_001', 'Kyle', 'Kookyko', 'Wizard'),
+--(3, 'group_001', 'Jaz', 'JazzySmash', 'Bard'),
+--(4, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
 
 --Insert Items
 

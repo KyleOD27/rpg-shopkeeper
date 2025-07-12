@@ -1,9 +1,9 @@
-# RunApp/cli_safe.py   ← new tiny wrapper (or paste at bottom of cli.py)
+# runapp/cli_safe.py   ← new tiny wrapper (or paste at bottom of cli.py)
 import datetime, csv, traceback, sys
 from pathlib import Path
 
 # ---- import your real entry point -------------------------------------
-from RunApp.cli import main   # adjust the import if main() lives elsewhere
+from runapp.cli import main   # adjust the import if main() lives elsewhere
 # ----------------------------------------------------------------------
 
 LOG_PATH = Path(__file__).resolve().parent / "error_log.csv"

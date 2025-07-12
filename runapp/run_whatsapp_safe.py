@@ -1,4 +1,4 @@
-# RunApp/run_whatsapp_safe.py
+# runapp/run_whatsapp_safe.py
 import datetime, csv, traceback, sys, os, subprocess
 from pathlib import Path
 

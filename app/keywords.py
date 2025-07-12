@@ -50,7 +50,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.VIEW_LEDGER:    ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE:         ["haggle", "negotiate", "bargain", "deal", "cheaper", "discount"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty"],
-    PlayerIntent.GREETING:       ["hello", "hi", "greetings", "hallo", "hey", "ey"],
+    PlayerIntent.GREETING:       ["hello", "greetings", "hallo", "hey", "ey"],
     PlayerIntent.NEXT:           ["next", "more", "show more", "continue", "another"],
     PlayerIntent.PREVIOUS:       ["previous", "back",  "last", "prev", "last"],
     PlayerIntent.UNDO:           ["undo"],

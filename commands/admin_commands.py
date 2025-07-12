@@ -136,14 +136,19 @@ class AdminCommandHandler:
         identifier = " ".join(identifier_parts)
         tier_key = tier_raw.lower()
 
-        if tier_key not in {t.lower() for t in VALID_TIERS}:
+        # Map input to the exact DB values
+        tier_map = {
+            "free": "Free",
+            "adventurer": "Adventurer",
+            "dm": "DM",
+            "guild": "Guild",
+            "admin": "ADMIN",  # Note ALL CAPS
+        }
+
+        if tier_key not in tier_map:
             return f"Tier must be one of: {', '.join(sorted(VALID_TIERS))}."
 
-        tier = (
-            "Admin" if tier_key == "admin"
-            else "DM" if tier_key == "dm"
-            else tier_key.capitalize()
-        )
+        tier = tier_map[tier_key]
 
         user = None
         if identifier.lstrip("+").isdigit():

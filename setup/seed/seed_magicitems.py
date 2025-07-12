@@ -1109,7 +1109,7 @@ WAND_ROWS: list[tuple[str, str, int, str, float, str, int, bool, str, str]]= [
      "The wand regains 1d6 + 1 expended charges daily at dawn. If you expend the last charge, roll a d20. On a 1, the wand crumbles into ashes and is destroyed.",
      0, True, 'Uncommon', 'Wand'),
 
-    ('wand-of-orcus', 'Wand of Orcus', 0, 'gp', 3.0,
+    ('wand-of-orcus', 'Wand of Orcus', 500000, 'gp', 3.0,
      "Wand, artifact (requires attunement)\n"
      "Crafted by Orcus, this skull-topped wand serves his unholy will. You can wield it as a +3 magic Mace that deals an extra 2d12 Necrotic damage. "
      "While holding it, you gain a +3 bonus to AC and may cast Animate Dead (1 charge), Blight (2), Circle of Death (3), Finger of Death (3), Power Word Kill (4), and Speak with Dead (1) (save DC 18). "
@@ -1394,7 +1394,7 @@ EQUIPABLE_MAGIC_ITEMS_ROWS: list[tuple[str, str, int, str, float, str, int, bool
 #--EQUIPABLE-END----------------------------------------
 
 # pg 288+
-# c100, u400, r4000, vr40000, l200000
+# c100, u400, r4000, vr40000, l200000, a500000*
 
 ##todo: WONDROUS ITEMS
 ##TODO: EQUIPABBLE +1 BONUSES ETC FOR CUSTOM ITEMS MIGHT NEED SAME INTSERT AS WEAPONS
