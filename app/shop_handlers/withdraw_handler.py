@@ -47,9 +47,11 @@ class WithdrawHandler(HandlerDebugMixin):
         amount, currency = self._extract_amount_and_currency(lowered)
         if amount is None:
             self.convo.debug('Withdraw amount missing — asking for it.')
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+            self.convo.set_state(ConversationState.AWAITING_WITHDRAW_AMOUNT)  # <--- correct state!
             self.convo.set_intent(PlayerIntent.WITHDRAW_NEEDS_AMOUNT)
+            self.convo.save_state()
             return self.agent.shopkeeper_withdraw_balance_cp_prompt()
+
         # You could prompt for invalid currency, but defaulting to cp is fine
 
         amount_cp = amount * self.CURRENCY_CP[currency]

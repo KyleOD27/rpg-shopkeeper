@@ -48,8 +48,9 @@ class DepositHandler(HandlerDebugMixin):
         amount, currency = self._extract_amount_and_currency(lowered)
         if amount is None:
             self.convo.debug('Deposit amount missing — asking for it.')
-            self.convo.set_state(ConversationState.AWAITING_CONFIRMATION)
+            self.convo.set_state(ConversationState.AWAITING_DEPOSIT_AMOUNT)  # <--- THIS LINE
             self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
+            self.convo.save_state()  # <--- ALWAYS SAVE after changing state!
             return self.agent.shopkeeper_deposit_balance_cp_prompt()
 
         # Convert to cp

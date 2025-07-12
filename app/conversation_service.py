@@ -263,6 +263,13 @@ class ConversationService(HandlerDebugMixin):
         self.convo.normalized_input = normalised
         self.convo.debug(f'[HANDLE] raw={player_input!r}, normalised={normalised!r}')
 
+        #check if numeric input is deposit or withdraw amount
+        if low.isdigit() and self.convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
+            return self.deposit_handler.process_deposit_balance_cp_flow({'text': text})
+
+        if low.isdigit() and self.convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
+            return self.withdraw_handler.process_withdraw_balance_cp_flow({'text': text})
+
         # ── numeric selection while browsing ───────
         if (
             low.isdigit()
@@ -271,6 +278,7 @@ class ConversationService(HandlerDebugMixin):
                 ConversationState.VIEWING_ITEMS,
             }
         ):
+
             idx = int(low)
             if idx <= 0:
                 return self.agent.shopkeeper_generic_say('Choose a positive number!')
