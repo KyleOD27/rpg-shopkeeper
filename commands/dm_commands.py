@@ -37,6 +37,8 @@ class DMCommandHandler:
             "see_users": self._see_users,
             "see_chars": self._see_chars,
             "upgrade_user": self._upgrade_user,
+            "restore_char": self._restore_char,
+
         }
 
     # ───────────────────── public entry-point ───────────────────────
@@ -305,6 +307,34 @@ class DMCommandHandler:
 
         return f"[DM] User '{user['user_name']}' upgraded to {tier} tier."
 
+    def _restore_char(self, _party_id, dm_user_id, args, _party_data):
+        """
+        dm restore_char <character_id|char_name>
+        """
+        if not args:
+            return "Usage: dm restore_char <character_id|char_name>"
+        identifier = " ".join(args).strip()
+        char = None
+        # Try by character_id
+        if identifier.isdigit():
+            char = query_db(
+                "SELECT * FROM characters WHERE character_id=? AND deleted=1",
+                (int(identifier),), one=True)
+        # Try by name if not found by id
+        if not char:
+            char = query_db(
+                "SELECT * FROM characters WHERE LOWER(character_name)=LOWER(?) AND deleted=1 LIMIT 1",
+                (identifier.lower(),), one=True)
+        if not char:
+            return "❌ Deleted character not found."
+        cid = char["character_id"]
+        name = char["character_name"] or char["player_name"]
+
+        # Restore character
+        execute_db("UPDATE characters SET deleted=0 WHERE character_id=?", (cid,))
+        self._audit("character", cid, "deleted", 1, 0, dm_user_id)
+        return f"[DM] Character '{name}' (ID {cid}) has been restored."
+
     # -- Helpers ----------------------------------------------------------------
 
     @staticmethod
@@ -321,6 +351,7 @@ class DMCommandHandler:
             "- dm see_users\n"
             "- dm see_chars\n"
             "- dm upgrade_user <+44...> <tier>"
+            "- dm restore_char <character_id|char_name>\n"
 
         )
 
