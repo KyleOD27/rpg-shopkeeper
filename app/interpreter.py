@@ -312,7 +312,7 @@ def interpret_input(player_input, convo=None):
                 return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
             return {"intent": PlayerIntent.STASH_ADD, "metadata": {}}
         # Stash remove selection
-        if convo.state == ConversationState.AWAITING_UNSTASH_ITEM_SELECTION:
+        if convo.state == ConversationState.AWAITING_TAKE_ITEM_SELECTION:
             items, _ = find_item_in_input(player_input, convo)
             if items:
                 return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}

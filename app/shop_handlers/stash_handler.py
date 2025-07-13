@@ -36,8 +36,9 @@ class StashHandler(HandlerDebugMixin):
             else:
                 self.convo.set_state(ConversationState.AWAITING_STASH_ITEM_SELECTION)
                 self.convo.save_state()
-                return self.agent.shopkeeper_generic_say(
-                    "What item would you like to add to the stash?")
+                stash_list = self.handle_view_stash(None)
+                prompt = f"{stash_list}\n\nWhat item would you like to add to the stash?"
+                return self.agent.shopkeeper_generic_say(prompt)
         item = item_name
         if isinstance(item, list):
             item = item[0] if item else None
@@ -196,14 +197,14 @@ class StashHandler(HandlerDebugMixin):
             # Multiple matches: prompt for selection
             self.convo.set_pending_item(matches)
             self.convo.set_pending_action(PlayerIntent.STASH_REMOVE)
-            self.convo.set_state(ConversationState.AWAITING_UNSTASH_ITEM_SELECTION)
+            self.convo.set_state(ConversationState.AWAITING_TAKE_ITEM_SELECTION)
             self.convo.save_state()
             return self.agent.shopkeeper_list_matching_items(matches)
         else:
             # No match: enter selection state and prompt, with current stash list
             self.convo.set_pending_item(None)
             self.convo.set_pending_action(PlayerIntent.STASH_REMOVE)
-            self.convo.set_state(ConversationState.AWAITING_UNSTASH_ITEM_SELECTION)
+            self.convo.set_state(ConversationState.AWAITING_TAKE_ITEM_SELECTION)
             self.convo.save_state()
             stash_list = self.handle_view_stash(None)
             prompt = f"{stash_list}\n\nWhat item would you like to take from the stash?"
@@ -238,7 +239,7 @@ class StashHandler(HandlerDebugMixin):
                 # Multiple matches found: show selection again
                 self.convo.set_pending_item(detected_items)
                 self.convo.set_pending_action(PlayerIntent.STASH_REMOVE)
-                self.convo.set_state(ConversationState.AWAITING_UNSTASH_ITEM_SELECTION)
+                self.convo.set_state(ConversationState.AWAITING_TAKE_ITEM_SELECTION)
                 self.convo.save_state()
                 return self.agent.shopkeeper_list_matching_items(detected_items)
 

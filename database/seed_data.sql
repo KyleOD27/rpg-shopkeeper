@@ -26,15 +26,15 @@ INSERT INTO party_owners (party_id, user_id) VALUES
 -- Add Users to Party Membership
 INSERT INTO party_membership (party_id, user_id) VALUES
 ('group_001', 1),  -- Admin
-('group_001', 2);  -- Kyle
---('group_001', 3),  -- Jaz
+('group_001', 2),  -- Kyle
+('group_001', 3);  -- Jaz
 --('group_001', 4);  -- Will (DM)
 
 -- Insert Characters
 INSERT INTO characters (user_id, party_id, player_name, character_name, role) VALUES
-(1, 'group_001', 'Admin', 'Jurgel', 'God');
---(2, 'group_001', 'Kyle', 'Kookyko', 'Wizard'),
---(3, 'group_001', 'Jaz', 'JazzySmash', 'Bard'),
+(1, 'group_001', 'Admin', 'Jurgel', 'God'),
+(2, 'group_001', 'Kyle', 'Kookyko', 'Arch Mage'),
+(3, 'group_001', 'Jaz', 'JazzySmash', 'Bard');
 --(4, 'group_001', 'Will', 'Will of the Meeple', 'Barbarian');
 
 --Insert Items

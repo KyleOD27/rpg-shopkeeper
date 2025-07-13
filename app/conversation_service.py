@@ -260,7 +260,7 @@ class ConversationService(HandlerDebugMixin):
         # --- SPECIAL CASE: Awaiting item selection for stash add/remove ---
         if self.convo.state == ConversationState.AWAITING_STASH_ITEM_SELECTION:
             return self.stash_handler.process_stash_item_selection({'text': text})
-        if self.convo.state == ConversationState.AWAITING_UNSTASH_ITEM_SELECTION:
+        if self.convo.state == ConversationState.AWAITING_TAKE_ITEM_SELECTION:
             return self.stash_handler.process_stash_remove_item_selection({'text': text})
 
         # store raw + normalised input on the convo
@@ -388,6 +388,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.CHECK_BALANCE,
             PlayerIntent.VIEW_LEDGER,
             PlayerIntent.VIEW_PROFILE,
+            PlayerIntent.VIEW_PARTY_PROFILE,
             PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
@@ -424,6 +425,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_LEDGER,
             PlayerIntent.INSPECT_ITEM,
             PlayerIntent.VIEW_PROFILE,
+            PlayerIntent.VIEW_PARTY_PROFILE,
             PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
             PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
@@ -460,6 +462,8 @@ class ConversationService(HandlerDebugMixin):
             return self.generic_handler.handle_check_balance
         if intent == PlayerIntent.VIEW_PROFILE:
             return self.generic_handler.handle_view_profile
+        if intent == PlayerIntent.VIEW_PARTY_PROFILE:
+            return self.generic_handler.handle_view_party_profile
         if intent == PlayerIntent.NEXT:
             return self.generic_handler.handle_next_page
         if intent == PlayerIntent.PREVIOUS:
@@ -492,7 +496,7 @@ class ConversationService(HandlerDebugMixin):
             return self.stash_handler.process_stash_add_flow
 
         # 3. Stash remove flow: Use state, NOT intent or pending_action!
-        if self.convo.state == ConversationState.AWAITING_UNSTASH_ITEM_SELECTION:
+        if self.convo.state == ConversationState.AWAITING_TAKE_ITEM_SELECTION:
             return self.stash_handler.process_stash_remove_item_selection
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION and self.convo.pending_action == PlayerIntent.STASH_REMOVE:
             return self.stash_handler.handle_confirm_stash_remove

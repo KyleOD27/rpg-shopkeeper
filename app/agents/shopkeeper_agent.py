@@ -1,4 +1,3 @@
-from locale import currency
 
 from app.conversation import ConversationState
 from app.models.items import get_all_items, get_all_equipment_categories, get_weapon_categories, get_armour_categories, \
@@ -834,7 +833,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             '• *DEPOSIT*  add to the fund',
             '• *WITHDRAW* take out of the fund',
             '• *LEDGER*  view our trade history',
-            '• *STASH*  store items in a shared space,', ' ', 'Just let me know! ')
+            '• *STASH*  store items in a shared space', ' ', 'Just let me know! ')
 
     def format_gp_cp(self, cp: int) -> str:
         """Formats a copper-piece (cp) value as a string in GP/CP for display."""
@@ -1074,6 +1073,9 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug("← Exiting shopkeeper_show_profile")
         return "\n".join(lines)
 
+
+
+
     def shopkeeper_show_items_by_weapon_range(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_weapon_range')
 
@@ -1161,3 +1163,33 @@ class BaseShopkeeper(HandlerDebugMixin):
             'Sure thing! What are you looking to sell?\n• Say the item’s *name* or *ID number*.'
         )
 
+
+    def shopkeeper_show_party_profile(self, profile: dict) -> str:
+        self.debug("→ Entering shopkeeper_show_party_profile")
+
+        balance = self.format_gp_cp(profile.get('party_balance_cp', 0))
+        num_chars = len(profile.get('characters', []))
+        founded = profile.get('founded_at', 'N/A')
+        if founded and founded != 'N/A':
+            founded = str(founded)[:10]
+        members = ', '.join(profile.get('members', [])) or '—'
+        char_list = ", ".join(
+            f"{c['character_name']} ({c.get('role') or 'Adventurer'})"
+            for c in profile.get('characters', [])
+        ) or '—'
+        stash_total = profile.get('stash_total', 0) or 0
+        stash_types = profile.get('stash_types', 0) or 0
+
+        lines = [
+            f"🏰 *{profile.get('party_name', 'Unnamed Party')}*",
+            f"👥 Members: {profile.get('num_members', 1)} | Founded: {founded}",
+            f"💰 Balance: {balance}",
+            f"🌟 Reputation: {profile.get('reputation_score', 0)}",
+            "",
+            f"🎭 Characters ({num_chars}): {char_list}",
+            f"🙋 Players: {members}",
+            "",
+            f"🎒 Stash: {stash_total} items ({stash_types} types)"
+        ]
+        self.debug("← Exiting shopkeeper_show_party_profile")
+        return "\n".join(lines)

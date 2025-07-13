@@ -189,6 +189,53 @@ class GenericChatHandler(HandlerDebugMixin):
         self.debug('← Exiting handle_view_character')
         return self.agent.shopkeeper_show_profile(char_dict)
 
+    def handle_view_party_profile(self, player_input=None):
+        self.debug('→ Entering handle_view_party_profile')
+
+        # --- Get party core info
+        party = self.party_data.copy()  # already has party_name, party_balance_cp, reputation_score, etc.
+
+        # --- Number of characters in party
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*), MIN(joined_at) FROM party_membership WHERE party_id = ?", (self.party_id,))
+        num_members, founded_at = cur.fetchone()
+
+        # --- List characters
+        cur.execute("SELECT character_name, role FROM characters WHERE party_id = ?", (self.party_id,))
+        char_rows = cur.fetchall()
+        characters = [{"character_name": r[0], "role": r[1]} for r in char_rows]
+
+        # --- Party stash summary
+        cur.execute("SELECT COUNT(DISTINCT item_id), SUM(quantity) FROM party_stash WHERE party_id = ?",
+                    (self.party_id,))
+        stash_types, stash_total = cur.fetchone() or (0, 0)
+
+        # --- Optional: list party members (users)
+        cur.execute("""
+            SELECT u.user_name
+            FROM party_membership pm
+            JOIN users u ON pm.user_id = u.user_id
+            WHERE pm.party_id = ?
+        """, (self.party_id,))
+        members = [row[0] for row in cur.fetchall()]
+
+        # --- Compose profile dict
+        profile = {
+            "party_name": party.get('party_name'),
+            "party_balance_cp": party.get('party_balance_cp', 0),
+            "reputation_score": party.get('reputation_score', 0),
+            "num_members": num_members,
+            "founded_at": founded_at,
+            "characters": characters,
+            "members": members,
+            "stash_types": stash_types,
+            "stash_total": stash_total
+        }
+
+        self.debug('← Exiting handle_view_party_profile')
+        return self.agent.shopkeeper_show_party_profile(profile)
+
     def handle_undo_last_transaction(self, player_input=None):
         self.debug('→ Entering handle_undo_last_transaction')
         from app.models.ledger import get_last_transaction_for_character, get_previous_balance_for_party, \
