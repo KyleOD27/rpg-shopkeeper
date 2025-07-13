@@ -43,7 +43,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
 
     # ▸ Bank actions
     PlayerIntent.DEPOSIT_BALANCE:  ["deposit", "add gold"],
-    PlayerIntent.WITHDRAW_BALANCE: ["withdraw", "collect" ],
+    PlayerIntent.WITHDRAW_BALANCE: ["withdraw", "collect", "take gold", "take copper", "take money", "take platinum", "take electrum" ],
     PlayerIntent.CHECK_BALANCE: ["balance", "amount", "funds"],
 
     # Stash actions
@@ -54,15 +54,12 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     # ▸ Miscellaneous
     PlayerIntent.VIEW_LEDGER:    ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE:         ["haggle", "negotiate", "bargain", "deal", "cheaper", "discount"],
-    PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful"],
-    PlayerIntent.GREETING:       ["hello", "greetings", "hallo", "hey", "ey"],
+    PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty", "gracias", "merci", "danke"],
+    PlayerIntent.GREETING:       ["hello", "greetings", "hallo", "hey", "ey", "hi"],
     PlayerIntent.NEXT:           ["next", "more", "show more", "continue", "another"],
     PlayerIntent.PREVIOUS:       ["previous", "back",  "last", "prev", "last"],
     PlayerIntent.UNDO:           ["undo"],
-    PlayerIntent.INSPECT_ITEM: [
-        "inspect", "details", "tell"
-        "info", "explain", "describe", "much",
-    ],
+    PlayerIntent.INSPECT_ITEM: ["inspect", "details", "tell", "info", "explain", "describe",],
     PlayerIntent.VIEW_PROFILE: ["profile", "my profile", "see me", "player", "user" ],
     PlayerIntent.VIEW_PARTY_PROFILE: ["party", "party profile", "see party", "party", "group"],
 }
@@ -88,9 +85,9 @@ INTENT_PREFIXES: list[str] = [
 ]
 
 CONFIRMATION_WORDS: list[str] = ["yes", "yeah", "yep", "sure", "ok", "okay", "aye"]
-CANCELLATION_WORDS: list[str] = ["no", "nah", "cancel", "stop", "never", "forget"]
-GRATITUDE_KEYWORDS: list[str] = ["thanks", "thank you", "ty", "cheers"]
-GOODBYE_KEYWORDS: list[str]   = ["bye", "farewell", "later", "see you"]
+CANCELLATION_WORDS: list[str] = ["no", "nah", "cancel", "stop", "never", "forget", "exit"]
+GRATITUDE_KEYWORDS: list[str] = INTENT_KEYWORDS[PlayerIntent.SHOW_GRATITUDE]
+GOODBYE_KEYWORDS: list[str]   = ["bye", "farewell", "later", "see you" "goodbye"]
 
 # ──────────────────────────────────────────────
 # Exception words

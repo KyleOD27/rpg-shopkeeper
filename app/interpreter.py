@@ -294,6 +294,19 @@ def _confirmation_overrides(player_input: str, lowered: str, convo: Conversation
 
 # ─── Interpreter entry point (unchanged except for normalization flow) ─
 
+import re
+
+def matches_keyword(input_text, keyword):
+    # Normalize: remove punctuation, lowercase, collapse whitespace
+    norm_input = re.sub(r"[^\w\s]", "", input_text.lower()).strip()
+    norm_keyword = re.sub(r"[^\w\s]", "", keyword.lower()).strip()
+    # Multi-word phrase: match as exact phrase with word boundaries
+    if " " in norm_keyword:
+        return re.search(rf"\b{re.escape(norm_keyword)}\b", norm_input) is not None
+    else:
+        # Single word: match as a full word only
+        return re.search(rf"\b{re.escape(norm_keyword)}\b", norm_input) is not None
+
 def interpret_input(player_input, convo=None):
     # --- State-aware handling for special input modes ---
     if convo is not None:
@@ -319,31 +332,24 @@ def interpret_input(player_input, convo=None):
             return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {}}
         # If in AWAITING_ITEM_SELECTION but not stash, fall through to buy/sell/inspect logic
 
-    # --- Standard intent detection below (unchanged) ---
+    # --- Standard intent detection below ---
     lowered = normalize_input(player_input)
     early = _confirmation_overrides(player_input, lowered, convo)
     if early:
         return early
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]):
+
+    # Deposit/Withdraw special case (match on boundaries!)
+    if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]):
         intent, amt = detect_deposit_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
-    if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
+    if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]):
         intent, amt = detect_withdraw_intent(player_input)
         return {"intent": intent, "metadata": {"amount": amt}}
 
-    # ...rest of your normal logic (category browsing, fallback, etc) ...
-
-
-
-
-
     # --- VIEW_STASH direct keyword detection (must come before fuzzy!) ---
     view_stash_keywords = INTENT_KEYWORDS[PlayerIntent.VIEW_STASH]
-    if any(normalize_input(player_input) == normalize_input(kw) for kw in view_stash_keywords):
+    if any(matches_keyword(player_input, kw) for kw in view_stash_keywords):
         return {"intent": PlayerIntent.VIEW_STASH, "metadata": {}}
-
-    # --- Category detection ---
-    # ... (rest unchanged)
 
     # --- Category detection ---
     CATEGORY_INTENTS = [
@@ -362,23 +368,24 @@ def interpret_input(player_input, convo=None):
         PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
     ]
     for intent in CATEGORY_INTENTS:
-        if lowered in NORMALIZED_INTENT_KEYWORDS[intent]:
+        if any(matches_keyword(player_input, kw) for kw in NORMALIZED_INTENT_KEYWORDS[intent]):
             return {"intent": intent, "metadata": {}}
     for intent in SUBCATEGORY_INTENTS:
-        if lowered in NORMALIZED_INTENT_KEYWORDS[intent]:
-            meta_key = None
-            if intent == PlayerIntent.VIEW_TOOL_SUBCATEGORY:
-                meta_key = "tool_category"
-            elif intent == PlayerIntent.VIEW_GEAR_SUBCATEGORY:
-                meta_key = "gear_category"
-            elif intent == PlayerIntent.VIEW_WEAPON_SUBCATEGORY:
-                meta_key = "weapon_category"
-            elif intent == PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
-                meta_key = "armour_category"
-            elif intent == PlayerIntent.VIEW_TREASURE_SUBCATEGORY:
-                meta_key = "treasure_category"
-            if meta_key:
-                return {"intent": intent, "metadata": {meta_key: lowered}}
+        for kw in NORMALIZED_INTENT_KEYWORDS[intent]:
+            if matches_keyword(player_input, kw):
+                meta_key = None
+                if intent == PlayerIntent.VIEW_TOOL_SUBCATEGORY:
+                    meta_key = "tool_category"
+                elif intent == PlayerIntent.VIEW_GEAR_SUBCATEGORY:
+                    meta_key = "gear_category"
+                elif intent == PlayerIntent.VIEW_WEAPON_SUBCATEGORY:
+                    meta_key = "weapon_category"
+                elif intent == PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
+                    meta_key = "armour_category"
+                elif intent == PlayerIntent.VIEW_TREASURE_SUBCATEGORY:
+                    meta_key = "treasure_category"
+                if meta_key:
+                    return {"intent": intent, "metadata": {meta_key: lowered}}
 
     # --- HAGGLE and other special keyword-based intents ---
     for special_intent in [
@@ -389,20 +396,20 @@ def interpret_input(player_input, convo=None):
         PlayerIntent.PREVIOUS,
         PlayerIntent.UNDO,
     ]:
-        if any(kw in lowered for kw in NORMALIZED_INTENT_KEYWORDS[special_intent]):
+        if any(matches_keyword(player_input, kw) for kw in NORMALIZED_INTENT_KEYWORDS[special_intent]):
             return {"intent": special_intent, "metadata": {}}
     # --- End special intents ---
 
     # Fuzzy item search as fallback
     items, _ = find_item_in_input(player_input, convo)  # cutoff 0.75
     if items:
-        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
-        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
             return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
-        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
             return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
-        if any(kw in lowered for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
             return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
         return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
 
@@ -420,6 +427,7 @@ def interpret_input(player_input, convo=None):
     if loose_items:
         return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": loose_items}}
     return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
 
 
 # ─── GPT confirm fallback (unchanged) ───────────────────────────────────
