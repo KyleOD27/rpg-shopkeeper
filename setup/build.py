@@ -75,34 +75,17 @@ def _ensure_database(skip_srd: bool) -> None:
 
     _validate_items(DB_FILE)
 
-def main() -> None:
-    env = os.environ.copy()
-    env["PYTHONPATH"] = f"{ROOT}{os.pathsep}{env.get('PYTHONPATH', '')}"
-    parser = argparse.ArgumentParser(description="Freeze rpg-shopkeeper")
-    parser.add_argument(
-        "mode",
-        choices=ENTRYPOINTS,
-        nargs="?",
-        default="whatsapp",
-        help="Target executable (default: whatsapp)",
-    )
-    parser.add_argument(
-        "--no-srd",
-        action="store_true",
-        help="Skip SRD item import while building the database",
-    )
-    args = parser.parse_args()
-
-    entry = ENTRYPOINTS[args.mode]
+def build_target(mode, skip_srd, env):
+    entry = ENTRYPOINTS[mode]
     if not entry.exists():
         sys.exit(f"‼ Entry script not found: {entry}")
 
     sep = ";" if os.name == "nt" else ":"
 
     _ensure_packages()
-    _ensure_database(skip_srd=args.no_srd)
+    _ensure_database(skip_srd=skip_srd)
 
-    exe_name = f"rpg-shopkeeper-{args.mode}"
+    exe_name = f"rpg-shopkeeper-{mode}"
     DIST_DIR = Path(__file__).resolve().parent / "dist"
     exe_path = DIST_DIR / f"{exe_name}.exe"
 
@@ -115,7 +98,7 @@ def main() -> None:
             "Close it and run the build again."
         )
 
-    cmd: list[str] = [
+    cmd = [
         sys.executable, "-m", "PyInstaller",
         "--onefile", "--clean", "--noconfirm",
         "--name", exe_name,
@@ -125,7 +108,7 @@ def main() -> None:
     if (icon := ASSETS / "shop.ico").exists():
         cmd += ["--icon", str(icon)]
 
-    # ── bundle static assets ──
+    # Bundle static assets
     if ASSETS.exists():
         cmd += ["--add-data", f"{ASSETS}{sep}assets"]
     if SCHEMA_FILE.exists():
@@ -140,10 +123,10 @@ def main() -> None:
 
     cmd.append(str(entry))
 
-    print("🛠 Running:", " ".join(map(str, cmd)))
+    print(f"🛠 Building [{mode}] ...\n  Running:", " ".join(map(str, cmd)))
     subprocess.run(cmd, env=env, check=True)
 
-    # ---- Copy dependencies to dist folder ----
+    # Copy dependencies to dist folder
     DEPENDENCY_FILES = [
         ROOT / ".env",
         ROOT / "ngrok.exe",
@@ -155,6 +138,30 @@ def main() -> None:
             print(f"✔ Copied {dep.name} to {DIST_DIR}")
         else:
             print(f"⚠ Dependency not found: {dep} (skipped)")
+
+def main():
+    env = os.environ.copy()
+    env["PYTHONPATH"] = f"{ROOT}{os.pathsep}{env.get('PYTHONPATH', '')}"
+    parser = argparse.ArgumentParser(description="Freeze rpg-shopkeeper")
+    parser.add_argument(
+        "mode",
+        choices=list(ENTRYPOINTS),
+        nargs="?",
+        help="Target executable (default: ALL)",
+    )
+    parser.add_argument(
+        "--no-srd",
+        action="store_true",
+        help="Skip SRD item import while building the database",
+    )
+    args = parser.parse_args()
+
+    if args.mode:
+        build_target(args.mode, args.no_srd, env)
+    else:
+        print("🔨 No mode specified – building ALL targets!")
+        for mode in ENTRYPOINTS:
+            build_target(mode, args.no_srd, env)
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,7 @@
 from app.models.characters import add_character_to_party
 from app.db import execute_db, query_db
+from app.models.parties import get_party_name
+
 
 def get_user_by_id(user_id):
     sql = 'SELECT * FROM users WHERE user_id = ?'
@@ -87,11 +89,18 @@ class UserCommandHandler:
             exc_type = type(exc).__name__
             return f"❌ {exc_type}: {exc}\n\nTraceback:\n{tb}"
 
+    # At the top of user_commands.py, add the import:
+    from app.models.parties import get_party_name
+    # Or, if your structure is different, adjust the import accordingly
     def _new_char(self, user_id, args):
-        if len(args) < 1:
-            return "Usage: user new_char <char_name> <role>"
-        char_name = args[0]
-        role = " ".join(args[1:]) if len(args) > 1 else "Adventurer"
+        raw = " ".join(args).strip()
+        if "," not in raw:
+            return "Usage: user new_char <char_name>, <role>\n(e.g. user new_char Sir Lancelot, Paladin)"
+        char_name, role = [s.strip() for s in raw.split(",", 1)]
+        if not char_name:
+            return "Please provide a character name before the comma."
+        if not role:
+            role = "Adventurer"  # fallback default role
         user = get_user_by_id(user_id)
         if not user:
             return "❌ User not found."
@@ -100,11 +109,12 @@ class UserCommandHandler:
         party_id = get_user_party(user_id)
         if not party_id:
             return "❌ You are not a member of any party. Please join a party before creating a character."
+        party_name = get_party_name(party_id)  # <-- Fetch party name
         char_id = add_character_to_party(phone, party_id, player_name, char_name, role)
         if char_id:
-            return f"[USER] Character '{char_name}' created in party '{party_id}' with role '{role}'."
+            return f"[USER] Character '{char_name}' created in party '{party_name}' with role '{role}'."
         else:
-            return f"[USER] Character '{char_name}' already exists in your party."
+            return f"[USER] Character '{char_name}' already exists in your party '{party_name}'."
 
     def _delete_char(self, user_id, args):
         if not args:
