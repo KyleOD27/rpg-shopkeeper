@@ -37,25 +37,25 @@ def add_character_to_party(phone_number, party_id, player_name,
             (phone_number, player_name))
         user = get_user_by_phone(phone_number)
     user_id = user['user_id']
+    # Duplicate check is now by character_name + party_id, not player_name
     sql_check = (
-        'SELECT character_id FROM characters WHERE LOWER(player_name) = ? AND party_id = ?'
-        )
-    existing = query_db(sql_check, (player_name.lower(), party_id), one=True)
+        'SELECT character_id FROM characters WHERE LOWER(character_name) = ? AND party_id = ?'
+    )
+    existing = query_db(sql_check, (character_name.lower(), party_id), one=True)
     if existing:
-        print(f"[INFO] Character '{player_name}' already exists in this party."
-            )
+        print(f"[INFO] Character '{character_name}' already exists in this party.")
         return None
     sql_insert = """
         INSERT INTO characters (user_id, party_id, player_name, character_name, role)
         VALUES (?, ?, ?, ?, ?)
     """
-    execute_db(sql_insert, (user_id, party_id, player_name, character_name,
-        role))
-    print(f"[INFO] New character '{player_name}' added successfully!")
+    execute_db(sql_insert, (user_id, party_id, player_name, character_name, role))
+    print(f"[INFO] New character '{character_name}' added successfully!")
     new_character = query_db(
-        'SELECT character_id FROM characters WHERE LOWER(player_name) = ? AND party_id = ?'
-        , (player_name.lower(), party_id), one=True)
+        'SELECT character_id FROM characters WHERE LOWER(character_name) = ? AND party_id = ?',
+        (character_name.lower(), party_id), one=True)
     return new_character['character_id'] if new_character else None
+
 
 
 def get_user_by_phone(phone_number):

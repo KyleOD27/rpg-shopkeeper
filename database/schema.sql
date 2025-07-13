@@ -5,8 +5,11 @@ CREATE TABLE users (
     user_name TEXT,
     subscription_tier TEXT CHECK(subscription_tier IN ('Free', 'Adventurer', 'DM', 'Guild', 'ADMIN')) DEFAULT 'Free',
     lifetime_access BOOLEAN DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active_character_id INTEGER,
+    FOREIGN KEY(active_character_id) REFERENCES characters(character_id)
 );
+
 
 -- PARTIES TABLE
 CREATE TABLE parties (
@@ -42,9 +45,10 @@ CREATE TABLE characters (
     player_name TEXT NOT NULL,
     character_name TEXT,
     role TEXT,
+    deleted BOOLEAN DEFAULT 0,
     FOREIGN KEY(user_id) REFERENCES users(user_id),
     FOREIGN KEY(party_id) REFERENCES parties(party_id),
-    UNIQUE(party_id, player_name)
+    UNIQUE(party_id, player_name, character_name)
 );
 
 DROP TABLE IF EXISTS items;

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from typing import Callable, Dict, Tuple, Any
+
+from app.db import execute_db
 from app.interpreter import interpret_input, normalize_input, find_item_in_input
-from app.models.parties import get_party_balance_cp
+from app.models.parties import get_party_balance_cp, get_party_name
 from app.models.visits import touch_visit
 from app.shop_handlers.buy_handler import BuyHandler
 from app.shop_handlers.sell_handler import SellHandler
@@ -13,10 +15,12 @@ from app.shop_handlers.inspect_handler import InspectHandler
 from app.shop_handlers.view_handler import ViewHandler
 from commands.dm_commands import handle_dm_command
 from commands.admin_commands import handle_admin_command
+from commands.user_commands import handle_user_command, get_user_by_id
 from app.conversation import ConversationState, PlayerIntent
 from app.utils.debug import HandlerDebugMixin
 from app.keywords import CONFIRMATION_WORDS, CANCELLATION_WORDS
 from app.shop_handlers.stash_handler import StashHandler
+
 
 import json
 from json import JSONDecodeError
@@ -238,16 +242,36 @@ class ConversationService(HandlerDebugMixin):
         text = player_input.strip()
         low = text.lower()
 
-        # refresh party balance every turn
+        # --- Always update party balance for freshness ---
         self.party_data['party_balance_cp'] = get_party_balance_cp(self.party_id)
 
-        # out-of-band commands
+        # --- User command handler (includes switch_char interactive flow) ---
+        if low.startswith('user '):
+            result = handle_user_command(self.player_id, player_input)
+            if isinstance(result, dict) and "switch_char_choices" in result:
+                chars = result["switch_char_choices"]
+                chars = [dict(c) for c in chars]  # convert Row to dict
+                user = get_user_by_id(self.player_id)
+                active_id = user["active_character_id"] if user else None
+                chars = [c for c in chars if c["character_id"] != active_id]
+                if not chars:
+                    return "You are already playing as your only active character."
+                self.convo.set_pending_item(chars)
+                self.convo.set_pending_action("SWITCH_CHAR")
+                self.convo.save_state()
+                msg = ["Which character would you like to switch to?"]
+                for idx, c in enumerate(chars, 1):
+                    party_name = get_party_name(c['party_id'])
+                    msg.append(f"{idx}. {c['character_name']} ({c['role']}, {party_name})")
+                return "\n".join(msg)
+            return result
+
+        # --- DM/Admin commands ---
         if low.startswith('dm '):
             return handle_dm_command(
                 self.party_id, self.player_id, player_input,
                 party_data=self.party_data
             )
-
         if low.startswith('admin '):
             resp = handle_admin_command(self.player_id, player_input)
             if 'reset' in low:
@@ -257,38 +281,79 @@ class ConversationService(HandlerDebugMixin):
                 self.convo.save_state()
             return resp
 
-        # --- SPECIAL CASE: Awaiting item selection for stash add/remove ---
+        # --- SPECIAL: Awaiting item/selection for stash flows ---
         if self.convo.state == ConversationState.AWAITING_STASH_ITEM_SELECTION:
             return self.stash_handler.process_stash_item_selection({'text': text})
         if self.convo.state == ConversationState.AWAITING_TAKE_ITEM_SELECTION:
             return self.stash_handler.process_stash_remove_item_selection({'text': text})
 
-        # store raw + normalised input on the convo
+        # --- Record latest input in conversation state ---
         self.convo.set_input(player_input)
         normalised = normalize_input(player_input) if isinstance(player_input, str) else 'N/A'
         self.convo.normalized_input = normalised
         self.convo.debug(f'[HANDLE] raw={player_input!r}, normalised={normalised!r}')
 
-        # SPECIAL CASES: Awaiting deposit/withdraw amount (numeric or not)
+        # --- Awaiting deposit/withdraw amount ---
         if self.convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
             return self.deposit_handler.process_deposit_balance_cp_flow({'text': text})
 
         if self.convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
             return self.withdraw_handler.process_withdraw_balance_cp_flow({'text': text})
 
-        # ── numeric selection while browsing ───────
-        if (
-            low.isdigit()
-            and self.convo.state in {
-                ConversationState.AWAITING_ITEM_SELECTION,
-                ConversationState.VIEWING_ITEMS,
-            }
-        ):
+        # --- Handle interactive switch_char selection ---
+        if self.convo.pending_action == "SWITCH_CHAR" and self.convo.pending_item:
+            chars = self.convo.pending_item
+            user = get_user_by_id(self.player_id)
+            active_id = user["active_character_id"] if user else None
+            chars = [c for c in chars if c["character_id"] != active_id]
+            if not chars:
+                self.convo.set_pending_item(None)
+                self.convo.set_pending_action(None)
+                self.convo.set_state(ConversationState.AWAITING_ACTION)
+                self.convo.save_state()
+                return "You are already playing as your only active character."
+            response = player_input.strip()
+            # Allow user to cancel selection
+            if response.lower() in {"cancel", "exit", "back", "stop"}:
+                self.convo.set_pending_item(None)
+                self.convo.set_pending_action(None)
+                self.convo.set_state(ConversationState.AWAITING_ACTION)
+                self.convo.save_state()
+                return "Character switch cancelled."
+            char = None
+            if response.isdigit():
+                idx = int(response) - 1
+                if 0 <= idx < len(chars):
+                    char = chars[idx]
+            else:
+                char = next((c for c in chars if c["character_name"].lower() == response.lower()), None)
+            if char:
+                execute_db(
+                    "UPDATE users SET active_character_id = ? WHERE user_id = ?",
+                    (char["character_id"], self.player_id)
+                )
+                self.convo.set_pending_item(None)
+                self.convo.set_pending_action(None)
+                self.convo.set_state(ConversationState.AWAITING_ACTION)
+                self.convo.save_state()
+                return f"[USER] You are now playing as '{char['character_name']}'!"
+            else:
+                menu = ["Which character would you like to switch to? (type number or name, or 'cancel' to abort)"]
+                for idx, c in enumerate(chars, 1):
+                    menu.append(f"{idx}. {c['character_name']} ({c['role']}, {c['party_id']})")
+                return "Invalid choice. Please try again.\n\n" + "\n".join(menu)
 
+        # --- Numeric selection while browsing (items, etc.) ---
+        if (
+                low.isdigit()
+                and self.convo.state in {
+            ConversationState.AWAITING_ITEM_SELECTION,
+            ConversationState.VIEWING_ITEMS,
+        }
+        ):
             idx = int(low)
             if idx <= 0:
                 return self.agent.shopkeeper_generic_say('Choose a positive number!')
-
             pending = self.convo.pending_action
             if pending == PlayerIntent.VIEW_CHARACTER:
                 chars = self.convo.pending_item or []
@@ -297,14 +362,13 @@ class ConversationService(HandlerDebugMixin):
                     self.convo.reset_state()
                     return self.generic_handler.handle_view_character(chars[char_idx])
                 return self.agent.shopkeeper_generic_say('That number isn’t in the list—try again!')
-
             self.convo.debug(f'[HANDLE] numeric select → intent={pending}, id={idx}')
             return self._list_or_detail(
                 pending,
                 {'text': text, 'intent': pending, 'item': None},
             )
 
-        # ── confirmation / cancellation flow ───────
+        # --- Confirmation/cancellation flow ---
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION:
             if low in CONFIRMATION_WORDS:
                 pending = self.convo.pending_action
@@ -319,30 +383,25 @@ class ConversationService(HandlerDebugMixin):
             if low in CANCELLATION_WORDS:
                 return self._handle_cancellation_flow({'text': text})
 
-        # ── primary NLU pass ───────────────────────
+        # --- Main intent detection and routing ---
         intent_data = interpret_input(player_input, self.convo)
-        intent    = intent_data.get('intent')
-        metadata  = intent_data.get('metadata', {}) or {}
+        intent = intent_data.get('intent')
+        metadata = intent_data.get('metadata', {}) or {}
 
-        # pop item out of metadata so we don't double-store
         item = metadata.pop('item', None)
 
         self.convo.set_intent(intent)
         self.convo.debug(f'[HANDLE] intent={intent}, metadata={metadata}')
 
-        # map category-intents to metadata helpers
         if intent in CATEGORY_MAPPING:
             field, val = CATEGORY_MAPPING[intent]
             metadata[field] = val
 
         self.convo.metadata.update(metadata)
-
-        # final payload for handler
         wrapped: dict = {'text': player_input, 'intent': intent, **metadata}
 
         if item is not None:
             if isinstance(item, str):
-                # handle JSON-encoded item blobs from the interpreter
                 try:
                     item = json.loads(item)
                 except JSONDecodeError:
@@ -352,10 +411,9 @@ class ConversationService(HandlerDebugMixin):
             self.convo.set_pending_item(item)
             self.convo.set_pending_action(intent)
 
-        # ── route to the correct handler ───────────
         handler = (
-            self.intent_router.get((self.convo.state, intent))
-            or self._route_intent(intent)
+                self.intent_router.get((self.convo.state, intent))
+                or self._route_intent(intent)
         )
 
         self.convo.debug(
@@ -364,8 +422,6 @@ class ConversationService(HandlerDebugMixin):
         )
         self.debug('← Exiting handle')
         return handler(wrapped)
-
-
 
     def _build_router(self) -> Dict[Tuple[ConversationState, PlayerIntent], Callable]:
         self.debug('→ Entering _build_router')

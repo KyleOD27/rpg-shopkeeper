@@ -5,6 +5,11 @@ def get_party_by_id(party_id):
     sql = 'SELECT * FROM parties WHERE party_id = ?'
     return query_db(sql, (party_id,), one=True)
 
+def get_party_name(party_id):
+    party = get_party_by_id(party_id)
+    return party['party_name'] if party else party_id
+
+
 def update_reputation(party_id, change):
     party = get_party_by_id(party_id)
     if not party:
