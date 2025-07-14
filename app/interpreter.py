@@ -358,27 +358,20 @@ def interpret_input(player_input, convo=None):
     if items:
         # Unique match: always prefer detail
         if len(items) == 1:
-            # If user is saying 'sell'/'inspect'/etc, route appropriately
-            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
-                return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
+            # Prefer buy, sell, inspect, stash, in that order, if keywords present
+            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.BUY_ITEM]):
+                return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
             if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
                 return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
+            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+                return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
             if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
                 return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
             if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
                 return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
-            # Default to inspect if only one match
+            # Default to inspect if only one match and no keyword
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
-        # Multiple matches: route to list/buy
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
-            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
-            return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
-            return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
-            return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
-        return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
+
     # === END PATCH ===
 
     # --- Category detection ---

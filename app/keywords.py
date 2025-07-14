@@ -39,7 +39,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
 
     # ▸ Transactions
     PlayerIntent.BUY_ITEM:  ["buy", "purchase", "get", "acquire", "grab", "want"],
-    PlayerIntent.SELL_ITEM: ["sell", "offload", "trade in"],
+    PlayerIntent.SELL_ITEM: ["sell", "offload"],
 
     # ▸ Bank actions
     PlayerIntent.DEPOSIT_BALANCE:  ["deposit", "add gold"],
@@ -55,7 +55,7 @@ INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     PlayerIntent.VIEW_LEDGER:    ["ledger", "transactions", "history"],
     PlayerIntent.HAGGLE:         ["haggle", "negotiate", "bargain", "deal", "cheaper", "discount"],
     PlayerIntent.SHOW_GRATITUDE: ["thanks", "thankyou", "grateful", "ty", "gracias", "merci", "danke"],
-    PlayerIntent.GREETING:       ["hello", "greetings", "hallo", "hey", "ey", "hi"],
+    PlayerIntent.GREETING:       ["hello", "greetings", "hallo", "hey", "ey", "hi", "whaddup", "wassup"],
     PlayerIntent.NEXT:           ["next", "more", "show more", "continue", "another"],
     PlayerIntent.PREVIOUS:       ["previous", "back",  "last", "prev", "last"],
     PlayerIntent.UNDO:           ["undo"],
