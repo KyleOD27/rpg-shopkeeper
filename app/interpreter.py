@@ -351,9 +351,44 @@ def interpret_input(player_input, convo=None):
     if any(matches_keyword(player_input, kw) for kw in view_stash_keywords):
         return {"intent": PlayerIntent.VIEW_STASH, "metadata": {}}
 
-    # === PATCHED SECTION: Item matching before category matching ===
+    # --- PURE SUBCATEGORY KEYWORD HANDLING (before any item matching!) ---
+    SUBCATEGORY_INTENTS = [
+        PlayerIntent.VIEW_TOOL_SUBCATEGORY,
+        PlayerIntent.VIEW_GEAR_SUBCATEGORY,
+        PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
+        PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
+        PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
+    ]
+    for intent in SUBCATEGORY_INTENTS:
+        for kw in INTENT_KEYWORDS[intent]:
+            norm_kw = normalize_input(kw)
+            user_norm = normalize_input(player_input)
+            if user_norm == norm_kw:
+                meta_key = None
+                subcat_section = None
+                if intent == PlayerIntent.VIEW_TOOL_SUBCATEGORY:
+                    meta_key = "tool_category"
+                    subcat_section = "tool"
+                elif intent == PlayerIntent.VIEW_GEAR_SUBCATEGORY:
+                    meta_key = "gear_category"
+                    subcat_section = "gear"
+                elif intent == PlayerIntent.VIEW_WEAPON_SUBCATEGORY:
+                    meta_key = "weapon_category"
+                    subcat_section = "weapon"
+                elif intent == PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
+                    meta_key = "armour_category"
+                    subcat_section = "armor"
+                elif intent == PlayerIntent.VIEW_TREASURE_SUBCATEGORY:
+                    meta_key = "treasure_category"
+                    subcat_section = "treasure"
+                if meta_key and subcat_section:
+                    canonical = get_subcategory_match(subcat_section, player_input)
+                    if canonical:
+                        return {"intent": intent, "metadata": {meta_key: canonical}}
+                    else:
+                        return {"intent": intent, "metadata": {meta_key: user_norm}}
 
-    # --- Item search: unique first, then multi, then fallback ---
+    # === PATCHED SECTION: Item matching before category matching ===
     items, _ = find_item_in_input(player_input, convo)
     if items:
         # Unique match: always prefer detail
@@ -372,8 +407,6 @@ def interpret_input(player_input, convo=None):
             # Default to inspect if only one match and no keyword
             return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
 
-    # === END PATCH ===
-
     # --- Category detection ---
     CATEGORY_INTENTS = [
         PlayerIntent.VIEW_TOOL_CATEGORY,
@@ -383,32 +416,9 @@ def interpret_input(player_input, convo=None):
         PlayerIntent.VIEW_TREASURE_CATEGORY,
         PlayerIntent.VIEW_EQUIPMENT_CATEGORY,
     ]
-    SUBCATEGORY_INTENTS = [
-        PlayerIntent.VIEW_TOOL_SUBCATEGORY,
-        PlayerIntent.VIEW_GEAR_SUBCATEGORY,
-        PlayerIntent.VIEW_WEAPON_SUBCATEGORY,
-        PlayerIntent.VIEW_ARMOUR_SUBCATEGORY,
-        PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
-    ]
     for intent in CATEGORY_INTENTS:
         if any(matches_keyword(player_input, kw) for kw in NORMALIZED_INTENT_KEYWORDS[intent]):
             return {"intent": intent, "metadata": {}}
-    for intent in SUBCATEGORY_INTENTS:
-        for kw in NORMALIZED_INTENT_KEYWORDS[intent]:
-            if matches_keyword(player_input, kw):
-                meta_key = None
-                if intent == PlayerIntent.VIEW_TOOL_SUBCATEGORY:
-                    meta_key = "tool_category"
-                elif intent == PlayerIntent.VIEW_GEAR_SUBCATEGORY:
-                    meta_key = "gear_category"
-                elif intent == PlayerIntent.VIEW_WEAPON_SUBCATEGORY:
-                    meta_key = "weapon_category"
-                elif intent == PlayerIntent.VIEW_ARMOUR_SUBCATEGORY:
-                    meta_key = "armour_category"
-                elif intent == PlayerIntent.VIEW_TREASURE_SUBCATEGORY:
-                    meta_key = "treasure_category"
-                if meta_key:
-                    return {"intent": intent, "metadata": {meta_key: lowered}}
 
     # --- HAGGLE and other special keyword-based intents ---
     for special_intent in [
@@ -437,6 +447,7 @@ def interpret_input(player_input, convo=None):
     if loose_items:
         return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": loose_items}}
     return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
 
 
 

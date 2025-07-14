@@ -456,14 +456,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
-
-        # "Next" always at the end for WhatsApp clarity
-        if any("next" in line.lower() for line in nav_lines):
-            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
-            next_lines = [l for l in nav_lines if "next" in l.lower()]
-            lines.extend(buy_lines + next_lines)
-        else:
-            lines.extend(nav_lines)
+        lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_armour_category')
         return '\n'.join(lines)
@@ -949,7 +942,12 @@ class BaseShopkeeper(HandlerDebugMixin):
         for item in matching_items:
             item_lines = self._format_shop_item(item)  # returns a 2-line list
             # Use bullet on first line only, indent second line for WhatsApp clarity
-            lines.append(f"• {item_lines[0]}\n   {item_lines[1]}")
+            if len(item_lines) >= 2:
+                lines.append(f"• {item_lines[0]}\n   {item_lines[1]}")
+            elif len(item_lines) == 1:
+                lines.append(f"• {item_lines[0]}")
+            else:
+                lines.append("• [Unknown item]")
 
         lines.append(
             "\nJust say the item *name* or _number_ to see more details."
