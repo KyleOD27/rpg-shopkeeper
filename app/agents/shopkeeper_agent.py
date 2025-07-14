@@ -1,5 +1,6 @@
 
 from app.conversation import ConversationState
+from app.models import items
 from app.models.items import get_all_items, get_all_equipment_categories, get_weapon_categories, get_armour_categories, \
     get_gear_categories, get_tool_categories, get_items_by_armour_category, get_items_by_weapon_category, \
     get_items_by_gear_category, get_items_by_tool_category, get_items_by_mount_category, search_items_by_name_fuzzy, \
@@ -316,31 +317,18 @@ class BaseShopkeeper(HandlerDebugMixin):
             lines.append('')
 
         if page < total_pages:
-            lines.append('Say _next_ to see more options.')
+            lines.append('Say _next_ for more.')
         if page > 1:
             lines.append('Say _previous_ to go back.')
 
         if include_buy_prompt:
-            lines.append('Pass me the item *id* or *name* for more details.')
+            lines.append('Pass the item id or name for details.')
 
     def _format_shop_item(self, item: dict) -> list[str]:
-        """Return a concise, single-line display for a shop item: id, name, price (gp/cp)."""
+        """Return a minimal, single-line display for a shop item: id, name."""
         item_id = item.get('item_id', '?')
         name = item.get('item_name', 'Unknown Item')
-        price_cp = int(item.get('base_price_cp', 0))
-
-        gp = price_cp // 100
-        cp = price_cp % 100
-
-        if gp > 0 and cp == 0:
-            price_str = f"{gp} gp"
-        elif gp > 0 and cp > 0:
-            price_str = f"{gp} gp {cp} cp"
-        else:
-            price_str = f"{cp} cp"
-
-        # WhatsApp-friendly: ID  name  price (single line, italic name)
-        return [f"{item_id} _{name}_ {price_str}"]
+        return [f"{item_id}, {name}"]
 
     def _format_armour_item(self, item: dict) -> list[str]:
         """Return multi-line display for an armour item including weight and description."""
@@ -390,8 +378,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         lines = [
             f'{emoji} **{category_value.title()} {label} (Page {page} of {total_pages})**\n'
         ]
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         self._add_navigation_lines(lines, page, total_pages)
         self.debug('← Exiting _show_items')
@@ -427,8 +414,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             ''
         ]
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
@@ -466,8 +452,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             ''
         ]
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
@@ -483,7 +468,7 @@ class BaseShopkeeper(HandlerDebugMixin):
         self.debug('← Exiting shopkeeper_show_items_by_armour_category')
         return '\n'.join(lines)
 
-    def shopkeeper_show_items_by_gear_category(self, player_input,):
+    def shopkeeper_show_items_by_gear_category(self, player_input):
         self.debug('→ Entering shopkeeper_show_items_by_gear_category')
 
         gear_category = player_input.get('gear_category')
@@ -506,18 +491,12 @@ class BaseShopkeeper(HandlerDebugMixin):
             ''
         ]
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        # Just this line replaces the whole old loop!
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
-
-        if any("next" in line.lower() for line in nav_lines):
-            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
-            next_lines = [l for l in nav_lines if "next" in l.lower()]
-            lines.extend(buy_lines + next_lines)
-        else:
-            lines.extend(nav_lines)
+        lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_gear_category')
         return '\n'.join(lines)
@@ -546,8 +525,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             ''
         ]
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
@@ -586,8 +564,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             ''
         ]
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
@@ -619,8 +596,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         lines = [f'🏇 *Mounts & Vehicles* _(Page {page} of {total_pages})_', '']
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
@@ -1093,8 +1069,7 @@ class BaseShopkeeper(HandlerDebugMixin):
             ''
         ]
 
-        for item in page_items:
-            lines.extend(self._format_shop_item(item))
+        lines.extend(self.format_items_by_price(page_items))
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
@@ -1186,3 +1161,50 @@ class BaseShopkeeper(HandlerDebugMixin):
         ]
         self.debug("← Exiting shopkeeper_show_party_profile")
         return "\n".join(lines)
+
+    def group_items_by_price(self, items):
+        """
+        Returns a sorted list of tuples: (price_str, [items with that price])
+        """
+        from collections import defaultdict
+        groups = defaultdict(list)
+        for item in items:
+            price_cp = int(item.get('base_price_cp', 0))
+            gp = price_cp // 100
+            cp = price_cp % 100
+            if gp > 0 and cp == 0:
+                price_str = f"{gp} gp"
+            elif gp > 0 and cp > 0:
+                price_str = f"{gp} gp {cp} cp"
+            else:
+                price_str = f"{cp} cp"
+            groups[price_str].append(item)
+
+        def price_sort_key(price_str):
+            gp, cp = 0, 0
+            parts = price_str.split()
+            if "gp" in price_str and "cp" in price_str:
+                gp = int(parts[0])
+                cp = int(parts[2])
+            elif "gp" in price_str:
+                gp = int(parts[0])
+            elif "cp" in price_str:
+                cp = int(parts[0])
+            return gp * 100 + cp
+
+        return sorted(groups.items(), key=lambda kv: price_sort_key(kv[0]))
+
+    def format_items_by_price(self, page_items):
+        lines = []
+        grouped = self.group_items_by_price(page_items)
+        for price_str, items_at_price in grouped:
+            lines.append(f"*{price_str.upper()}*")
+            for item in items_at_price:
+                lines.extend(self._format_shop_item(item))
+            lines.append("")
+        # Remove last blank if present
+        if lines and lines[-1] == "":
+            lines.pop()
+        return lines
+
+
