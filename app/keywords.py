@@ -19,7 +19,7 @@ from app.conversation import PlayerIntent
 
 INTENT_KEYWORDS: dict[PlayerIntent, list[str]] = {
     # ▸ General browsing
-    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me",  "what do you sell", "what do you buy", "browse"],
+    PlayerIntent.VIEW_ITEMS: ["items", "inventory", "stock", "what do you have", "show me",  "what do you sell", "what do you buy", "browse", "see"],
 
     # ▸ Top‑level equipment categories
     PlayerIntent.VIEW_EQUIPMENT_CATEGORY: ["items", "inventory", "item", "shop"],
@@ -81,7 +81,7 @@ SHOP_ACTION_WORDS: set[str] = {
 INTENT_PREFIXES: list[str] = [
     "want to buy", "want to purchase", "can i buy",
     "how much is", "how much would",
-    "tell me about", "what does", "what is", "show me",
+    "tell me about", "what does", "what is", "show me", "see"
 ]
 
 CONFIRMATION_WORDS: list[str] = ["yes", "yeah", "yep", "sure", "ok", "okay", "aye"]

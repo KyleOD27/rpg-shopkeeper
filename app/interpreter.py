@@ -351,6 +351,36 @@ def interpret_input(player_input, convo=None):
     if any(matches_keyword(player_input, kw) for kw in view_stash_keywords):
         return {"intent": PlayerIntent.VIEW_STASH, "metadata": {}}
 
+    # === PATCHED SECTION: Item matching before category matching ===
+
+    # --- Item search: unique first, then multi, then fallback ---
+    items, _ = find_item_in_input(player_input, convo)
+    if items:
+        # Unique match: always prefer detail
+        if len(items) == 1:
+            # If user is saying 'sell'/'inspect'/etc, route appropriately
+            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+                return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
+            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
+                return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
+            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
+                return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
+            if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
+                return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
+            # Default to inspect if only one match
+            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
+        # Multiple matches: route to list/buy
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
+            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
+            return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
+            return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
+        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
+            return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
+        return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
+    # === END PATCH ===
+
     # --- Category detection ---
     CATEGORY_INTENTS = [
         PlayerIntent.VIEW_TOOL_CATEGORY,
@@ -400,19 +430,6 @@ def interpret_input(player_input, convo=None):
             return {"intent": special_intent, "metadata": {}}
     # --- End special intents ---
 
-    # Fuzzy item search as fallback
-    items, _ = find_item_in_input(player_input, convo)  # cutoff 0.75
-    if items:
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.INSPECT_ITEM]):
-            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.SELL_ITEM]):
-            return {"intent": PlayerIntent.SELL_ITEM, "metadata": {"item": items}}
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_REMOVE]):
-            return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
-        if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
-            return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
-        return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
-
     # (rest unchanged...)
     intent_r, conf = rank_intent_kw(player_input, convo)
     if (conf >= INTENT_CONF_THRESHOLD and
@@ -427,6 +444,7 @@ def interpret_input(player_input, convo=None):
     if loose_items:
         return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": loose_items}}
     return {"intent": PlayerIntent.UNKNOWN, "metadata": {}}
+
 
 
 
