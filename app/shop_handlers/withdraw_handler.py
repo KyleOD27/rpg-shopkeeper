@@ -1,4 +1,5 @@
 from app.conversation import ConversationState, PlayerIntent
+from app.keywords import INTENT_KEYWORDS
 from app.models.ledger import record_transaction
 from app.models.parties import update_party_balance_cp
 import re
@@ -41,18 +42,19 @@ class WithdrawHandler(HandlerDebugMixin):
     def process_withdraw_balance_cp_flow(self, player_input):
         self.debug('→ Entering process_withdraw_balance_cp_flow')
         raw_text = player_input['text'] if isinstance(player_input, dict) else player_input
-        lowered = raw_text.lower()
+        lowered = raw_text.lower().strip()
 
-        # Extract amount and currency (defaulting to cp)
         amount, currency = self._extract_amount_and_currency(lowered)
         if amount is None:
-            self.convo.debug('Withdraw amount missing — asking for it.')
-            self.convo.set_state(ConversationState.AWAITING_WITHDRAW_AMOUNT)  # <--- correct state!
-            self.convo.set_intent(PlayerIntent.WITHDRAW_NEEDS_AMOUNT)
-            self.convo.save_state()
-            return self.agent.shopkeeper_withdraw_balance_cp_prompt()
-
-        # You could prompt for invalid currency, but defaulting to cp is fine
+            # Special: If input is only digits, treat as copper
+            if lowered.isdigit():
+                amount = int(lowered)
+                currency = "cp"
+            else:
+                withdraw_keywords = INTENT_KEYWORDS[PlayerIntent.WITHDRAW_BALANCE]
+                if any(kw in lowered for kw in withdraw_keywords):
+                    return self.agent.shopkeeper_withdraw_balance_cp_prompt()
+                return None
 
         amount_cp = amount * self.CURRENCY_CP[currency]
         current_balance_cp = self.party_data.get('party_balance_cp', 0)
@@ -77,7 +79,6 @@ class WithdrawHandler(HandlerDebugMixin):
         self.convo.set_state(ConversationState.INTRODUCTION)
         self.debug('← Exiting process_withdraw_balance_cp_flow')
         return self.agent.shopkeeper_withdraw_success_prompt(amount_cp, self.party_data['party_balance_cp'])
-
 
     def handle_confirm_withdraw(self, player_input):
         self.debug('→ Entering handle_confirm_withdraw')

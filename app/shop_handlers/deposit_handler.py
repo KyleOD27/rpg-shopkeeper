@@ -1,4 +1,5 @@
 from app.conversation import ConversationState, PlayerIntent
+from app.keywords import INTENT_KEYWORDS
 from app.models.ledger import record_transaction
 from app.models.parties import update_party_balance_cp
 import re
@@ -42,16 +43,25 @@ class DepositHandler(HandlerDebugMixin):
     def process_deposit_balance_cp_flow(self, player_input):
         self.debug('→ Entering process_deposit_balance_cp_flow')
         text = player_input['text'] if isinstance(player_input, dict) else str(player_input)
-        lowered = text.lower()
+        lowered = text.lower().strip()
 
         # Extract amount and currency
         amount, currency = self._extract_amount_and_currency(lowered)
         if amount is None:
-            self.convo.debug('Deposit amount missing — asking for it.')
-            self.convo.set_state(ConversationState.AWAITING_DEPOSIT_AMOUNT)  # <--- THIS LINE
-            self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
-            self.convo.save_state()  # <--- ALWAYS SAVE after changing state!
-            return self.agent.shopkeeper_deposit_balance_cp_prompt()
+            # Allow plain numbers to be treated as copper
+            if lowered.isdigit():
+                amount = int(lowered)
+                currency = "cp"
+            else:
+                deposit_keywords = INTENT_KEYWORDS[PlayerIntent.DEPOSIT_BALANCE]
+                if any(kw in lowered for kw in deposit_keywords):
+                    # Reprompt only if user repeated a deposit-like keyword
+                    self.convo.set_state(ConversationState.AWAITING_DEPOSIT_AMOUNT)
+                    self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
+                    self.convo.save_state()
+                    return self.agent.shopkeeper_deposit_balance_cp_prompt()
+                # Otherwise, let the main router handle (for menu, items, etc)
+                return None
 
         # Convert to cp
         amount_cp = amount * self.CURRENCY_CP[currency]

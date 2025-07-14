@@ -295,10 +295,20 @@ class ConversationService(HandlerDebugMixin):
 
         # --- Awaiting deposit/withdraw amount ---
         if self.convo.state == ConversationState.AWAITING_DEPOSIT_AMOUNT:
-            return self.deposit_handler.process_deposit_balance_cp_flow({'text': text})
+            resp = self.deposit_handler.process_deposit_balance_cp_flow({'text': text})
+            if resp is not None:
+                return resp
+            # If deposit handler didn't handle (i.e. not a number), reset state so global commands work
+            self.convo.set_state(ConversationState.AWAITING_ACTION)
+            self.convo.save_state()
 
         if self.convo.state == ConversationState.AWAITING_WITHDRAW_AMOUNT:
-            return self.withdraw_handler.process_withdraw_balance_cp_flow({'text': text})
+            resp = self.withdraw_handler.process_withdraw_balance_cp_flow({'text': text})
+            if resp is not None:
+                return resp
+            # If withdraw handler didn't handle (i.e. not a number), reset state so global commands work
+            self.convo.set_state(ConversationState.AWAITING_ACTION)
+            self.convo.save_state()
 
         # --- Handle interactive switch_char selection ---
         if self.convo.pending_action == "SWITCH_CHAR" and self.convo.pending_item:
@@ -392,6 +402,26 @@ class ConversationService(HandlerDebugMixin):
 
         self.convo.set_intent(intent)
         self.convo.debug(f'[HANDLE] intent={intent}, metadata={metadata}')
+
+        # ---- PATCHED SECTION: handle needs_amount properly ----
+        if intent == PlayerIntent.WITHDRAW_NEEDS_AMOUNT:
+            self.convo.set_state(ConversationState.AWAITING_WITHDRAW_AMOUNT)
+            self.convo.set_intent(PlayerIntent.WITHDRAW_NEEDS_AMOUNT)
+            self.convo.save_state()
+            return self.agent.shopkeeper_withdraw_balance_cp_prompt()
+
+        if intent == PlayerIntent.DEPOSIT_NEEDS_AMOUNT:
+            self.convo.set_state(ConversationState.AWAITING_DEPOSIT_AMOUNT)
+            self.convo.set_intent(PlayerIntent.DEPOSIT_NEEDS_AMOUNT)
+            self.convo.save_state()
+            return self.agent.shopkeeper_deposit_balance_cp_prompt()
+
+        if intent == PlayerIntent.WITHDRAW_BALANCE:
+            return self.withdraw_handler.process_withdraw_balance_cp_flow({'text': text})
+
+        if intent == PlayerIntent.DEPOSIT_BALANCE:
+            return self.deposit_handler.process_deposit_balance_cp_flow({'text': text})
+        # ---- END PATCH ----
 
         if intent in CATEGORY_MAPPING:
             field, val = CATEGORY_MAPPING[intent]
@@ -511,7 +541,7 @@ class ConversationService(HandlerDebugMixin):
         if intent in {PlayerIntent.SELL_ITEM, PlayerIntent.SELL_NEEDS_ITEM}:
             return self.sell_handler.process_sell_item_flow
 
-        # ---------- 2. TOP-LEVEL INTENT ROUTING: always do this BEFORE stash/unstash state checks! ----------
+        # ---------- 2. TOP-LEVEL INTENT ROUTING ----------
         if intent == PlayerIntent.VIEW_LEDGER:
             return self.generic_handler.handle_view_ledger
         if intent == PlayerIntent.CHECK_BALANCE:
@@ -526,9 +556,9 @@ class ConversationService(HandlerDebugMixin):
             return self.generic_handler.handle_previous_page
         if intent == PlayerIntent.GREETING:
             return self.generic_handler.handle_reply_to_greeting
-        if intent in {PlayerIntent.DEPOSIT_BALANCE, PlayerIntent.DEPOSIT_NEEDS_AMOUNT}:
+        if intent == PlayerIntent.DEPOSIT_BALANCE:
             return self.deposit_handler.process_deposit_balance_cp_flow
-        if intent in {PlayerIntent.WITHDRAW_BALANCE, PlayerIntent.WITHDRAW_NEEDS_AMOUNT}:
+        if intent == PlayerIntent.WITHDRAW_BALANCE:
             return self.withdraw_handler.process_withdraw_balance_cp_flow
         if intent == PlayerIntent.HAGGLE:
             return self.buy_handler.handle_haggle
@@ -537,13 +567,10 @@ class ConversationService(HandlerDebugMixin):
         if intent == PlayerIntent.UNDO:
             return self.generic_handler.handle_undo_last_transaction
 
-        # ---------- 3. Stash/Unstash stateful routing (do this AFTER the intent-based top-level checks) ----------
-
-        # 1. Add handler for viewing stash (intent only)
+        # ---------- 3. Stash/Unstash stateful routing ----------
         if intent == PlayerIntent.VIEW_STASH:
             return self.stash_handler.handle_view_stash
 
-        # 2. Stash add flow: Use state, NOT intent or pending_action!
         if self.convo.state == ConversationState.AWAITING_STASH_ITEM_SELECTION:
             return self.stash_handler.process_stash_item_selection
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION and self.convo.pending_action == PlayerIntent.STASH_ADD:
@@ -551,7 +578,6 @@ class ConversationService(HandlerDebugMixin):
         if intent == PlayerIntent.STASH_ADD:
             return self.stash_handler.process_stash_add_flow
 
-        # 3. Stash remove flow: Use state, NOT intent or pending_action!
         if self.convo.state == ConversationState.AWAITING_TAKE_ITEM_SELECTION:
             return self.stash_handler.process_stash_remove_item_selection
         if self.convo.state == ConversationState.AWAITING_CONFIRMATION and self.convo.pending_action == PlayerIntent.STASH_REMOVE:
@@ -576,7 +602,7 @@ class ConversationService(HandlerDebugMixin):
             PlayerIntent.VIEW_GEAR_SUBCATEGORY,
             PlayerIntent.VIEW_TOOL_SUBCATEGORY,
             PlayerIntent.VIEW_TREASURE_SUBCATEGORY,
-        }  # defined at top
+        }
 
         if intent in view_subcategory_intents:
             def _subcat(wrapped):
@@ -596,5 +622,6 @@ class ConversationService(HandlerDebugMixin):
 
         self.debug('← Exiting _route_intent')
         return self.generic_handler.handle_fallback
+
 
 
