@@ -324,30 +324,23 @@ class BaseShopkeeper(HandlerDebugMixin):
             lines.append('Pass me the item *id* or *name* for more details.')
 
     def _format_shop_item(self, item: dict) -> list[str]:
-        """Return 2-line display for a shop item (ID, name, price only)."""
+        """Return a concise, single-line display for a shop item: id, name, price (gp/cp)."""
         item_id = item.get('item_id', '?')
         name = item.get('item_name', 'Unknown Item')
-        price_cp = item.get('base_price_cp', 0)
+        price_cp = int(item.get('base_price_cp', 0))
 
-        # Split into gold and leftover copper
         gp = price_cp // 100
         cp = price_cp % 100
 
-        # Build the price string
-        if gp == 0:
-            # under 1 GP, show only copper
-            price_str = f"{cp} CP"
+        if gp > 0 and cp == 0:
+            price_str = f"{gp} gp"
+        elif gp > 0 and cp > 0:
+            price_str = f"{gp} gp {cp} cp"
         else:
-            # 1 GP or more
-            if cp == 0:
-                price_str = f"{gp} GP"  # e.g. "3 GP"
-            else:
-                price_str = f"{gp} GP {cp} CP"  # e.g. "3 GP 27 CP"
+            price_str = f"{cp} cp"
 
-        return [
-            f"*#{item_id}* | *{name}*",
-            f"💰{price_str}"
-        ]
+        # WhatsApp-friendly: ID  name  price (single line, italic name)
+        return [f"{item_id} _{name}_ {price_str}"]
 
     def _format_armour_item(self, item: dict) -> list[str]:
         """Return multi-line display for an armour item including weight and description."""
