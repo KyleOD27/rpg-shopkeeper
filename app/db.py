@@ -328,6 +328,22 @@ def get_last_haggle_attempt_time(character_id: int, item_name: str):
     )
     return row["timestamp"] if row else None
 
+def get_haggle_attempts_today(character_id):
+    """
+    Get all haggle attempts today for this character (any item).
+    """
+    return query_db(
+        """
+        SELECT die_roll, result, timestamp, item_name
+        FROM haggle_attempts
+        WHERE character_id = ?
+          AND DATE(timestamp) = DATE('now', 'localtime')
+        ORDER BY timestamp ASC
+        """,
+        (character_id,)
+    )
+
+
 
 
 

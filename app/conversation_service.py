@@ -70,6 +70,7 @@ class ConversationService(HandlerDebugMixin):
             convo,
             agent,
             party_id,
+            character_id,
             player_id,
             player_name,
             self.party_data
