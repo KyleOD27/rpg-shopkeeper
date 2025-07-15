@@ -410,7 +410,9 @@ class BaseShopkeeper(HandlerDebugMixin):
             return f"😕 Looks like there's no *{weapon_category.title()}* weapons in stock right now."
 
         lines = [
-            f'⚔️ *{weapon_category.title()} Weapons* _(Pg {page} of {total_pages})_',
+            f'⚔️ *{weapon_category.title(
+                
+            )} Weapons* _(Pg {page} of {total_pages})_',
             ''
         ]
 
@@ -418,6 +420,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
+        lines.extend(nav_lines)
 
         if any("next" in line.lower() for line in nav_lines):
             buy_lines = [l for l in nav_lines if "next" not in l.lower()]
@@ -522,13 +525,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
-
-        if any("next" in line.lower() for line in nav_lines):
-            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
-            next_lines = [l for l in nav_lines if "next" in l.lower()]
-            lines.extend(buy_lines + next_lines)
-        else:
-            lines.extend(nav_lines)
+        lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_tool_category')
         return '\n'.join(lines)
@@ -561,13 +558,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
-
-        if any("next" in line.lower() for line in nav_lines):
-            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
-            next_lines = [l for l in nav_lines if "next" in l.lower()]
-            lines.extend(buy_lines + next_lines)
-        else:
-            lines.extend(nav_lines)
+        lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_treasure_category')
         return '\n'.join(lines)
@@ -593,14 +584,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
-
-        # Keep “next” at the end (for WhatsApp clarity)
-        if any("next" in line.lower() for line in nav_lines):
-            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
-            next_lines = [l for l in nav_lines if "next" in l.lower()]
-            lines.extend(buy_lines + next_lines)
-        else:
-            lines.extend(nav_lines)
+        lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_mount_category')
         return '\n'.join(lines)
@@ -1071,13 +1055,7 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         nav_lines = []
         self._add_navigation_lines(nav_lines, page, total_pages, include_buy_prompt=True)
-
-        if any("next" in line.lower() for line in nav_lines):
-            buy_lines = [l for l in nav_lines if "next" not in l.lower()]
-            next_lines = [l for l in nav_lines if "next" in l.lower()]
-            lines.extend(buy_lines + next_lines)
-        else:
-            lines.extend(nav_lines)
+        lines.extend(nav_lines)
 
         self.debug('← Exiting shopkeeper_show_items_by_weapon_range')
         return '\n'.join(lines)

@@ -404,8 +404,8 @@ def interpret_input(player_input, convo=None):
                 return {"intent": PlayerIntent.STASH_REMOVE, "metadata": {"item": items}}
             if any(matches_keyword(player_input, kw) for kw in INTENT_KEYWORDS[PlayerIntent.STASH_ADD]):
                 return {"intent": PlayerIntent.STASH_ADD, "metadata": {"item": items}}
-            # Default to inspect if only one match and no keyword
-            return {"intent": PlayerIntent.INSPECT_ITEM, "metadata": {"item": items}}
+            # Default to BUY if only one match and no keyword
+            return {"intent": PlayerIntent.BUY_ITEM, "metadata": {"item": items}}
 
     # --- Category detection ---
     CATEGORY_INTENTS = [
