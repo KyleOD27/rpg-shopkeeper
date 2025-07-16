@@ -340,7 +340,8 @@ def update_base_price_cp(db_path: Path) -> None:
 # ---- Image population logic ----
 import os
 IMAGE_DIR = r"C:\Users\win11\PycharmProjects\rpg-shopkeeper-project\tools\images\items"
-IMAGE_URL_PREFIX = "img"
+IMAGE_URL_PREFIX = "https://kyleod27.github.io/rpg-shopkeeper/tools/images/items"
+
 
 
 def slugify(name):

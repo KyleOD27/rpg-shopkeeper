@@ -1,5 +1,6 @@
 import importlib
 import json
+import os
 from app.db import query_db, update_convo_state, log_convo_state
 from app.conversation import Conversation
 from app.conversation_service import ConversationService
@@ -9,6 +10,8 @@ from app.models.shops import get_all_shops
 from app.config import SHOP_NAME
 from integrations.sharedutils.shared_session_manager import SessionManager
 from app.auth.user_login import get_user_by_phone, register_user, create_character_for_user
+from twilio.rest import Client
+
 
 session_manager = SessionManager()
 
@@ -20,6 +23,13 @@ def _load_agent(shop_row, conversation):
     )
     AgentClass = getattr(mod, shop_row['agent_name'])
     return AgentClass(conversation)
+
+
+
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+WHATSAPP_MESSAGING_SERVICE_SID = os.getenv("WHATSAPP_MESSAGING_SERVICE_SID")
+client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
 def handle_whatsapp_command(sender: str, text: str) -> str:
     """Main entrypoint for every incoming WhatsApp message."""
@@ -184,7 +194,6 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
         )
         response = service.handle(text)
 
-
         # Persist into `character_sessions` (serialize enums & lists)
         raw_action = convo.pending_action
         action_val = raw_action.name if hasattr(raw_action, "name") else raw_action
@@ -215,7 +224,37 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
             player_intent=player_intent,
         )
 
-        return response or 'Hmm… the shopkeeper says nothing. Try again?'
+        # --- 🟢 NEW: WhatsApp media send logic ---
+        # Only at the end, after all logic is complete:
+        if isinstance(response, dict) and response.get("media_url"):
+            print("Sending media URL:", response["media_url"])
+            client.messages.create(
+                messaging_service_sid=WHATSAPP_MESSAGING_SERVICE_SID,
+                to=sender,
+                body=response.get("body", ""),
+                media_url=[response["media_url"]]
+            )
+            return ""
+
+        elif isinstance(response, dict) and response.get("body"):
+            client.messages.create(
+                messaging_service_sid=WHATSAPP_MESSAGING_SERVICE_SID,
+                to=sender,
+                body=response["body"]
+            )
+            return ""
+
+        elif isinstance(response, str):
+            client.messages.create(
+                messaging_service_sid=WHATSAPP_MESSAGING_SERVICE_SID,
+                to=sender,
+                body=response
+            )
+            return ""
+
+        else:
+            # If response is None or unexpected, fallback
+            return "Hmm… the shopkeeper says nothing. Try again?"
 
     except Exception as exc:
         print(f'[ERROR][handle_whatsapp_command] {exc}')
@@ -223,3 +262,4 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
             'Something broke while speaking to the shopkeeper. '
             'Please tell the Game Master!'
         )
+

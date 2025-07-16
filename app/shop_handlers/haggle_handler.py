@@ -54,7 +54,7 @@ class HaggleHandler(HandlerDebugMixin):
             balance_cp = self.party_data.get('party_balance_cp', 0)
             set_pending_buy()
             return self.agent.shopkeeper_generic_say(
-                f"😎 You've already out-haggled me once today—no more deals 'til tomorrow!\n\n"
+                f"😎 You've already had the best of me once today, no more deals 'til tomorrow!\n\n"
                 f"The *{item_name}* still costs *{self.agent.format_gp_cp(full_price_cp)}*.\n\n"
                 f"Your balance is *{self.agent.format_gp_cp(balance_cp)}*. Would you like to proceed with the purchase at full price?"
             )
@@ -94,7 +94,7 @@ class HaggleHandler(HandlerDebugMixin):
             self.convo.save_state()
             # Flair for a win!
             return self.agent.shopkeeper_generic_say(
-                f"🤑 You rolled a *{roll}*!\n\n"
+                f"🤑 _You rolled a *{roll}*!_\n\n"
                 f"Alright, alright, you twisted my arm!\n\n"
                 f"How about *{self.agent.format_gp_cp(discounted_cost_cp)}* for the *{item['item_name']}*?\n\n"
                 f"Would you like to buy it at this new price?\n\n"
@@ -111,8 +111,8 @@ class HaggleHandler(HandlerDebugMixin):
             remaining_attempts = 3 - (attempt_count + 1)  # +1 for this attempt
             if remaining_attempts > 0:
                 return self.agent.shopkeeper_generic_say(
-                    f"😅 You rolled a *{roll}* — no luck!\n"
-                    f"You have {remaining_attempts} more haggle attempt{'s' if remaining_attempts > 1 else ''} today.\n"
+                    f"😅 _You rolled a *{roll}*_\n"
+                    f"Bad luck. You have {remaining_attempts} more haggle attempt{'s' if remaining_attempts > 1 else ''} today.\n"
                     f"The *{item['item_name']}* still costs *{self.agent.format_gp_cp(base_price_cp)}*."
                 )
             else:
@@ -122,7 +122,8 @@ class HaggleHandler(HandlerDebugMixin):
                 balance_cp = self.party_data.get('party_balance_cp', 0)
                 set_pending_buy()
                 return self.agent.shopkeeper_generic_say(
-                    f"🙅‍♂️ You rolled a *{roll}* — that's your third attempt today!\n"
+                    f"🙅‍♂️ _You rolled a *{roll}*_"
+                    f" — that's your third attempt today!\n"
                     f"I'm not budging any more on price—try again tomorrow.\n\n"
                     f"The *{item_name}* still costs *{self.agent.format_gp_cp(full_price_cp)}*.\n\n"
                     f"Your balance is *{self.agent.format_gp_cp(balance_cp)}*. Would you like to proceed with the purchase at full price?"

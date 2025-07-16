@@ -800,7 +800,6 @@ class BaseShopkeeper(HandlerDebugMixin):
         desc = item.get('desc')
         weight = item.get('weight', 0)
 
-        # Always use CP for calculations and display
         base_cp = item.get('base_price_cp', 0)
         cost_cp = discount if discount is not None else base_cp
         saved_cp = base_cp - cost_cp if discount is not None else 0
@@ -808,13 +807,12 @@ class BaseShopkeeper(HandlerDebugMixin):
 
         lines = [f"🛍️ *{name}*  ({cat}, {rar})"]
 
-        # 1. Always start with item name/details.
+        # Only add image if present and non-empty
+        media_url = item.get("image_url")
+        if media_url:
+            # Don't include the URL in the text body, just set as media_url for WhatsApp
+            lines.append("")  # Optional: blank line for nice WhatsApp preview
 
-        # 2. If WhatsApp and image_url present, add image as the next line.
-        lines.append(item["image_url"])
-        lines.append("")  # Optional: blank line for WhatsApp preview separation
-
-        # 3. Continue with the rest of the details.
         lines.append(f"💰 *Price:* {self.format_gp_cp(cost_cp)}{discount_note}")
         lines.append(f"⚖️ *Weight:* {weight} lb")
 
@@ -861,6 +859,15 @@ class BaseShopkeeper(HandlerDebugMixin):
             '',
             'Would you like to buy?'
         ])
+
+        # Join all text lines for WhatsApp message body
+        body = '\n'.join(line for line in lines if line is not None)
+
+        # Return dict for media-friendly response
+        if media_url:
+            return {"body": body, "media_url": media_url}
+        else:
+            return {"body": body}
 
         self.debug('← Exiting shopkeeper_buy_confirm_prompt')
         return '\n'.join(lines)
