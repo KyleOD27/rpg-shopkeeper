@@ -806,12 +806,17 @@ class BaseShopkeeper(HandlerDebugMixin):
         saved_cp = base_cp - cost_cp if discount is not None else 0
         discount_note = f' _(You save {self.format_gp_cp(saved_cp)})_' if saved_cp > 0 else ''
 
-        lines = [
-            f"🛍️ *{name}*  ({cat}, {rar})",
-            '',
-            f"💰 *Price:* {self.format_gp_cp(cost_cp)}{discount_note}",
-            f"⚖️ *Weight:* {weight} lb"
-        ]
+        lines = [f"🛍️ *{name}*  ({cat}, {rar})"]
+
+        # 1. Always start with item name/details.
+
+        # 2. If WhatsApp and image_url present, add image as the next line.
+        lines.append(item["image_url"])
+        lines.append("")  # Optional: blank line for WhatsApp preview separation
+
+        # 3. Continue with the rest of the details.
+        lines.append(f"💰 *Price:* {self.format_gp_cp(cost_cp)}{discount_note}")
+        lines.append(f"⚖️ *Weight:* {weight} lb")
 
         if desc:
             lines.extend(['', f"📜 {desc}"])

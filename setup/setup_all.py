@@ -35,7 +35,6 @@ SCHEMA_SQL = BASE_DIR / "database" / "schema.sql"
 SEED_SQL = BASE_DIR / "database" / "seed_data.sql"
 FALLBACK_SQL = BASE_DIR / "database" / "fallback_items.sql"
 
-
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def reset_database() -> None:
@@ -45,13 +44,11 @@ def reset_database() -> None:
     else:
         print("⚠️  No existing DB found. Proceeding fresh.")
 
-
 def run_sql_script(path: Path) -> None:
     with sqlite3.connect(DB_PATH) as conn:
         with open(path, "r", encoding="utf-8") as f:
             conn.executescript(f.read())
         print(f"📄 Executed: {path.name}")
-
 
 def populate_normalised_names() -> None:
     """Create/populate normalised_item_name column (ASCII, no punctuation)."""
@@ -78,7 +75,6 @@ def populate_normalised_names() -> None:
     conn.close()
     print("✅  normalised_item_name populated for all items!")
 
-
 # ─── Seeding logic ───────────────────────────────────────────────────────────
 
 def _insert_items(no_srd_flag: bool) -> None:
@@ -95,12 +91,7 @@ def _insert_items(no_srd_flag: bool) -> None:
         logging.warning("SRD load failed: %s – falling back to local seed", exc)
         run_sql_script(FALLBACK_SQL)
 
-# ---- Insert Treasure Items -----------------------------------------------------
 def insert_gemstones(db_path: Path) -> None:
-    """
-    Insert each gemstone row individually.
-    Logs every attempt so you can see exactly what happens.
-    """
     with sqlite3.connect(db_path) as conn:
         for srd_index, name, price_gp, description, rarity in GEM_ROWS:
             try:
@@ -119,14 +110,9 @@ def insert_gemstones(db_path: Path) -> None:
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
         conn.commit()
-
     print("💎  Gemstone seeding finished!")
 
 def insert_tradebars(db_path: Path) -> None:
-    """
-    Insert each tradebar row individually.
-    Logs every attempt so you can see exactly what happens.
-    """
     with sqlite3.connect(db_path) as conn:
         for srd_index, name, price_gp, description, rarity in TRADEBAR_ROWS:
             try:
@@ -145,14 +131,9 @@ def insert_tradebars(db_path: Path) -> None:
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
         conn.commit()
-
     print("💰 Trade bar seeding finished!")
 
 def insert_tradegoods(db_path: Path) -> None:
-    """
-    Insert each trade goods row individually.
-    Logs every attempt so you can see exactly what happens.
-    """
     with sqlite3.connect(db_path) as conn:
         for srd_index, name, price_cp, description, rarity in TRADEGOODS_ROWS:
             try:
@@ -171,14 +152,9 @@ def insert_tradegoods(db_path: Path) -> None:
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
         conn.commit()
-
     print("📦  Trade goods seeding finished!")
 
 def insert_artobjects(db_path: Path) -> None:
-    """
-    Insert each art object row individually.
-    Logs every attempt so you can see exactly what happens.
-    """
     with sqlite3.connect(db_path) as conn:
         for srd_index, name, price_gp, description, rarity in ARTOBJECTS_ROWS:
             try:
@@ -197,14 +173,9 @@ def insert_artobjects(db_path: Path) -> None:
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<15}  {name}")
         conn.commit()
-
     print("🖼️  Art object seeding finished!")
 
-# ---- Insert Magic Items -----------------------------------------------------
 def insert_wearable_magic_items(db_path: Path) -> None:
-    """
-    Insert wearable magic items (weapons and armor) into the items table.
-    """
     with sqlite3.connect(db_path) as conn:
         for (
             srd_index, item_name, base_price, price_unit,
@@ -274,19 +245,13 @@ def insert_wearable_magic_items(db_path: Path) -> None:
                             magic_bonus, int(is_magical)
                         )
                     )
-
                 print(f"🧤  added → {srd_index:<30} {item_name}")
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
         conn.commit()
-
     print("🪖 Wearable magic item seeding finished!")
 
 def insert_consumable_magic_items(db_path: Path) -> None:
-    """
-    Insert each adventuring gear row (e.g. potions, ammunition, misc).
-    Logs every attempt so you can see exactly what happens.
-    """
     with sqlite3.connect(db_path) as conn:
         for (
             srd_index, item_name, base_price, price_unit,
@@ -320,14 +285,9 @@ def insert_consumable_magic_items(db_path: Path) -> None:
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
         conn.commit()
-
     print("🎒 Adventuring Gear seeding finished!")
 
 def insert_equipable_magic_items(db_path: Path) -> None:
-    """
-    Insert each equipable magic item (rods, staffs, wands, etc.) into the Treasure category.
-    Logs every attempt so you can see exactly what happens.
-    """
     with sqlite3.connect(db_path) as conn:
         for (
             srd_index, item_name, base_price, price_unit,
@@ -361,13 +321,9 @@ def insert_equipable_magic_items(db_path: Path) -> None:
             except sqlite3.IntegrityError:
                 print(f"⚠️  skipped duplicate → {srd_index:<30} {item_name}")
         conn.commit()
-
     print("✨ Equipable magic item seeding finished!")
 
 def update_base_price_cp(db_path: Path) -> None:
-    """
-    Calculates and updates the base_price_cp column based on price_unit conversion.
-    """
     with sqlite3.connect(db_path) as conn:
         conn.execute("""
             UPDATE items
@@ -381,7 +337,37 @@ def update_base_price_cp(db_path: Path) -> None:
         conn.commit()
     print("🧮 base_price_cp column updated!")
 
+# ---- Image population logic ----
+import os
+IMAGE_DIR = r"C:\Users\win11\PycharmProjects\rpg-shopkeeper-project\tools\images\items"
+IMAGE_URL_PREFIX = "img"
 
+
+def slugify(name):
+    import re
+    return re.sub(r'[^a-z0-9_]', '', name.replace(' ', '_').replace('-', '_').lower())
+
+def update_item_images():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT item_id, item_name FROM items")
+    updated = 0
+    for item_id, item_name in cursor.fetchall():
+        slug = slugify(item_name)
+        for ext in ['.png', '.jpg', '.jpeg', '.webp']:
+            filename = slug + ext
+            image_path = os.path.join(IMAGE_DIR, filename)
+            if os.path.isfile(image_path):
+                image_url = f"{IMAGE_URL_PREFIX}/{filename}"
+                cursor.execute(
+                    "UPDATE items SET image_url = ? WHERE item_id = ?",
+                    (image_url, item_id)
+                )
+                updated += 1
+                break
+    conn.commit()
+    conn.close()
+    print(f"✅ Set image_url for {updated} items.")
 
 # ─── CLI Entry point ─────────────────────────────────────────────────────────
 
@@ -409,9 +395,7 @@ def main() -> None:  # noqa: C901
     if not args.no_seed:
         print("🌱  Seeding user/shop/party data …")
         run_sql_script(SEED_SQL)
-
-        # Add this line right after the above call:
-        insert_gemstones(DB_PATH)  # DB_PATH is whatever you already pass to run_sql_script
+        insert_gemstones(DB_PATH)
         insert_tradebars(DB_PATH)
         insert_tradegoods(DB_PATH)
         insert_artobjects(DB_PATH)
@@ -419,11 +403,14 @@ def main() -> None:  # noqa: C901
         insert_consumable_magic_items(DB_PATH)
         insert_equipable_magic_items(DB_PATH)
         update_base_price_cp(DB_PATH)
+
     print("🔡  Populating normalised_item_name …")
     populate_normalised_names()
 
-    print("✅  Setup complete.")
+    # --- Add image URL population here ---
+    update_item_images()
 
+    print("✅  Setup complete.")
 
 if __name__ == "__main__":
     main()

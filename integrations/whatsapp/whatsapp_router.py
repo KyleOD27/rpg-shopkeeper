@@ -184,6 +184,7 @@ def handle_whatsapp_command(sender: str, text: str) -> str:
         )
         response = service.handle(text)
 
+
         # Persist into `character_sessions` (serialize enums & lists)
         raw_action = convo.pending_action
         action_val = raw_action.name if hasattr(raw_action, "name") else raw_action

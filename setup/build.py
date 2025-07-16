@@ -132,12 +132,25 @@ def build_target(mode, skip_srd, env):
         ROOT / "ngrok.exe",
         # Add more dependencies here if needed
     ]
+    DIST_DIR.mkdir(exist_ok=True)
     for dep in DEPENDENCY_FILES:
         if dep.exists():
             shutil.copy(dep, DIST_DIR / dep.name)
             print(f"✔ Copied {dep.name} to {DIST_DIR}")
         else:
             print(f"⚠ Dependency not found: {dep} (skipped)")
+
+    # --- NEW: Copy images into dist/img ---
+    IMG_SRC = ROOT / "tools" / "images" / "items"
+    IMG_DEST = DIST_DIR / "img"
+
+    if IMG_SRC.exists():
+        if IMG_DEST.exists():
+            shutil.rmtree(IMG_DEST)
+        shutil.copytree(IMG_SRC, IMG_DEST)
+        print(f"✔ Copied images to {IMG_DEST}")
+    else:
+        print(f"⚠ Image source {IMG_SRC} does not exist!")
 
 def main():
     env = os.environ.copy()
