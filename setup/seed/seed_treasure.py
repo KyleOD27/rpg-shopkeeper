@@ -72,7 +72,7 @@ TRADEGOODS_ROWS: list[tuple[str, str, int, str, str]] = [
     ("1-yrd-cloth", "1 sq. yd. of cotton cloth", 250, "1 square yard of cotton cloth", "Common"),
     ("1-lb-ginger", "1 lb of ginger", 100, "1 pound of ginger", "Common"),
     ("goat", "goat", 100, " 4 legged creature with horns and a funny look in it's eye", "Common"),
-    ("1-lb-cinnamon", "1 lb of cinnamon", 100, " 4 legged creature with horns and a funny look in it's eye", "Common"),
+    ("1-lb-cinnamon", "1 lb of cinnamon", 100, " 1 lb of sweet cinnamon", "Common"),
     ("1-lb-pepper", "1 lb of pepper", 100, " 1 pound of pepper", "Common"),
     ("sheep", "domestic sheep", 200, " Highly cuddly 4 legged creature", "Common"),
     ("1-lb-cloves", "1 lb of cloves", 300, " Highly cuddly 4 legged creature", "Common"),

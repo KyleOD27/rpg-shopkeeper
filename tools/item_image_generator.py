@@ -110,7 +110,7 @@ for i, row in df.iterrows():
     visual_detail = fetch_visual_description(name, desc, visual_desc_cache)
     prompt = (
         f"A {name}, a {category.lower()}, centered on a plain solid {bg_color} background. "
-        "Pixel art, manga-inspired style. Only the item is shown, centered."
+        "Pixel art, manga-inspired style. Only the item is shown, centered. Full image should fit well within frame."
     )
     if visual_detail:
         prompt += f" Features: {visual_detail}."
